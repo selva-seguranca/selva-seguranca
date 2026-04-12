@@ -14,6 +14,7 @@ class Database {
     private function __construct() {
         self::loadEnvironment();
         $config = self::resolveConnectionConfig();
+        self::validateConnectionConfig($config);
 
         try {
             $this->connection = new PDO($config['dsn'], $config['user'], $config['pass'], [
@@ -127,6 +128,25 @@ class Database {
         }
 
         return (string) $config['port'] === '6543';
+    }
+
+    private static function validateConnectionConfig($config) {
+        $port = trim((string) ($config['port'] ?? ''));
+        if ($port === '' || !ctype_digit($port) || (int) $port < 1 || (int) $port > 65535) {
+            throw new RuntimeException('DB_PORT invalido. Use 5432 para conexao direta local ou 6543 para o Transaction Pooler do Supabase.');
+        }
+
+        $host = trim((string) ($config['host'] ?? ''));
+        if (
+            Env::isTruthy('VERCEL')
+            && preg_match('/^db\.[^.]+\.supabase\.co$/i', $host)
+            && $port === '6543'
+        ) {
+            throw new RuntimeException(
+                'Configuracao invalida na Vercel: db.<project-ref>.supabase.co:6543 nao funciona ai. ' .
+                'Use o host do Transaction Pooler em pooler.supabase.com ou cole a DATABASE_URL exata do botao Connect do Supabase.'
+            );
+        }
     }
 
     public static function getDebugInfo() {
