@@ -74,7 +74,7 @@ class VigilanteController {
             exit;
         } catch (Throwable $e) {
             if ($storedPhoto !== null) {
-                ChecklistPhotoStorage::delete($storedPhoto['path'] ?? null);
+                ChecklistPhotoStorage::delete($storedPhoto);
             }
 
             $_SESSION['ronda_error'] = $e->getMessage();

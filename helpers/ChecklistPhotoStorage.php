@@ -2,11 +2,10 @@
 
 namespace Helpers;
 
+use Config\Env;
 use RuntimeException;
 
 class ChecklistPhotoStorage {
-    private const MAX_FILE_SIZE = 10485760;
-
     private const MIME_TO_EXTENSION = [
         'image/jpeg' => 'jpg',
         'image/png' => 'png',
@@ -27,13 +26,13 @@ class ChecklistPhotoStorage {
                 throw new RuntimeException('Envie a foto do painel para iniciar a ronda.');
             case UPLOAD_ERR_INI_SIZE:
             case UPLOAD_ERR_FORM_SIZE:
-                throw new RuntimeException('A foto do painel excede o tamanho maximo permitido.');
+                throw new RuntimeException('A foto do painel excede o limite de ' . self::getMaxFileSizeLabel() . '.');
             default:
                 throw new RuntimeException('Nao foi possivel processar a foto do painel enviada.');
         }
 
-        if (($file['size'] ?? 0) <= 0 || $file['size'] > self::MAX_FILE_SIZE) {
-            throw new RuntimeException('A foto do painel deve ter ate 10 MB.');
+        if (($file['size'] ?? 0) <= 0 || $file['size'] > self::getMaxFileSizeBytes()) {
+            throw new RuntimeException('A foto do painel deve ter ate ' . self::getMaxFileSizeLabel() . '.');
         }
 
         if (!is_uploaded_file($file['tmp_name'])) {
@@ -41,6 +40,80 @@ class ChecklistPhotoStorage {
         }
 
         $extension = self::detectExtension($file);
+        $driver = strtolower((string) Env::get(
+            'CHECKLIST_STORAGE_DRIVER',
+            Env::isTruthy('VERCEL') ? 'supabase' : 'local'
+        ));
+
+        if ($driver === 'local') {
+            return self::storeLocally($file, $extension);
+        }
+
+        if ($driver === 'supabase') {
+            return self::storeInSupabase($file, $extension);
+        }
+
+        throw new RuntimeException('Driver de armazenamento de checklist invalido.');
+    }
+
+    public static function delete($storedFile) {
+        if (is_array($storedFile)) {
+            $driver = strtolower((string) ($storedFile['driver'] ?? 'local'));
+
+            if ($driver === 'supabase' && !empty($storedFile['object_path'])) {
+                self::deleteFromSupabase($storedFile['object_path']);
+                return;
+            }
+
+            $localPath = $storedFile['path'] ?? null;
+            if (is_string($localPath) && $localPath !== '' && is_file($localPath)) {
+                @unlink($localPath);
+            }
+            return;
+        }
+
+        if (is_string($storedFile) && $storedFile !== '' && is_file($storedFile)) {
+            @unlink($storedFile);
+        }
+    }
+
+    private static function detectExtension($file) {
+        $mime = self::detectMimeType($file);
+
+        if (isset(self::MIME_TO_EXTENSION[$mime])) {
+            return self::MIME_TO_EXTENSION[$mime];
+        }
+
+        $fallback = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+        $allowedExtensions = array_unique(array_values(self::MIME_TO_EXTENSION));
+
+        if (in_array($fallback, $allowedExtensions, true) || $fallback === 'jpeg') {
+            return $fallback === 'jpeg' ? 'jpg' : $fallback;
+        }
+
+        throw new RuntimeException('Formato de foto nao suportado. Use JPG, PNG, WEBP ou HEIC.');
+    }
+
+    private static function detectMimeType($file) {
+        $mime = '';
+
+        if (class_exists('finfo')) {
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $mime = $finfo->file($file['tmp_name']) ?: '';
+        }
+
+        if ($mime === '' && isset($file['type'])) {
+            $mime = strtolower((string) $file['type']);
+        }
+
+        return $mime;
+    }
+
+    private static function storeLocally($file, $extension) {
+        if (Env::isTruthy('VERCEL')) {
+            throw new RuntimeException('Na Vercel, configure CHECKLIST_STORAGE_DRIVER=supabase para salvar a foto do checklist.');
+        }
+
         $relativeDirectory = '/uploads/checklists/' . date('Y/m');
         $absoluteDirectory = dirname(__DIR__) . '/public' . str_replace('/', DIRECTORY_SEPARATOR, $relativeDirectory);
 
@@ -56,40 +129,195 @@ class ChecklistPhotoStorage {
         }
 
         return [
+            'driver' => 'local',
             'url' => $relativeDirectory . '/' . $filename,
             'path' => $absolutePath,
         ];
     }
 
-    public static function delete($absolutePath) {
-        if (is_string($absolutePath) && $absolutePath !== '' && is_file($absolutePath)) {
-            @unlink($absolutePath);
+    private static function storeInSupabase($file, $extension) {
+        $supabaseUrl = self::resolveSupabaseUrl();
+        $bucket = trim((string) Env::get('SUPABASE_STORAGE_BUCKET', 'checklists'));
+        $storageKey = trim((string) Env::get(
+            'SUPABASE_STORAGE_KEY',
+            Env::get('SUPABASE_SERVICE_ROLE_KEY', Env::get('SUPABASE_ANON_KEY', ''))
+        ));
+
+        if ($supabaseUrl === '') {
+            throw new RuntimeException('Defina SUPABASE_URL na Vercel para salvar a foto do checklist.');
+        }
+
+        if ($bucket === '') {
+            throw new RuntimeException('Defina SUPABASE_STORAGE_BUCKET para salvar a foto do checklist.');
+        }
+
+        if ($storageKey === '') {
+            throw new RuntimeException('Defina SUPABASE_STORAGE_KEY ou SUPABASE_SERVICE_ROLE_KEY na Vercel.');
+        }
+
+        $baseDirectory = trim((string) Env::get('SUPABASE_STORAGE_DIRECTORY', 'checklists'), '/');
+        $filename = bin2hex(random_bytes(16)) . '.' . $extension;
+        $objectPath = trim($baseDirectory . '/' . date('Y/m') . '/' . $filename, '/');
+        $uploadUrl = $supabaseUrl . '/storage/v1/object/' . rawurlencode($bucket) . '/' . self::encodePath($objectPath);
+        $fileContents = file_get_contents($file['tmp_name']);
+
+        if ($fileContents === false) {
+            throw new RuntimeException('Nao foi possivel ler a foto do checklist para envio.');
+        }
+
+        self::sendSupabaseRequest(
+            'POST',
+            $uploadUrl,
+            $storageKey,
+            $fileContents,
+            self::detectMimeType($file) ?: 'application/octet-stream'
+        );
+
+        return [
+            'driver' => 'supabase',
+            'url' => self::buildSupabasePublicUrl($supabaseUrl, $bucket, $objectPath),
+            'path' => $objectPath,
+            'object_path' => $objectPath,
+        ];
+    }
+
+    private static function deleteFromSupabase($objectPath) {
+        $supabaseUrl = self::resolveSupabaseUrl();
+        $bucket = trim((string) Env::get('SUPABASE_STORAGE_BUCKET', 'checklists'));
+        $storageKey = trim((string) Env::get(
+            'SUPABASE_STORAGE_KEY',
+            Env::get('SUPABASE_SERVICE_ROLE_KEY', Env::get('SUPABASE_ANON_KEY', ''))
+        ));
+
+        if ($supabaseUrl === '' || $bucket === '' || $storageKey === '') {
+            return;
+        }
+
+        $deleteUrl = $supabaseUrl . '/storage/v1/object/' . rawurlencode($bucket) . '/' . self::encodePath($objectPath);
+
+        try {
+            self::sendSupabaseRequest('DELETE', $deleteUrl, $storageKey);
+        } catch (RuntimeException $e) {
+            return;
         }
     }
 
-    private static function detectExtension($file) {
-        $mime = '';
+    private static function sendSupabaseRequest($method, $url, $apiKey, $body = null, $contentType = null) {
+        $headers = [
+            'Authorization: Bearer ' . $apiKey,
+            'apikey: ' . $apiKey,
+            'x-upsert: false',
+        ];
 
-        if (class_exists('finfo')) {
-            $finfo = new \finfo(FILEINFO_MIME_TYPE);
-            $mime = $finfo->file($file['tmp_name']) ?: '';
+        if ($contentType !== null && $contentType !== '') {
+            $headers[] = 'Content-Type: ' . $contentType;
         }
 
-        if ($mime === '' && isset($file['type'])) {
-            $mime = strtolower((string) $file['type']);
+        $options = [
+            'http' => [
+                'method' => strtoupper($method),
+                'header' => implode("\r\n", $headers),
+                'ignore_errors' => true,
+                'timeout' => 30,
+            ],
+        ];
+
+        if ($body !== null) {
+            $options['http']['content'] = $body;
         }
 
-        if (isset(self::MIME_TO_EXTENSION[$mime])) {
-            return self::MIME_TO_EXTENSION[$mime];
+        $context = stream_context_create($options);
+        $responseBody = file_get_contents($url, false, $context);
+        $responseHeaders = isset($http_response_header) && is_array($http_response_header) ? $http_response_header : [];
+        $statusCode = self::extractHttpStatusCode($responseHeaders);
+
+        if ($statusCode >= 200 && $statusCode < 300) {
+            return $responseBody;
         }
 
-        $fallback = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
-        $allowedExtensions = array_unique(array_values(self::MIME_TO_EXTENSION));
-
-        if (in_array($fallback, $allowedExtensions, true) || $fallback === 'jpeg') {
-            return $fallback === 'jpeg' ? 'jpg' : $fallback;
+        $errorMessage = self::extractSupabaseErrorMessage($responseBody);
+        if ($errorMessage === '') {
+            $errorMessage = 'Falha ao enviar a foto do checklist para o Supabase Storage.';
         }
 
-        throw new RuntimeException('Formato de foto nao suportado. Use JPG, PNG, WEBP ou HEIC.');
+        throw new RuntimeException($errorMessage);
+    }
+
+    private static function extractHttpStatusCode($headers) {
+        if (empty($headers) || !preg_match('/\s(\d{3})\s?/', (string) $headers[0], $matches)) {
+            return 0;
+        }
+
+        return (int) $matches[1];
+    }
+
+    private static function extractSupabaseErrorMessage($responseBody) {
+        if (!is_string($responseBody) || trim($responseBody) === '') {
+            return '';
+        }
+
+        $payload = json_decode($responseBody, true);
+        if (!is_array($payload)) {
+            return '';
+        }
+
+        foreach (['message', 'error', 'msg'] as $key) {
+            if (!empty($payload[$key]) && is_string($payload[$key])) {
+                return $payload[$key];
+            }
+        }
+
+        return '';
+    }
+
+    private static function resolveSupabaseUrl() {
+        $configuredUrl = trim((string) Env::get('SUPABASE_URL', Env::get('SUPABASE_PROJECT_URL', '')));
+        if ($configuredUrl !== '') {
+            return rtrim($configuredUrl, '/');
+        }
+
+        $host = trim((string) Env::get('DB_HOST', ''));
+        if (preg_match('/^db\.([a-z0-9-]+)\.supabase\.co$/i', $host, $matches)) {
+            return 'https://' . $matches[1] . '.supabase.co';
+        }
+
+        return '';
+    }
+
+    private static function buildSupabasePublicUrl($supabaseUrl, $bucket, $objectPath) {
+        $customPublicUrl = trim((string) Env::get('SUPABASE_STORAGE_PUBLIC_URL', ''));
+        if ($customPublicUrl !== '') {
+            return rtrim($customPublicUrl, '/') . '/' . self::encodePath($objectPath);
+        }
+
+        return rtrim($supabaseUrl, '/') . '/storage/v1/object/public/'
+            . rawurlencode($bucket) . '/'
+            . self::encodePath($objectPath);
+    }
+
+    private static function encodePath($path) {
+        $segments = array_map('rawurlencode', explode('/', trim((string) $path, '/')));
+        return implode('/', $segments);
+    }
+
+    private static function getMaxFileSizeBytes() {
+        $defaultMegabytes = Env::isTruthy('VERCEL') ? 4 : 10;
+        $configuredMegabytes = (float) Env::get('CHECKLIST_MAX_FILE_SIZE_MB', (string) $defaultMegabytes);
+
+        if ($configuredMegabytes <= 0) {
+            $configuredMegabytes = $defaultMegabytes;
+        }
+
+        return (int) round($configuredMegabytes * 1024 * 1024);
+    }
+
+    private static function getMaxFileSizeLabel() {
+        $megabytes = self::getMaxFileSizeBytes() / 1048576;
+
+        if (abs($megabytes - (int) $megabytes) < 0.001) {
+            return (int) $megabytes . ' MB';
+        }
+
+        return number_format($megabytes, 1, ',', '.') . ' MB';
     }
 }
