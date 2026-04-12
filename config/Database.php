@@ -54,7 +54,6 @@ class Database {
             ? self::parseDatabaseUrl($databaseUrl)
             : self::buildConfigFromDiscreteVariables();
 
-        $config = self::normalizeSupabasePoolerConfig($config);
         $config['emulate_prepares'] = self::shouldEmulatePrepares($config);
 
         return $config;
@@ -129,61 +128,6 @@ class Database {
         }
 
         return (string) $config['port'] === '6543';
-    }
-
-    private static function normalizeSupabasePoolerConfig($config) {
-        $host = trim((string) ($config['host'] ?? ''));
-        $user = trim((string) ($config['user'] ?? ''));
-
-        if (!preg_match('/\.pooler\.supabase\.com$/i', $host)) {
-            return $config;
-        }
-
-        if ($user !== 'postgres') {
-            return $config;
-        }
-
-        $projectRef = self::inferSupabaseProjectRef($host);
-        if ($projectRef === '') {
-            return $config;
-        }
-
-        $config['user'] = 'postgres.' . $projectRef;
-        $config['dsn'] = self::buildDsn($config['host'], $config['port'], $config['db'], $config['sslmode']);
-
-        return $config;
-    }
-
-    private static function inferSupabaseProjectRef($host) {
-        $candidates = [
-            trim((string) Env::get('SUPABASE_URL', '')),
-            trim((string) Env::get('NEXT_PUBLIC_SUPABASE_URL', '')),
-            trim((string) Env::get('DB_HOST', '')),
-        ];
-
-        foreach ($candidates as $candidate) {
-            if ($candidate === '') {
-                continue;
-            }
-
-            if (preg_match('#https://([a-z0-9-]+)\.supabase\.co/?#i', $candidate, $matches)) {
-                return $matches[1];
-            }
-
-            if (preg_match('/^db\.([a-z0-9-]+)\.supabase\.co$/i', $candidate, $matches)) {
-                return $matches[1];
-            }
-        }
-
-        if (preg_match('/^postgres\.([a-z0-9-]+)$/i', trim((string) Env::get('DB_USERNAME', '')), $matches)) {
-            return $matches[1];
-        }
-
-        if (preg_match('/^postgres\.([a-z0-9-]+):/i', trim((string) Env::get('DATABASE_URL', '')), $matches)) {
-            return $matches[1];
-        }
-
-        return '';
     }
 
     private static function validateConnectionConfig($config) {
