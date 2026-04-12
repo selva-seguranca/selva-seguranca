@@ -12,12 +12,25 @@ ON CONFLICT (nome) DO NOTHING;
 
 -- O id_perfil pode variar porque usamos SERIAL. Vamos usar subqueries para referenciar por nome.
 
--- Inserir Usuario Coordenador Geral Administrativo Default
--- Senha padrao: admin123
+-- Inserir/atualizar Usuario Coordenador Geral Default
+-- E-mail padrao: selvaseguranca190@gmail.com
+-- Senha padrao: 123456
+UPDATE usuarios
+SET nome = 'Admin Selva',
+    email = 'selvaseguranca190@gmail.com',
+    senha_hash = '$2y$10$giaxSN00ZwNUeueGrqw3yO8Ytwf1OBT9j2JOFAioRnujnW7QmW7FC',
+    perfil_id = (SELECT id FROM perfis WHERE nome = 'Coordenador Geral'),
+    ativo = true
+WHERE email = 'admin@selvaseguranca.com';
+
 INSERT INTO usuarios (nome, email, senha_hash, perfil_id)
-SELECT 'Admin Selva', 'admin@selvaseguranca.com', '$2y$10$J3jo29iM4JIbOedktKQeM.FcIzhh3HVRiNqqgl92StRBRGTkcvYVa', id
+SELECT 'Admin Selva', 'selvaseguranca190@gmail.com', '$2y$10$giaxSN00ZwNUeueGrqw3yO8Ytwf1OBT9j2JOFAioRnujnW7QmW7FC', id
 FROM perfis WHERE nome = 'Coordenador Geral'
-ON CONFLICT (email) DO NOTHING;
+ON CONFLICT (email) DO UPDATE
+SET nome = EXCLUDED.nome,
+    senha_hash = EXCLUDED.senha_hash,
+    perfil_id = EXCLUDED.perfil_id,
+    ativo = true;
 
 -- Inserir Usuario Vigilante Exemplo
 -- Senha padrao: vigilante123
