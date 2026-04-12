@@ -1,0 +1,187 @@
+-- schema.sql
+-- Banco de Dados: PostgreSQL
+-- Projeto: Selva Segurança CRM
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Perfis
+CREATE TABLE IF NOT EXISTS perfis (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- Usuários
+CREATE TABLE IF NOT EXISTS usuarios (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nome VARCHAR(150) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    senha_hash VARCHAR(255) NOT NULL,
+    perfil_id INTEGER NOT NULL REFERENCES perfis(id) ON DELETE RESTRICT,
+    ativo BOOLEAN DEFAULT true,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Vigilantes
+CREATE TABLE IF NOT EXISTS vigilantes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    cnh VARCHAR(20),
+    validade_cnh DATE,
+    formacao VARCHAR(150),
+    validade_reciclagem DATE,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Veículos
+CREATE TABLE IF NOT EXISTS veiculos (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    placa VARCHAR(10) NOT NULL UNIQUE,
+    modelo VARCHAR(50) NOT NULL,
+    marca VARCHAR(50) NOT NULL,
+    ano INTEGER,
+    km_atual INTEGER DEFAULT 0,
+    data_prox_troca_oleo DATE,
+    km_prox_troca_oleo INTEGER,
+    data_prox_revisao DATE,
+    km_prox_revisao INTEGER,
+    status VARCHAR(30) DEFAULT 'disponivel', -- disponivel, em_uso, manutencao
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Rondas
+CREATE TABLE IF NOT EXISTS rondas (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vigilante_id UUID NOT NULL REFERENCES vigilantes(id) ON DELETE RESTRICT,
+    veiculo_id UUID REFERENCES veiculos(id) ON DELETE SET NULL,
+    data_inicio TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_fim TIMESTAMP,
+    status VARCHAR(30) DEFAULT 'em_andamento', -- em_andamento, concluido
+    observacoes TEXT
+);
+
+-- Checklist do Veículo ANTES da ronda
+CREATE TABLE IF NOT EXISTS checklist_veiculos (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vigilante_id UUID NOT NULL REFERENCES vigilantes(id) ON DELETE RESTRICT,
+    veiculo_id UUID NOT NULL REFERENCES veiculos(id) ON DELETE RESTRICT,
+    ronda_id UUID REFERENCES rondas(id) ON DELETE CASCADE,
+    data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    km_inicial INTEGER NOT NULL,
+    foto_painel_url VARCHAR(255),
+    combustivel_nivel VARCHAR(30), -- cheio, 3/4, 1/2, 1/4, reserva
+    condicao_pneus VARCHAR(30), -- bom, regular, ruim
+    condicao_iluminacao VARCHAR(30),
+    condicao_freios VARCHAR(30),
+    observacoes TEXT
+);
+
+-- Ocorrências (registradas durante a ronda)
+CREATE TABLE IF NOT EXISTS ocorrencias (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    ronda_id UUID NOT NULL REFERENCES rondas(id) ON DELETE CASCADE,
+    tipo VARCHAR(50) NOT NULL, -- suspeita, invasao, veiculo_suspeito, pane, outros
+    descricao TEXT NOT NULL,
+    latitude DECIMAL(10,8),
+    longitude DECIMAL(11,8),
+    foto_url VARCHAR(255),
+    video_url VARCHAR(255),
+    audio_url VARCHAR(255),
+    data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Manutenções
+CREATE TABLE IF NOT EXISTS manutencoes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    veiculo_id UUID NOT NULL REFERENCES veiculos(id) ON DELETE CASCADE,
+    tipo VARCHAR(50) NOT NULL, -- troca_oleo, revisao, corretiva
+    data_realizada DATE NOT NULL,
+    km_realizada INTEGER NOT NULL,
+    observacoes TEXT,
+    valor DECIMAL(10,2),
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Clientes
+CREATE TABLE IF NOT EXISTS clientes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nome_razao_social VARCHAR(200) NOT NULL,
+    cpf_cnpj VARCHAR(20) NOT NULL UNIQUE,
+    telefone VARCHAR(20),
+    email VARCHAR(150),
+    endereco TEXT,
+    status VARCHAR(20) DEFAULT 'ativo',
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Colaboradores (Internos / Geral)
+CREATE TABLE IF NOT EXISTS colaboradores (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    cargo VARCHAR(100),
+    departamento VARCHAR(100),
+    data_admissao DATE,
+    salario DECIMAL(10,2),
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Contratos
+CREATE TABLE IF NOT EXISTS contratos (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tipo VARCHAR(30) NOT NULL, -- cliente, colaborador
+    cliente_id UUID REFERENCES clientes(id) ON DELETE CASCADE,
+    colaborador_id UUID REFERENCES colaboradores(id) ON DELETE CASCADE,
+    data_inicio DATE NOT NULL,
+    data_fim DATE,
+    valor DECIMAL(10,2),
+    status VARCHAR(20) DEFAULT 'ativo',
+    arquivo_pdf_url VARCHAR(255),
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Estoque
+CREATE TABLE IF NOT EXISTS estoque (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    nome_item VARCHAR(100) NOT NULL,
+    categoria VARCHAR(50), -- uniforme, epi, armamento, equipamento
+    quantidade INTEGER DEFAULT 0,
+    validade DATE,
+    numero_serie VARCHAR(100),
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Financeiro
+CREATE TABLE IF NOT EXISTS financeiro (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tipo VARCHAR(20) NOT NULL, -- receita, despesa
+    descricao VARCHAR(255) NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
+    data_vencimento DATE NOT NULL,
+    data_pagamento DATE,
+    status VARCHAR(20) DEFAULT 'pendente', -- pendente, pago, atrasado
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Documentos
+CREATE TABLE IF NOT EXISTS documentos (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    entidade_tipo VARCHAR(50), -- usuario, cliente, veiculo, etc.
+    entidade_id UUID,
+    titulo VARCHAR(150) NOT NULL,
+    arquivo_url VARCHAR(255) NOT NULL,
+    data_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Logs de Auditoria
+CREATE TABLE IF NOT EXISTS logs_auditoria (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    usuario_id UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+    acao VARCHAR(50) NOT NULL, -- CREATE, UPDATE, DELETE, LOGIN
+    tabela_afetada VARCHAR(50),
+    registro_id UUID,
+    dados_antigos JSONB,
+    dados_novos JSONB,
+    ip VARCHAR(45),
+    data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
