@@ -46,6 +46,7 @@ class AuthController {
             $stmt->execute();
             $user = $stmt->fetch();
         } catch (Throwable $e) {
+            error_log('[AuthController@login] ' . $e->getMessage());
             $_SESSION['login_error'] = "Nao foi possivel conectar ao banco de dados. Revise a configuracao do Supabase.";
             header("Location: /login");
             exit;
