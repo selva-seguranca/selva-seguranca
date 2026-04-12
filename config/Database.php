@@ -129,6 +129,34 @@ class Database {
         return (string) $config['port'] === '6543';
     }
 
+    public static function getDebugInfo() {
+        self::loadEnvironment();
+
+        $config = self::resolveConnectionConfig();
+
+        return [
+            'connection_source' => trim((string) Env::get(
+                'DATABASE_URL',
+                Env::get('POSTGRES_URL', Env::get('SUPABASE_DB_URL', ''))
+            )) !== '' ? 'database_url' : 'discrete_variables',
+            'host' => $config['host'],
+            'port' => $config['port'],
+            'db' => $config['db'],
+            'user' => $config['user'],
+            'sslmode' => $config['sslmode'],
+            'emulate_prepares' => $config['emulate_prepares'],
+            'database_url_present' => trim((string) Env::get(
+                'DATABASE_URL',
+                Env::get('POSTGRES_URL', Env::get('SUPABASE_DB_URL', ''))
+            )) !== '',
+            'vercel' => Env::isTruthy('VERCEL'),
+            'app_env' => Env::get('APP_ENV', ''),
+            'pdo_loaded' => extension_loaded('pdo'),
+            'pdo_pgsql_loaded' => extension_loaded('pdo_pgsql'),
+            'pgsql_loaded' => extension_loaded('pgsql'),
+        ];
+    }
+
     public static function getInstance() {
         if (self::$instance === null) {
             self::$instance = new self();

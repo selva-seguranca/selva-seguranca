@@ -8,6 +8,7 @@ $router = new Router();
 $router->get('/login', 'AuthController@showLoginForm');
 $router->post('/login', 'AuthController@login');
 $router->get('/logout', 'AuthController@logout');
+$router->get('/debug/db', 'DebugController@db');
 
 // Dashboard Routes
 $router->get('/', 'DashboardController@index');
