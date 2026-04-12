@@ -3,6 +3,7 @@
 namespace Controllers;
 
 use Config\Database;
+use Config\Env;
 use Helpers\View;
 use Throwable;
 
@@ -47,7 +48,7 @@ class AuthController {
             $user = $stmt->fetch();
         } catch (Throwable $e) {
             error_log('[AuthController@login] ' . $e->getMessage());
-            $_SESSION['login_error'] = "Nao foi possivel conectar ao banco de dados. Revise a configuracao do Supabase.";
+            $_SESSION['login_error'] = $this->getDatabaseConnectionErrorMessage();
             header("Location: /login");
             exit;
         }
@@ -70,5 +71,29 @@ class AuthController {
         session_destroy();
         header("Location: /login");
         exit;
+    }
+
+    private function getDatabaseConnectionErrorMessage() {
+        if ($this->isLikelyInvalidSupabaseVercelConfiguration()) {
+            return 'Na Vercel, use o connection string do Supabase Transaction Pooler (porta 6543) ou DATABASE_URL do botao Connect.';
+        }
+
+        return 'Nao foi possivel conectar ao banco de dados. Revise a configuracao do Supabase.';
+    }
+
+    private function isLikelyInvalidSupabaseVercelConfiguration() {
+        if (!Env::isTruthy('VERCEL')) {
+            return false;
+        }
+
+        $databaseUrl = trim((string) Env::get('DATABASE_URL', Env::get('POSTGRES_URL', '')));
+        if ($databaseUrl !== '') {
+            return (bool) preg_match('/@db\.[^.]+\.supabase\.co:5432(\/|$)/i', $databaseUrl);
+        }
+
+        $host = trim((string) Env::get('DB_HOST', ''));
+        $port = trim((string) Env::get('DB_PORT', '5432'));
+
+        return (bool) preg_match('/^db\.[^.]+\.supabase\.co$/i', $host) && $port === '5432';
     }
 }
