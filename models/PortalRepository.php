@@ -388,6 +388,25 @@ class PortalRepository {
         }
     }
 
+    public function registrarOcorrencia($rondaId, $dados) {
+        return $this->run(
+            "INSERT INTO ocorrencias (
+                ronda_id, tipo, descricao, latitude, longitude, foto_url, video_url
+            ) VALUES (
+                :ronda_id, :tipo, :descricao, :latitude, :longitude, :foto_url, :video_url
+            ) RETURNING id, data_hora",
+            [
+                ':ronda_id' => $rondaId,
+                ':tipo' => $dados['tipo'] ?? 'outros',
+                ':descricao' => $dados['descricao'] ?? '',
+                ':latitude' => $dados['latitude'] ?? null,
+                ':longitude' => $dados['longitude'] ?? null,
+                ':foto_url' => $dados['foto_url'] ?? null,
+                ':video_url' => $dados['video_url'] ?? null,
+            ]
+        )->fetch();
+    }
+
     private function findVigilanteIdByUserId($userId) {
         $result = $this->fetchValue(
             "SELECT id FROM vigilantes WHERE usuario_id = :user_id LIMIT 1",

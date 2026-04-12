@@ -28,7 +28,8 @@ $router->get('/contratos', 'ContratoController@index');
 // Vigilante Routes
 $router->get('/vigilante/ronda', 'VigilanteController@preRonda');
 $router->post('/vigilante/checklist', 'VigilanteController@submitChecklist');
-$router->get('/vigilante/painel', 'VigilanteController@painelAtivo');
-$router->post('/vigilante/ronda/finalizar', 'VigilanteController@finalizarRonda');
+    $router->get('/vigilante/painel', 'VigilanteController@painelAtivo');
+    $router->post('/vigilante/ocorrencia', 'VigilanteController@registrarOcorrencia');
+    $router->post('/vigilante/ronda/finalizar', 'VigilanteController@finalizarRonda');
 
 return $router;

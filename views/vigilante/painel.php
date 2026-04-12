@@ -99,14 +99,68 @@
                 <span class="text-sm font-medium">Ocorrencia</span>
             </button>
 
-            <button class="bg-brand-gray border border-gray-700 rounded-xl p-5 flex flex-col items-center justify-center space-y-2 hover:bg-gray-800 transition-colors col-span-2 relative overflow-hidden">
+            <label class="bg-brand-gray border border-gray-700 rounded-xl p-5 flex flex-col items-center justify-center space-y-2 hover:bg-gray-800 transition-colors col-span-2 relative overflow-hidden cursor-pointer">
                 <div class="absolute inset-0 w-full h-full bg-gradient-to-r from-red-500/5 to-transparent"></div>
                 <div class="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center text-brand-red mb-1">
                     <i class="ph ph-camera text-2xl"></i>
                 </div>
                 <span class="text-sm font-medium">Capturar Evidencia (Foto/Video)</span>
-                <input type="file" capture="environment" accept="image/*,video/*" class="absolute inset-0 opacity-0 cursor-pointer">
-            </button>
+                <input type="file" id="evidencia-direta" capture="environment" accept="image/*,video/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="enviarEvidenciaDireta(this)">
+            </label>
+        </div>
+    </div>
+
+    <!-- Modal Ocorrencia -->
+    <div id="modal-ocorrencia" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeOcorrencia()"></div>
+        <div class="absolute bottom-0 w-full bg-brand-gray border-t border-gray-700 rounded-t-3xl p-6 transform transition-transform translate-y-full" id="modal-content">
+            <div class="w-12 h-1.5 bg-gray-600 rounded-full mx-auto mb-6"></div>
+            
+            <h2 class="text-xl font-bold mb-6 flex items-center">
+                <i class="ph ph-warning-circle text-yellow-500 mr-2"></i>
+                Nova Ocorrencia
+            </h2>
+
+            <form id="form-ocorrencia" class="space-y-4">
+                <input type="hidden" name="ronda_id" value="<?= htmlspecialchars($ronda['id'] ?? '') ?>">
+                <input type="hidden" name="latitude" id="input-lat">
+                <input type="hidden" name="longitude" id="input-lng">
+
+                <div>
+                    <label class="block text-xs uppercase text-gray-400 mb-1">Tipo de Ocorrencia</label>
+                    <select name="tipo" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-brand-red outline-none">
+                        <option value="suspeita">Atividade Suspeita</option>
+                        <option value="invasao">Invasao / Arrombamento</option>
+                        <option value="veiculo_suspeito">Veiculo Suspeito</option>
+                        <option value="pane">Pane Mecanica / Eletrica</option>
+                        <option value="apoio">Solicitacao de Apoio</option>
+                        <option value="outros" selected>Outros</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase text-gray-400 mb-1">Descricao</label>
+                    <textarea name="descricao" rows="3" placeholder="Descreva os detalhes..." class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-brand-red outline-none resize-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="flex flex-col items-center justify-center border-2 border-dashed border-gray-700 rounded-xl p-4 hover:border-brand-red transition-colors cursor-pointer relative">
+                        <i class="ph ph-image text-2xl mb-1 text-gray-400"></i>
+                        <span class="text-[10px] uppercase font-bold text-gray-500">Adicionar Foto</span>
+                        <input type="file" name="foto" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer">
+                    </label>
+                    <label class="flex flex-col items-center justify-center border-2 border-dashed border-gray-700 rounded-xl p-4 hover:border-brand-red transition-colors cursor-pointer relative">
+                        <i class="ph ph-video-camera text-2xl mb-1 text-gray-400"></i>
+                        <span class="text-[10px] uppercase font-bold text-gray-500">Adicionar Video</span>
+                        <input type="file" name="video" accept="video/*" class="absolute inset-0 opacity-0 cursor-pointer">
+                    </label>
+                </div>
+
+                <button type="submit" id="btn-submit-ocorrencia" class="w-full bg-brand-red text-white font-bold py-4 rounded-xl mt-4 flex items-center justify-center group">
+                    <i class="ph ph-paper-plane-tilt text-xl mr-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"></i>
+                    ENVIAR RELATORIO
+                </button>
+            </form>
         </div>
     </div>
 
@@ -120,11 +174,15 @@
         </form>
     </div>
 
-    <script>
+        let lastLat = null;
+        let lastLng = null;
+
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition(
                 (pos) => {
-                    document.getElementById('location-text').innerText = `Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)}`;
+                    lastLat = pos.coords.latitude;
+                    lastLng = pos.coords.longitude;
+                    document.getElementById('location-text').innerText = `Lat: ${lastLat.toFixed(4)}, Lng: ${lastLng.toFixed(4)}`;
                 },
                 () => {
                     document.getElementById('location-text').innerText = "Erro ao obter GPS.";
@@ -144,7 +202,81 @@
         }, 1000);
 
         function openOcorrencia() {
-            alert("Nesta fase, este botao abrira a modal com campos detalhados de ocorrencia e upload de midia.");
+            const modal = document.getElementById('modal-ocorrencia');
+            const content = document.getElementById('modal-content');
+            
+            document.getElementById('input-lat').value = lastLat;
+            document.getElementById('input-lng').value = lastLng;
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('translate-y-full');
+            }, 10);
+        }
+
+        function closeOcorrencia() {
+            const modal = document.getElementById('modal-ocorrencia');
+            const content = document.getElementById('modal-content');
+            
+            content.classList.add('translate-y-full');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function enviarEvidenciaDireta(input) {
+            if (!input.files || input.files.length === 0) return;
+            
+            if (confirm('Deseja enviar este arquivo como uma ocorrencia rapida?')) {
+                const formData = new FormData();
+                formData.append('evidencia', input.files[0]);
+                formData.append('tipo', 'outros');
+                formData.append('descricao', 'Evidencia capturada rapidamente pelo painel.');
+                formData.append('latitude', lastLat);
+                formData.append('longitude', lastLng);
+
+                submitOcorrencia(formData);
+            }
+        }
+
+        document.getElementById('form-ocorrencia').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            submitOcorrencia(formData);
+        });
+
+        async function submitOcorrencia(formData) {
+            const btn = document.getElementById('btn-submit-ocorrencia');
+            const originalText = btn ? btn.innerHTML : '';
+            
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="ph ph-circle-notch animate-spin text-xl mr-2"></i> ENVIANDO...';
+            }
+
+            try {
+                const response = await fetch('/vigilante/ocorrencia', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Ocorrencia registrada com sucesso!');
+                    closeOcorrencia();
+                    document.getElementById('form-ocorrencia').reset();
+                } else {
+                    alert('Erro: ' + result.error);
+                }
+            } catch (error) {
+                alert('Erro na comunicacao com o servidor.');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            }
         }
     </script>
 </body>
