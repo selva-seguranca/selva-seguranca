@@ -48,7 +48,7 @@ class AuthController {
             $user = $stmt->fetch();
         } catch (Throwable $e) {
             error_log('[AuthController@login] ' . $e->getMessage());
-            $_SESSION['login_error'] = $this->getDatabaseConnectionErrorMessage();
+            $_SESSION['login_error'] = $this->getDatabaseConnectionErrorMessage($e);
             header("Location: /login");
             exit;
         }
@@ -73,7 +73,11 @@ class AuthController {
         exit;
     }
 
-    private function getDatabaseConnectionErrorMessage() {
+    private function getDatabaseConnectionErrorMessage(Throwable $e) {
+        if ($this->shouldExposeDatabaseError()) {
+            return 'Falha na conexao com o banco: ' . $e->getMessage();
+        }
+
         if ($this->isLikelyInvalidSupabaseVercelConfiguration()) {
             return 'Na Vercel, use o connection string do Supabase Transaction Pooler (porta 6543) ou DATABASE_URL do botao Connect.';
         }
@@ -95,5 +99,9 @@ class AuthController {
         $port = trim((string) Env::get('DB_PORT', '5432'));
 
         return (bool) preg_match('/^db\.[^.]+\.supabase\.co$/i', $host) && $port === '5432';
+    }
+
+    private function shouldExposeDatabaseError() {
+        return Env::isTruthy('APP_DEBUG') || Env::isTruthy('DB_DEBUG_MESSAGE');
     }
 }
