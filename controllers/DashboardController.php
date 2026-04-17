@@ -2,18 +2,16 @@
 
 namespace Controllers;
 
+use Helpers\Auth;
 use Helpers\View;
 use Models\PortalRepository;
 use Throwable;
 
 class DashboardController {
     public function index() {
-        if (!isset($_SESSION['user_id'])) {
-            header("Location: /login");
-            exit;
-        }
+        Auth::requireLogin();
 
-        $perfil = $_SESSION['user_perfil'] ?? '';
+        $perfil = Auth::currentProfile();
         if ($perfil === 'Vigilante') {
             header("Location: /vigilante/ronda");
             exit;

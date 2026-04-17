@@ -2,16 +2,14 @@
 
 namespace Controllers;
 
+use Helpers\Auth;
 use Helpers\View;
 use Models\PortalRepository;
 use Throwable;
 
 class ContratoController {
     public function index() {
-        if (!isset($_SESSION['user_id'])) {
-            header("Location: /login");
-            exit;
-        }
+        Auth::requireAnyProfile(['Coordenador Geral', 'Administrador']);
 
         $contratos = [];
         $dbWarning = null;

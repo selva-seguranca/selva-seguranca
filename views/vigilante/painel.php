@@ -174,6 +174,7 @@
         </form>
     </div>
 
+    <script>
         let lastLat = null;
         let lastLng = null;
 

@@ -3,16 +3,14 @@
 namespace Controllers;
 
 use DateTimeImmutable;
+use Helpers\Auth;
 use Helpers\View;
 use Models\PortalRepository;
 use Throwable;
 
 class EscalaController {
     public function calendario() {
-        if (!isset($_SESSION['user_id'])) {
-            header("Location: /login");
-            exit;
-        }
+        Auth::requireAnyProfile(['Coordenador Geral', 'Administrador']);
 
         $monthStart = new DateTimeImmutable('first day of this month');
         $monthEnd = new DateTimeImmutable('last day of this month');

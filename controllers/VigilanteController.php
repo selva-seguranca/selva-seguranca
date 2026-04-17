@@ -2,6 +2,7 @@
 
 namespace Controllers;
 
+use Helpers\Auth;
 use Helpers\ChecklistPhotoStorage;
 use Helpers\MediaStorage;
 use Helpers\View;
@@ -10,10 +11,7 @@ use Throwable;
 
 class VigilanteController {
     public function preRonda() {
-        if (!isset($_SESSION['user_id'])) {
-            header("Location: /login");
-            exit;
-        }
+        Auth::requireAnyProfile(['Vigilante']);
 
         $veiculos = [];
         $dbWarning = null;
@@ -47,10 +45,7 @@ class VigilanteController {
     }
 
     public function submitChecklist() {
-        if (!isset($_SESSION['user_id'])) {
-            header("Location: /login");
-            exit;
-        }
+        Auth::requireAnyProfile(['Vigilante']);
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header("Location: /vigilante/ronda");
@@ -85,10 +80,7 @@ class VigilanteController {
     }
 
     public function painelAtivo() {
-        if (!isset($_SESSION['user_id'])) {
-            header("Location: /login");
-            exit;
-        }
+        Auth::requireAnyProfile(['Vigilante']);
 
         try {
             $repository = new PortalRepository();
@@ -122,9 +114,17 @@ class VigilanteController {
     }
 
     public function registrarOcorrencia() {
-        if (!isset($_SESSION['user_id'])) {
+        if (!Auth::check()) {
             header('Content-Type: application/json');
+            http_response_code(401);
             echo json_encode(['success' => false, 'error' => 'Sessao expirada.']);
+            exit;
+        }
+
+        if (!Auth::hasAnyProfile(['Vigilante'])) {
+            header('Content-Type: application/json');
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Acesso negado para registrar ocorrencias.']);
             exit;
         }
 
@@ -135,7 +135,12 @@ class VigilanteController {
             }
 
             $repository = new PortalRepository();
-            
+
+            $ronda = $repository->getRoundByIdForUser($rondaId, $_SESSION['user_id']);
+            if ($ronda === null) {
+                throw new \RuntimeException('Ronda nao encontrada para este vigilante.');
+            }
+             
             $fotoUrl = null;
             $videoUrl = null;
 
@@ -183,10 +188,7 @@ class VigilanteController {
     }
 
     public function finalizarRonda() {
-        if (!isset($_SESSION['user_id'])) {
-            header("Location: /login");
-            exit;
-        }
+        Auth::requireAnyProfile(['Vigilante']);
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header("Location: /vigilante/painel");

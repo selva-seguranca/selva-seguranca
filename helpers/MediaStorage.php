@@ -126,6 +126,7 @@ class MediaStorage {
             throw new RuntimeException('Na Vercel, use driver supabase.');
         }
 
+        $mime = self::detectMimeType($file) ?: 'application/octet-stream';
         $relativeDirectory = '/uploads/' . $folder . '/' . date('Y/m');
         $absoluteDirectory = dirname(__DIR__) . '/public' . str_replace('/', DIRECTORY_SEPARATOR, $relativeDirectory);
 
