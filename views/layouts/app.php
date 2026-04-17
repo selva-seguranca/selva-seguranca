@@ -30,7 +30,10 @@
 <body class="bg-brand-light text-gray-800 min-h-screen flex">
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-brand-dark text-gray-300 flex flex-col hidden md:flex shrink-0 shadow-xl z-20 transition-all">
+    <aside
+        id="app-sidebar"
+        class="fixed inset-y-0 left-0 z-30 flex w-64 -translate-x-full flex-col bg-brand-dark text-gray-300 shadow-xl transition-transform duration-200 md:static md:z-20 md:translate-x-0 md:shrink-0"
+    >
         <div class="h-20 flex items-center justify-center border-b border-gray-800 p-4">
             <img src="/assets/img/logo.png" alt="Logo" class="max-h-full object-contain filter drop-shadow">
         </div>
@@ -84,13 +87,26 @@
         </div>
     </aside>
 
+    <div
+        id="sidebar-backdrop"
+        class="fixed inset-0 z-20 hidden bg-black/50 backdrop-blur-sm md:hidden"
+        aria-hidden="true"
+    ></div>
+
     <!-- Main Content -->
     <div class="flex-1 flex flex-col w-full">
         <!-- Header -->
         <header class="h-20 bg-white shadow-sm flex items-center justify-between px-6 z-10">
             <div class="flex items-center">
-                <button class="md:hidden text-gray-600 focus:outline-none mr-4">
-                    <i class="ph ph-list text-2xl"></i>
+                <button
+                    id="sidebar-toggle"
+                    type="button"
+                    class="mr-4 text-gray-600 focus:outline-none md:hidden"
+                    aria-controls="app-sidebar"
+                    aria-expanded="false"
+                    aria-label="Abrir menu"
+                >
+                    <i id="sidebar-toggle-icon" class="ph ph-list text-2xl"></i>
                 </button>
                 <h1 class="text-xl font-semibold text-gray-800"><?= $pageTitle ?? 'Dashboard' ?></h1>
             </div>
@@ -124,5 +140,59 @@
         </main>
     </div>
 
+    <script>
+        const body = document.body;
+        const sidebar = document.getElementById('app-sidebar');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebarToggleIcon = document.getElementById('sidebar-toggle-icon');
+        const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+        const mobileBreakpoint = window.matchMedia('(min-width: 768px)');
+
+        function setSidebarOpen(isOpen) {
+            if (mobileBreakpoint.matches) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebarBackdrop.classList.add('hidden');
+                body.classList.remove('overflow-hidden');
+                sidebarToggle.setAttribute('aria-expanded', 'false');
+                sidebarToggle.setAttribute('aria-label', 'Abrir menu');
+                sidebarToggleIcon.classList.remove('ph-x');
+                sidebarToggleIcon.classList.add('ph-list');
+                return;
+            }
+
+            sidebar.classList.toggle('-translate-x-full', !isOpen);
+            sidebarBackdrop.classList.toggle('hidden', !isOpen);
+            body.classList.toggle('overflow-hidden', isOpen);
+            sidebarToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            sidebarToggle.setAttribute('aria-label', isOpen ? 'Fechar menu' : 'Abrir menu');
+            sidebarToggleIcon.classList.toggle('ph-list', !isOpen);
+            sidebarToggleIcon.classList.toggle('ph-x', isOpen);
+        }
+
+        function toggleSidebar() {
+            const isOpen = sidebarToggle.getAttribute('aria-expanded') === 'true';
+            setSidebarOpen(!isOpen);
+        }
+
+        sidebarToggle.addEventListener('click', toggleSidebar);
+        sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                setSidebarOpen(false);
+            }
+        });
+
+        sidebar.querySelectorAll('a').forEach((link) => {
+            link.addEventListener('click', () => setSidebarOpen(false));
+        });
+
+        if (typeof mobileBreakpoint.addEventListener === 'function') {
+            mobileBreakpoint.addEventListener('change', () => setSidebarOpen(false));
+        } else if (typeof mobileBreakpoint.addListener === 'function') {
+            mobileBreakpoint.addListener(() => setSidebarOpen(false));
+        }
+        setSidebarOpen(false);
+    </script>
 </body>
 </html>
