@@ -25,6 +25,9 @@ $router->get('/frota', 'FrotaController@index');
 // Contratos Routes
 $router->get('/contratos', 'ContratoController@index');
 
+// Financeiro Routes
+$router->get('/financeiro', 'FinanceiroController@index');
+
 // Vigilante Routes
 $router->get('/vigilante/ronda', 'VigilanteController@preRonda');
 $router->post('/vigilante/checklist', 'VigilanteController@submitChecklist');

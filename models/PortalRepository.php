@@ -172,6 +172,102 @@ class PortalRepository {
         }, $rows);
     }
 
+    public function getFinancialSummary() {
+        $receitasMes = (float) $this->fetchValue(
+            "SELECT COALESCE(SUM(valor), 0)
+             FROM financeiro
+             WHERE LOWER(tipo) = 'receita'
+               AND date_trunc('month', data_vencimento) = date_trunc('month', CURRENT_DATE)"
+        );
+
+        $despesasMes = (float) $this->fetchValue(
+            "SELECT COALESCE(SUM(valor), 0)
+             FROM financeiro
+             WHERE LOWER(tipo) = 'despesa'
+               AND date_trunc('month', data_vencimento) = date_trunc('month', CURRENT_DATE)"
+        );
+
+        $recebidoMes = (float) $this->fetchValue(
+            "SELECT COALESCE(SUM(valor), 0)
+             FROM financeiro
+             WHERE LOWER(tipo) = 'receita'
+               AND data_pagamento IS NOT NULL
+               AND date_trunc('month', data_pagamento) = date_trunc('month', CURRENT_DATE)"
+        );
+
+        $aPagar = (float) $this->fetchValue(
+            "SELECT COALESCE(SUM(valor), 0)
+             FROM financeiro
+             WHERE LOWER(tipo) = 'despesa'
+               AND data_pagamento IS NULL"
+        );
+
+        $aReceber = (float) $this->fetchValue(
+            "SELECT COALESCE(SUM(valor), 0)
+             FROM financeiro
+             WHERE LOWER(tipo) = 'receita'
+               AND data_pagamento IS NULL"
+        );
+
+        $atrasados = (int) $this->fetchValue(
+            "SELECT COUNT(*)
+             FROM financeiro
+             WHERE data_pagamento IS NULL
+               AND data_vencimento < CURRENT_DATE"
+        );
+
+        return [
+            'receitas_mes' => $receitasMes,
+            'despesas_mes' => $despesasMes,
+            'saldo_previsto_mes' => $receitasMes - $despesasMes,
+            'recebido_mes' => $recebidoMes,
+            'a_pagar' => $aPagar,
+            'a_receber' => $aReceber,
+            'atrasados' => $atrasados,
+        ];
+    }
+
+    public function getFinancialEntries($limit = 20) {
+        $rows = $this->fetchAll(
+            "SELECT id, tipo, descricao, valor, data_vencimento, data_pagamento, status, criado_em
+             FROM financeiro
+             ORDER BY
+                CASE
+                    WHEN data_pagamento IS NULL AND data_vencimento < CURRENT_DATE THEN 0
+                    WHEN data_pagamento IS NULL THEN 1
+                    ELSE 2
+                END,
+                data_vencimento ASC,
+                criado_em DESC
+             LIMIT :limit",
+            [':limit' => (int) $limit],
+            [':limit' => PDO::PARAM_INT]
+        );
+
+        return array_map(function ($row) {
+            return $this->mapFinancialEntry($row);
+        }, $rows);
+    }
+
+    public function getUpcomingFinancialEntries($limit = 6) {
+        $rows = $this->fetchAll(
+            "SELECT id, tipo, descricao, valor, data_vencimento, data_pagamento, status, criado_em
+             FROM financeiro
+             WHERE data_pagamento IS NULL
+             ORDER BY
+                CASE WHEN data_vencimento < CURRENT_DATE THEN 0 ELSE 1 END,
+                data_vencimento ASC,
+                criado_em DESC
+             LIMIT :limit",
+            [':limit' => (int) $limit],
+            [':limit' => PDO::PARAM_INT]
+        );
+
+        return array_map(function ($row) {
+            return $this->mapFinancialEntry($row);
+        }, $rows);
+    }
+
     public function getChecklistVehicles() {
         return $this->fetchAll(
             "SELECT id, placa, modelo, km_atual, km_prox_troca_oleo
@@ -477,6 +573,71 @@ class PortalRepository {
         ];
 
         $key = strtolower((string) $type);
+
+        return $map[$key] ?? $this->humanize($key);
+    }
+
+    private function mapFinancialEntry($row) {
+        $status = $this->resolveFinancialStatus(
+            $row['status'] ?? '',
+            $row['data_vencimento'] ?? null,
+            $row['data_pagamento'] ?? null
+        );
+
+        return [
+            'id' => $row['id'],
+            'tipo' => strtolower((string) $row['tipo']),
+            'tipo_label' => $this->formatFinancialType($row['tipo'] ?? ''),
+            'descricao' => $row['descricao'],
+            'valor' => $row['valor'] !== null ? (float) $row['valor'] : 0,
+            'data_vencimento' => $row['data_vencimento'],
+            'data_pagamento' => $row['data_pagamento'],
+            'status' => $status,
+            'status_label' => $this->formatFinancialStatus($status),
+        ];
+    }
+
+    private function resolveFinancialStatus($status, $dueDate, $paymentDate) {
+        $key = strtolower(trim((string) $status));
+
+        if ($key === 'pago') {
+            return 'pago';
+        }
+
+        if ($paymentDate !== null && $paymentDate !== '') {
+            return 'pago';
+        }
+
+        if ($dueDate !== null && $dueDate !== '' && $dueDate < date('Y-m-d')) {
+            return 'atrasado';
+        }
+
+        if ($key !== '') {
+            return $key;
+        }
+
+        return 'pendente';
+    }
+
+    private function formatFinancialType($type) {
+        $map = [
+            'receita' => 'Receita',
+            'despesa' => 'Despesa',
+        ];
+
+        $key = strtolower((string) $type);
+
+        return $map[$key] ?? $this->humanize($key);
+    }
+
+    private function formatFinancialStatus($status) {
+        $map = [
+            'pendente' => 'Pendente',
+            'pago' => 'Pago',
+            'atrasado' => 'Atrasado',
+        ];
+
+        $key = strtolower((string) $status);
 
         return $map[$key] ?? $this->humanize($key);
     }
