@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Selva Segurança - CRM</title>
+    <title>Selva Seguran&ccedil;a - CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -27,6 +27,24 @@
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
+<?php
+    $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    if (strpos($currentPath, '/public') === 0) {
+        $currentPath = substr($currentPath, strlen('/public')) ?: '/';
+    }
+
+    $linkBaseClasses = 'flex items-center space-x-3 rounded-lg px-4 py-3 transition-colors';
+    $linkActiveClasses = 'bg-brand-red text-white shadow-lg shadow-red-500/20';
+    $linkInactiveClasses = 'text-gray-300 hover:text-white hover:bg-gray-800';
+
+    $isDashboardActive = $currentPath === '/';
+    $isRhActive = strpos($currentPath, '/rh') === 0;
+    $isEscalasActive = strpos($currentPath, '/escalas') === 0;
+    $isFrotaActive = strpos($currentPath, '/frota') === 0;
+    $isContratosActive = strpos($currentPath, '/contratos') === 0;
+    $isFinanceiroActive = strpos($currentPath, '/financeiro') === 0;
+    $isVigilanteActive = strpos($currentPath, '/vigilante') === 0;
+?>
 <body class="bg-brand-light text-gray-800 min-h-screen flex">
 
     <!-- Sidebar -->
@@ -34,48 +52,85 @@
         id="app-sidebar"
         class="fixed inset-y-0 left-0 z-30 flex w-64 -translate-x-full flex-col bg-brand-dark text-gray-300 shadow-xl transition-transform duration-200 md:static md:z-20 md:translate-x-0 md:shrink-0"
     >
+        <button
+            id="sidebar-close"
+            type="button"
+            class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-800 hover:text-white md:hidden"
+            aria-label="Fechar menu"
+        >
+            <i class="ph ph-x text-2xl"></i>
+        </button>
+
         <div class="h-20 flex items-center justify-center border-b border-gray-800 p-4">
             <img src="/assets/img/logo.png" alt="Logo" class="max-h-full object-contain filter drop-shadow">
         </div>
         
         <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-            <a href="/" class="flex items-center space-x-3 text-white bg-brand-red rounded-lg px-4 py-3 transition-colors shadow-lg shadow-red-500/20">
+            <a
+                href="/"
+                class="<?= $linkBaseClasses . ' ' . ($isDashboardActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
+                <?= $isDashboardActive ? 'aria-current="page"' : '' ?>
+            >
                 <i class="ph ph-squares-four text-xl"></i>
                 <span class="font-medium">Dashboard</span>
             </a>
             
             <?php if ($_SESSION['user_perfil'] === 'Coordenador Geral' || $_SESSION['user_perfil'] === 'Administrador'): ?>
-            <a href="/rh" class="flex items-center space-x-3 hover:text-white hover:bg-gray-800 rounded-lg px-4 py-3 transition-colors">
+            <a
+                href="/rh"
+                class="<?= $linkBaseClasses . ' ' . ($isRhActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
+                <?= $isRhActive ? 'aria-current="page"' : '' ?>
+            >
                 <i class="ph ph-users text-xl"></i>
-                <span class="font-medium">RH & Colaboradores</span>
+                <span class="font-medium">RH &amp; Colaboradores</span>
             </a>
             
-            <a href="/escalas" class="flex items-center space-x-3 hover:text-white hover:bg-gray-800 rounded-lg px-4 py-3 transition-colors">
+            <a
+                href="/escalas"
+                class="<?= $linkBaseClasses . ' ' . ($isEscalasActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
+                <?= $isEscalasActive ? 'aria-current="page"' : '' ?>
+            >
                 <i class="ph ph-calendar text-xl"></i>
                 <span class="font-medium">Escalas</span>
             </a>
 
-            <a href="/frota" class="flex items-center space-x-3 hover:text-white hover:bg-gray-800 rounded-lg px-4 py-3 transition-colors">
+            <a
+                href="/frota"
+                class="<?= $linkBaseClasses . ' ' . ($isFrotaActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
+                <?= $isFrotaActive ? 'aria-current="page"' : '' ?>
+            >
                 <i class="ph ph-car text-xl"></i>
                 <span class="font-medium">Frota</span>
             </a>
 
-            <a href="/contratos" class="flex items-center space-x-3 hover:text-white hover:bg-gray-800 rounded-lg px-4 py-3 transition-colors">
+            <a
+                href="/contratos"
+                class="<?= $linkBaseClasses . ' ' . ($isContratosActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
+                <?= $isContratosActive ? 'aria-current="page"' : '' ?>
+            >
                 <i class="ph ph-handshake text-xl"></i>
                 <span class="font-medium">Contratos</span>
             </a>
             <?php endif; ?>
 
             <?php if ($_SESSION['user_perfil'] === 'Coordenador Geral'): ?>
-            <a href="/financeiro" class="flex items-center space-x-3 hover:text-white hover:bg-gray-800 rounded-lg px-4 py-3 transition-colors">
+            <a
+                href="/financeiro"
+                class="<?= $linkBaseClasses . ' ' . ($isFinanceiroActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
+                <?= $isFinanceiroActive ? 'aria-current="page"' : '' ?>
+            >
                 <i class="ph ph-coins text-xl"></i>
                 <span class="font-medium">Financeiro</span>
             </a>
             <?php endif; ?>
             
-            <a href="/vigilante/ronda" class="flex items-center space-x-3 hover:text-white hover:bg-gray-800 rounded-lg px-4 py-3 transition-colors md:hidden">
-                <i class="ph ph-shield-check text-xl text-brand-red"></i>
-                <span class="font-medium">Módulo Vigilante</span>
+            <a
+                href="/vigilante/ronda"
+                class="<?= $linkBaseClasses . ' md:hidden ' . ($isVigilanteActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
+                <?= $isVigilanteActive ? 'aria-current="page"' : '' ?>
+            >
+                <i class="ph ph-shield-check text-xl <?= $isVigilanteActive ? 'text-white' : 'text-brand-red' ?>"></i>
+                <span class="font-medium">M&oacute;dulo Vigilante</span>
             </a>
         </nav>
 
@@ -143,6 +198,7 @@
     <script>
         const body = document.body;
         const sidebar = document.getElementById('app-sidebar');
+        const sidebarClose = document.getElementById('sidebar-close');
         const sidebarToggle = document.getElementById('sidebar-toggle');
         const sidebarToggleIcon = document.getElementById('sidebar-toggle-icon');
         const sidebarBackdrop = document.getElementById('sidebar-backdrop');
@@ -175,6 +231,7 @@
         }
 
         sidebarToggle.addEventListener('click', toggleSidebar);
+        sidebarClose.addEventListener('click', () => setSidebarOpen(false));
         sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
 
         document.addEventListener('keydown', (event) => {
@@ -192,6 +249,7 @@
         } else if (typeof mobileBreakpoint.addListener === 'function') {
             mobileBreakpoint.addListener(() => setSidebarOpen(false));
         }
+
         setSidebarOpen(false);
     </script>
 </body>
