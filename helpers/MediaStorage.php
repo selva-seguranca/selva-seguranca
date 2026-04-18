@@ -247,7 +247,7 @@ class MediaStorage {
             return $responseBody;
         }
 
-        throw new RuntimeException('Erro no Supabase: ' . $statusCode);
+        throw new RuntimeException(self::buildSupabaseErrorMessage($statusCode, $responseBody));
     }
 
     private static function extractHttpStatusCode($headers) {
@@ -255,6 +255,34 @@ class MediaStorage {
             return 0;
         }
         return (int) $matches[1];
+    }
+
+    private static function buildSupabaseErrorMessage($statusCode, $responseBody) {
+        $responseText = trim((string) $responseBody);
+        $decoded = json_decode($responseText, true);
+        $apiMessage = trim((string) ($decoded['message'] ?? $decoded['error'] ?? $decoded['msg'] ?? ''));
+
+        if ($statusCode === 401 || $statusCode === 403) {
+            return 'Falha no envio para o Supabase. Verifique a chave de acesso do Storage.';
+        }
+
+        if ($statusCode === 404) {
+            return 'Falha no envio para o Supabase. Verifique se o bucket configurado existe.';
+        }
+
+        if ($statusCode === 413) {
+            return 'Falha no envio para o Supabase. O arquivo ainda excede o limite permitido.';
+        }
+
+        if ($statusCode === 0) {
+            return 'Falha na comunicacao com o Supabase Storage.';
+        }
+
+        if ($apiMessage !== '') {
+            return 'Falha no envio para o Supabase: ' . $apiMessage;
+        }
+
+        return 'Falha no envio para o Supabase. Codigo HTTP: ' . $statusCode . '.';
     }
 
     private static function resolveSupabaseUrl() {

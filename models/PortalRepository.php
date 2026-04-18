@@ -791,6 +791,15 @@ class PortalRepository {
 
     private function ensureCollaboratorRegistrationSchema() {
         $this->db->exec(
+            "INSERT INTO perfis (nome) VALUES
+                ('Coordenador Geral'),
+                ('Administrador'),
+                ('Colaborador Interno'),
+                ('Vigilante')
+             ON CONFLICT (nome) DO NOTHING"
+        );
+
+        $this->db->exec(
             "CREATE TABLE IF NOT EXISTS colaborador_detalhes (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 colaborador_id UUID NOT NULL UNIQUE REFERENCES colaboradores(id) ON DELETE CASCADE,
