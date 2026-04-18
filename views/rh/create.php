@@ -456,8 +456,6 @@
 
                 <div class="rounded-2xl border border-gray-200 bg-white p-4">
                     <div class="flex flex-wrap items-center gap-3">
-                        <p class="text-sm font-semibold text-gray-900">Controle de Zoom</p>
-
                         <div class="flex items-center gap-3">
                             <button type="button" id="crop-zoom-out-button" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
                                 <i class="ph ph-minus text-xl"></i>
