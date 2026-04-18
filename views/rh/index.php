@@ -189,7 +189,7 @@
 
 <div
     id="collaborator-modal"
-    class="fixed inset-0 z-40 <?= $isCreateModalOpen ? 'flex' : 'hidden' ?> items-center justify-center bg-black/60 p-4 sm:p-6"
+    class="fixed inset-0 z-40 <?= $isCreateModalOpen ? 'flex' : 'hidden' ?> items-center justify-center bg-black/60 p-3 sm:p-5"
     aria-hidden="<?= $isCreateModalOpen ? 'false' : 'true' ?>"
 >
     <button
@@ -199,8 +199,8 @@
         aria-label="Fechar cadastro"
     ></button>
 
-    <section class="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[1280px] flex-col overflow-hidden rounded-[32px] bg-gray-50 shadow-2xl sm:max-h-[calc(100vh-3rem)]">
-        <header class="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-5 py-4 sm:px-6">
+    <section class="relative z-10 flex max-h-[calc(100vh-3rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-[28px] bg-gray-50 shadow-2xl sm:max-h-[calc(100vh-4rem)] sm:rounded-[30px]">
+        <header class="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-4 sm:px-5">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-red">RH / Cadastro</p>
                 <h2 class="mt-1 text-xl font-bold text-gray-900 sm:text-2xl">Novo colaborador</h2>
@@ -216,7 +216,7 @@
             </button>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div class="flex-1 overflow-y-auto p-3 sm:p-5">
             <?php include __DIR__ . '/create.php'; ?>
         </div>
     </section>
