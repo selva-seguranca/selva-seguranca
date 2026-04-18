@@ -476,16 +476,6 @@
                 </div>
             </div>
 
-            <div class="space-y-4">
-                <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                    <p class="text-sm font-semibold text-gray-900">Dica de enquadramento</p>
-                    <p class="mt-2 text-sm text-gray-500">
-                        Arraste a foto para os lados, aproxime com zoom e priorize rosto e ombros.
-                        O sistema salva um recorte quadrado padrao para o cadastro.
-                    </p>
-                </div>
-
-            </div>
         </div>
     </div>
 </div>
