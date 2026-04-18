@@ -456,6 +456,15 @@
 
                 <div class="rounded-2xl border border-gray-200 bg-white p-4">
                     <p class="text-sm font-semibold text-gray-900">Controle de Zoom</p>
+                    <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                        <button type="button" id="crop-apply-button" class="inline-flex items-center justify-center rounded-2xl bg-brand-red px-4 py-4 text-sm font-semibold text-white transition-colors hover:bg-red-700">
+                            <i class="ph ph-check mr-2 text-lg"></i>
+                            ACEITAR
+                        </button>
+                        <button type="button" id="crop-cancel-button" class="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-4 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900">
+                            Escolher outra foto
+                        </button>
+                    </div>
                     <div class="mt-4 flex gap-3">
                         <button type="button" id="crop-zoom-out-button" class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
                             <i class="ph ph-minus text-xl"></i>
@@ -476,15 +485,6 @@
                     </p>
                 </div>
 
-                <div class="grid gap-3">
-                    <button type="button" id="crop-apply-button" class="inline-flex items-center justify-center rounded-2xl bg-brand-red px-4 py-4 text-sm font-semibold text-white transition-colors hover:bg-red-700">
-                        <i class="ph ph-check mr-2 text-lg"></i>
-                        ACEITAR
-                    </button>
-                    <button type="button" id="crop-cancel-button" class="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-4 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900">
-                        Cancelar
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -773,9 +773,12 @@
             }, 'image/png', 0.95);
         });
 
-        [cropCancelButton, cropCloseButton].forEach((button) => {
-            button.addEventListener('click', closeCropModal);
+        cropCancelButton.addEventListener('click', () => {
+            closeCropModal();
+            openPhotoChooser();
         });
+
+        cropCloseButton.addEventListener('click', closeCropModal);
 
         cropModal.addEventListener('click', (event) => {
             if (event.target === cropModal) {
