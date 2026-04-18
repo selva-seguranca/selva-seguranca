@@ -116,8 +116,7 @@
                         <img id="photo-preview" src="" alt="Preview da foto" class="hidden h-full w-full object-cover">
                         <div id="photo-placeholder" class="flex h-full w-full flex-col items-center justify-center px-6 text-center text-gray-400 transition-colors group-hover:text-brand-red">
                             <i class="ph ph-user-circle text-5xl"></i>
-                            <p class="mt-3 text-sm font-medium">Sem foto recortada</p>
-                            <p class="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-gray-400 group-hover:text-brand-red">Toque para escolher</p>
+                            <p class="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-gray-400 group-hover:text-brand-red">Toque para escolher</p>
                         </div>
                     </button>
 
