@@ -343,23 +343,13 @@
             </div>
         </section>
 
-    </div>
-
-    <aside class="space-y-6">
-        <div class="rounded-3xl border border-red-100 bg-red-50 p-6 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-red">Acao</p>
-            <h3 class="mt-2 text-lg font-bold text-gray-900">Salvar cadastro</h3>
-            <p class="mt-2 text-sm text-gray-600">
-                O cadastro cria o usuario do sistema, o colaborador no RH, os detalhes pessoais e, no caso de vigilante,
-                tambem o registro operacional com documentacao.
-            </p>
-
-            <button type="submit" class="mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-brand-red px-4 py-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-700">
+        <div class="pt-1">
+            <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl bg-brand-red px-4 py-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-700">
                 <i class="ph ph-floppy-disk mr-2 text-lg"></i>
                 Salvar novo colaborador
             </button>
         </div>
-    </aside>
+    </div>
 </form>
 
 <div id="crop-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 px-4 py-8">
