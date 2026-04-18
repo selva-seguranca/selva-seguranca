@@ -98,6 +98,306 @@ class PortalRepository {
         );
     }
 
+    public function createCollaboratorRegistration(array $payload, array $media = []) {
+        $this->ensureCollaboratorRegistrationSchema();
+
+        $tipoCadastro = $this->normalizeRegistrationType($payload['tipo_cadastro'] ?? 'vigilante');
+        $nomeCompleto = trim((string) ($payload['nome_completo'] ?? ''));
+        $cpf = $this->normalizeDigits($payload['cpf'] ?? '');
+        $fotoUrl = $media['foto']['url'] ?? null;
+
+        if ($nomeCompleto === '') {
+            throw new RuntimeException('Informe o nome completo do colaborador.');
+        }
+
+        if ($fotoUrl === null || $fotoUrl === '') {
+            throw new RuntimeException('A foto do colaborador e obrigatoria para este cadastro.');
+        }
+
+        if (strlen($cpf) !== 11) {
+            throw new RuntimeException('Informe um CPF valido com 11 digitos.');
+        }
+
+        if ($this->collaboratorCpfExists($cpf)) {
+            throw new RuntimeException('Ja existe um colaborador cadastrado com este CPF.');
+        }
+
+        foreach ([
+            'rg' => 'Informe o RG do colaborador.',
+            'data_nascimento' => 'Informe a data de nascimento.',
+            'telefone_principal' => 'Informe o telefone principal.',
+            'telefone_familiar' => 'Informe o telefone familiar.',
+            'cep' => 'Informe o CEP do endereco.',
+            'logradouro' => 'Informe o logradouro do endereco.',
+            'numero' => 'Informe o numero do endereco.',
+            'bairro' => 'Informe o bairro.',
+            'cidade' => 'Informe a cidade.',
+            'uf' => 'Informe a UF.',
+            'nome_mae' => 'Informe o nome da mae.',
+            'tipo_sanguineo' => 'Informe o tipo sanguineo.',
+            'fator_rh' => 'Informe o fator RH.',
+            'tipo_vinculo' => 'Informe o tipo de vinculo.',
+            'data_admissao' => 'Informe a data de admissao.',
+            'numero_admissao' => 'Informe o numero da admissao.',
+            'situacao' => 'Informe a situacao do colaborador.',
+        ] as $field => $message) {
+            if ($this->nullIfBlank($payload[$field] ?? null) === null) {
+                throw new RuntimeException($message);
+            }
+        }
+
+        if ($tipoCadastro === 'vigilante') {
+            foreach ([
+                'numero_cnv' => 'Informe o numero da CNV.',
+                'validade_cnv' => 'Informe a validade da CNV.',
+                'curso_formacao' => 'Informe se o colaborador possui curso de formacao.',
+                'data_ultima_reciclagem' => 'Informe a data da ultima reciclagem.',
+                'situacao_reciclagem' => 'Informe a situacao da reciclagem.',
+            ] as $field => $message) {
+                if ($this->nullIfBlank($payload[$field] ?? null) === null) {
+                    throw new RuntimeException($message);
+                }
+            }
+        }
+
+        $emailAcesso = trim((string) ($payload['email_acesso'] ?? ''));
+        if ($emailAcesso === '') {
+            $emailAcesso = ($tipoCadastro === 'vigilante' ? 'vigilante.' : 'colaborador.') . $cpf . '@selva.local';
+        }
+
+        if (!filter_var($emailAcesso, FILTER_VALIDATE_EMAIL)) {
+            throw new RuntimeException('Informe um e-mail de acesso valido.');
+        }
+
+        if ($this->emailExists($emailAcesso)) {
+            throw new RuntimeException('Ja existe um usuario com este e-mail de acesso.');
+        }
+
+        $senhaProvisoria = trim((string) ($payload['senha_provisoria'] ?? ''));
+        $senhaFoiGerada = false;
+        if ($senhaProvisoria === '') {
+            $senhaProvisoria = $this->generateTemporaryPassword();
+            $senhaFoiGerada = true;
+        }
+
+        if (strlen($senhaProvisoria) < 6) {
+            throw new RuntimeException('A senha provisoria deve ter pelo menos 6 caracteres.');
+        }
+
+        $situacao = $this->normalizeEmploymentStatus($payload['situacao'] ?? 'Ativo');
+        $cargo = $this->resolveCollaboratorRole($tipoCadastro, $payload['funcao_administrativa'] ?? null);
+        $departamento = $tipoCadastro === 'vigilante'
+            ? 'Operacional'
+            : ($cargo === 'Financeiro' ? 'Financeiro' : 'Administrativo');
+        $perfilNome = $tipoCadastro === 'vigilante' ? 'Vigilante' : 'Colaborador Interno';
+        $perfilId = $this->findProfileIdByName($perfilNome);
+
+        if ($perfilId === null) {
+            throw new RuntimeException('O perfil necessario para este cadastro nao foi encontrado no banco.');
+        }
+
+        $documentos = is_array($media['documentos'] ?? null) ? $media['documentos'] : [];
+        $outrosCursos = is_array($payload['outros_cursos'] ?? null) ? $payload['outros_cursos'] : [];
+
+        $tipoSanguineo = strtoupper(trim((string) ($payload['tipo_sanguineo'] ?? '')));
+        $fatorRh = trim((string) ($payload['fator_rh'] ?? ''));
+
+        try {
+            $this->db->beginTransaction();
+
+            $usuario = $this->run(
+                "INSERT INTO usuarios (nome, email, senha_hash, perfil_id, ativo)
+                 VALUES (:nome, :email, :senha_hash, :perfil_id, :ativo)
+                 RETURNING id",
+                [
+                    ':nome' => $nomeCompleto,
+                    ':email' => $emailAcesso,
+                    ':senha_hash' => password_hash($senhaProvisoria, PASSWORD_DEFAULT),
+                    ':perfil_id' => $perfilId,
+                    ':ativo' => $situacao === 'Ativo',
+                ],
+                [
+                    ':perfil_id' => PDO::PARAM_INT,
+                    ':ativo' => PDO::PARAM_BOOL,
+                ]
+            )->fetch();
+
+            $colaborador = $this->run(
+                "INSERT INTO colaboradores (usuario_id, cargo, departamento, data_admissao)
+                 VALUES (:usuario_id, :cargo, :departamento, :data_admissao)
+                 RETURNING id",
+                [
+                    ':usuario_id' => $usuario['id'],
+                    ':cargo' => $cargo,
+                    ':departamento' => $departamento,
+                    ':data_admissao' => $this->nullIfBlank($payload['data_admissao'] ?? null),
+                ]
+            )->fetch();
+
+            $this->run(
+                "INSERT INTO colaborador_detalhes (
+                    colaborador_id,
+                    tipo_cadastro,
+                    foto_url,
+                    cpf,
+                    rg,
+                    data_nascimento,
+                    telefone_principal,
+                    telefone_familiar,
+                    cep,
+                    logradouro,
+                    numero,
+                    bairro,
+                    complemento,
+                    cidade,
+                    uf,
+                    endereco_completo,
+                    nome_mae,
+                    tipo_sanguineo,
+                    fator_rh,
+                    tipo_vinculo,
+                    numero_admissao,
+                    situacao
+                 ) VALUES (
+                    :colaborador_id,
+                    :tipo_cadastro,
+                    :foto_url,
+                    :cpf,
+                    :rg,
+                    :data_nascimento,
+                    :telefone_principal,
+                    :telefone_familiar,
+                    :cep,
+                    :logradouro,
+                    :numero,
+                    :bairro,
+                    :complemento,
+                    :cidade,
+                    :uf,
+                    :endereco_completo,
+                    :nome_mae,
+                    :tipo_sanguineo,
+                    :fator_rh,
+                    :tipo_vinculo,
+                    :numero_admissao,
+                    :situacao
+                 )",
+                [
+                    ':colaborador_id' => $colaborador['id'],
+                    ':tipo_cadastro' => $tipoCadastro,
+                    ':foto_url' => $fotoUrl,
+                    ':cpf' => $cpf,
+                    ':rg' => $this->nullIfBlank($payload['rg'] ?? null),
+                    ':data_nascimento' => $this->nullIfBlank($payload['data_nascimento'] ?? null),
+                    ':telefone_principal' => $this->nullIfBlank($payload['telefone_principal'] ?? null),
+                    ':telefone_familiar' => $this->nullIfBlank($payload['telefone_familiar'] ?? null),
+                    ':cep' => $this->nullIfBlank($payload['cep'] ?? null),
+                    ':logradouro' => $this->nullIfBlank($payload['logradouro'] ?? null),
+                    ':numero' => $this->nullIfBlank($payload['numero'] ?? null),
+                    ':bairro' => $this->nullIfBlank($payload['bairro'] ?? null),
+                    ':complemento' => $this->nullIfBlank($payload['complemento'] ?? null),
+                    ':cidade' => $this->nullIfBlank($payload['cidade'] ?? null),
+                    ':uf' => $this->nullIfBlank($payload['uf'] ?? null),
+                    ':endereco_completo' => $this->buildAddressLine($payload),
+                    ':nome_mae' => $this->nullIfBlank($payload['nome_mae'] ?? null),
+                    ':tipo_sanguineo' => $tipoSanguineo !== '' ? $tipoSanguineo : null,
+                    ':fator_rh' => $fatorRh !== '' ? $fatorRh : null,
+                    ':tipo_vinculo' => $this->nullIfBlank($payload['tipo_vinculo'] ?? null),
+                    ':numero_admissao' => $this->nullIfBlank($payload['numero_admissao'] ?? null),
+                    ':situacao' => $situacao,
+                ]
+            );
+
+            if ($tipoCadastro === 'vigilante') {
+                $cursoFormacao = strtolower(trim((string) ($payload['curso_formacao'] ?? 'nao'))) === 'sim';
+
+                $this->run(
+                    "INSERT INTO vigilantes (
+                        usuario_id,
+                        cnh,
+                        validade_cnh,
+                        formacao,
+                        validade_reciclagem,
+                        numero_cnv,
+                        validade_cnv,
+                        curso_formacao_concluido,
+                        data_ultima_reciclagem,
+                        situacao_reciclagem,
+                        curso_escolta_armada,
+                        curso_seguranca_eventos,
+                        curso_seguranca_vip
+                     ) VALUES (
+                        :usuario_id,
+                        :cnh,
+                        :validade_cnh,
+                        :formacao,
+                        :validade_reciclagem,
+                        :numero_cnv,
+                        :validade_cnv,
+                        :curso_formacao_concluido,
+                        :data_ultima_reciclagem,
+                        :situacao_reciclagem,
+                        :curso_escolta_armada,
+                        :curso_seguranca_eventos,
+                        :curso_seguranca_vip
+                     )",
+                    [
+                        ':usuario_id' => $usuario['id'],
+                        ':cnh' => null,
+                        ':validade_cnh' => null,
+                        ':formacao' => $cursoFormacao ? 'Curso de formacao concluido' : null,
+                        ':validade_reciclagem' => null,
+                        ':numero_cnv' => $this->nullIfBlank($payload['numero_cnv'] ?? null),
+                        ':validade_cnv' => $this->nullIfBlank($payload['validade_cnv'] ?? null),
+                        ':curso_formacao_concluido' => $cursoFormacao,
+                        ':data_ultima_reciclagem' => $this->nullIfBlank($payload['data_ultima_reciclagem'] ?? null),
+                        ':situacao_reciclagem' => $this->nullIfBlank($payload['situacao_reciclagem'] ?? null),
+                        ':curso_escolta_armada' => in_array('escolta_armada', $outrosCursos, true),
+                        ':curso_seguranca_eventos' => in_array('seguranca_eventos', $outrosCursos, true),
+                        ':curso_seguranca_vip' => in_array('seguranca_vip', $outrosCursos, true),
+                    ],
+                    [
+                        ':curso_formacao_concluido' => PDO::PARAM_BOOL,
+                        ':curso_escolta_armada' => PDO::PARAM_BOOL,
+                        ':curso_seguranca_eventos' => PDO::PARAM_BOOL,
+                        ':curso_seguranca_vip' => PDO::PARAM_BOOL,
+                    ]
+                );
+            }
+
+            foreach ($documentos as $documento) {
+                $this->run(
+                    "INSERT INTO documentos (entidade_tipo, entidade_id, titulo, arquivo_url)
+                     VALUES (:entidade_tipo, :entidade_id, :titulo, :arquivo_url)",
+                    [
+                        ':entidade_tipo' => 'colaborador',
+                        ':entidade_id' => $colaborador['id'],
+                        ':titulo' => $documento['title'] ?? 'Documento',
+                        ':arquivo_url' => $documento['media']['url'] ?? null,
+                    ]
+                );
+            }
+
+            $this->db->commit();
+
+            return [
+                'user_id' => $usuario['id'],
+                'collaborator_id' => $colaborador['id'],
+                'access' => [
+                    'email' => $emailAcesso,
+                    'password' => $senhaProvisoria,
+                    'generated_password' => $senhaFoiGerada,
+                ],
+            ];
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
     public function getScaleEntries(DateTimeImmutable $startDate, DateTimeImmutable $endDate) {
         $rows = $this->fetchAll(
             "SELECT r.id, u.nome AS vigilante, r.data_inicio, r.status
@@ -501,6 +801,133 @@ class PortalRepository {
                 ':video_url' => $dados['video_url'] ?? null,
             ]
         )->fetch();
+    }
+
+    private function ensureCollaboratorRegistrationSchema() {
+        $this->db->exec(
+            "CREATE TABLE IF NOT EXISTS colaborador_detalhes (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                colaborador_id UUID NOT NULL UNIQUE REFERENCES colaboradores(id) ON DELETE CASCADE,
+                tipo_cadastro VARCHAR(50) NOT NULL DEFAULT 'financeiro_administrativo',
+                foto_url VARCHAR(255),
+                cpf VARCHAR(14) NOT NULL UNIQUE,
+                rg VARCHAR(30),
+                data_nascimento DATE,
+                telefone_principal VARCHAR(20),
+                telefone_familiar VARCHAR(20),
+                cep VARCHAR(9),
+                logradouro VARCHAR(150),
+                numero VARCHAR(20),
+                bairro VARCHAR(100),
+                complemento VARCHAR(100),
+                cidade VARCHAR(100),
+                uf CHAR(2),
+                endereco_completo TEXT,
+                nome_mae VARCHAR(150),
+                tipo_sanguineo VARCHAR(3),
+                fator_rh VARCHAR(1),
+                tipo_vinculo VARCHAR(30),
+                numero_admissao VARCHAR(30),
+                situacao VARCHAR(30) DEFAULT 'Ativo',
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )"
+        );
+
+        $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS numero_cnv VARCHAR(30)");
+        $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS validade_cnv DATE");
+        $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS curso_formacao_concluido BOOLEAN DEFAULT false");
+        $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS data_ultima_reciclagem DATE");
+        $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS situacao_reciclagem VARCHAR(30)");
+        $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS curso_escolta_armada BOOLEAN DEFAULT false");
+        $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS curso_seguranca_eventos BOOLEAN DEFAULT false");
+        $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS curso_seguranca_vip BOOLEAN DEFAULT false");
+    }
+
+    private function findProfileIdByName($profileName) {
+        $result = $this->fetchValue(
+            "SELECT id FROM perfis WHERE nome = :nome LIMIT 1",
+            [':nome' => $profileName]
+        );
+
+        return $result !== false ? (int) $result : null;
+    }
+
+    private function emailExists($email) {
+        return (bool) $this->fetchValue(
+            "SELECT 1 FROM usuarios WHERE email = :email LIMIT 1",
+            [':email' => $email]
+        );
+    }
+
+    private function collaboratorCpfExists($cpf) {
+        return (bool) $this->fetchValue(
+            "SELECT 1 FROM colaborador_detalhes WHERE cpf = :cpf LIMIT 1",
+            [':cpf' => $cpf]
+        );
+    }
+
+    private function normalizeRegistrationType($type) {
+        $type = strtolower(trim((string) $type));
+
+        return $type === 'vigilante' ? 'vigilante' : 'financeiro_administrativo';
+    }
+
+    private function normalizeEmploymentStatus($status) {
+        $status = strtolower(trim((string) $status));
+
+        $map = [
+            'ativo' => 'Ativo',
+            'inativo' => 'Inativo',
+            'afastado' => 'Afastado',
+        ];
+
+        return $map[$status] ?? 'Ativo';
+    }
+
+    private function resolveCollaboratorRole($registrationType, $administrativeRole) {
+        if ($registrationType === 'vigilante') {
+            return 'Vigilante';
+        }
+
+        $role = strtolower(trim((string) $administrativeRole));
+
+        if ($role === 'financeiro') {
+            return 'Financeiro';
+        }
+
+        return 'Administrativo';
+    }
+
+    private function buildAddressLine(array $payload) {
+        $parts = [
+            trim((string) ($payload['logradouro'] ?? '')),
+            trim((string) ($payload['numero'] ?? '')),
+            trim((string) ($payload['bairro'] ?? '')),
+            trim((string) ($payload['complemento'] ?? '')),
+            trim((string) ($payload['cidade'] ?? '')),
+            trim((string) ($payload['uf'] ?? '')),
+            trim((string) ($payload['cep'] ?? '')),
+        ];
+
+        $parts = array_values(array_filter($parts, function ($value) {
+            return $value !== '';
+        }));
+
+        return empty($parts) ? null : implode(', ', $parts);
+    }
+
+    private function normalizeDigits($value) {
+        return preg_replace('/\D+/', '', (string) $value);
+    }
+
+    private function nullIfBlank($value) {
+        $value = trim((string) $value);
+        return $value === '' ? null : $value;
+    }
+
+    private function generateTemporaryPassword() {
+        return strtoupper(substr(bin2hex(random_bytes(6)), 0, 10));
     }
 
     private function findVigilanteIdByUserId($userId) {

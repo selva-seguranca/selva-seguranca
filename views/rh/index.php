@@ -53,7 +53,7 @@
 
 <div class="flex justify-between items-center mb-6">
     <h3 class="text-xl font-semibold text-gray-800">Modulos de Colaboradores</h3>
-    <a href="#" class="bg-brand-red hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium shadow transition-colors flex items-center">
+    <a href="/rh/colaboradores/novo" class="bg-brand-red hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium shadow transition-colors flex items-center">
         <i class="ph ph-plus-circle text-lg mr-2"></i>
         Novo Colaborador
     </a>

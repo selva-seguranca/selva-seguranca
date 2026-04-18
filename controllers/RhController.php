@@ -3,6 +3,7 @@
 namespace Controllers;
 
 use Helpers\Auth;
+use Helpers\MediaStorage;
 use Helpers\View;
 use Models\PortalRepository;
 use Throwable;
@@ -36,6 +37,134 @@ class RhController {
             'kpis' => $kpis,
             'dbWarning' => $dbWarning,
         ]);
+    }
+
+    public function create() {
+        Auth::requireAnyProfile(['Coordenador Geral', 'Administrador']);
+
+        $formError = $_SESSION['rh_form_error'] ?? null;
+        $successMessage = $_SESSION['rh_form_success'] ?? null;
+        $accessInfo = $_SESSION['rh_form_access'] ?? null;
+        $old = $_SESSION['rh_form_old'] ?? $this->defaultFormData();
+
+        unset($_SESSION['rh_form_error'], $_SESSION['rh_form_success'], $_SESSION['rh_form_access'], $_SESSION['rh_form_old']);
+
+        View::render('rh/create', [
+            'pageTitle' => 'Novo Colaborador',
+            'formError' => $formError,
+            'successMessage' => $successMessage,
+            'accessInfo' => $accessInfo,
+            'old' => $old,
+        ]);
+    }
+
+    public function store() {
+        Auth::requireAnyProfile(['Coordenador Geral', 'Administrador']);
+
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            header('Location: /rh/colaboradores/novo');
+            exit;
+        }
+
+        $_SESSION['rh_form_old'] = $this->collectOldFormData($_POST);
+        $storedFiles = [];
+
+        try {
+            $photo = $this->storeOptionalFile($_FILES['foto_colaborador'] ?? null, 'colaboradores/fotos');
+            if ($photo === null) {
+                throw new \RuntimeException('Selecione a foto do colaborador e aplique o crop antes de salvar.');
+            }
+
+            if ($photo !== null) {
+                $storedFiles[] = $photo;
+            }
+
+            $documents = [];
+            foreach ($this->documentFieldMap() as $field => $title) {
+                $storedDocument = $this->storeOptionalFile($_FILES[$field] ?? null, 'colaboradores/documentos');
+
+                if ($storedDocument === null) {
+                    continue;
+                }
+
+                $documents[$field] = [
+                    'title' => $title,
+                    'media' => $storedDocument,
+                ];
+                $storedFiles[] = $storedDocument;
+            }
+
+            $repository = new PortalRepository();
+            $result = $repository->createCollaboratorRegistration($_POST, [
+                'foto' => $photo,
+                'documentos' => $documents,
+            ]);
+
+            unset($_SESSION['rh_form_old']);
+            $_SESSION['rh_form_success'] = 'Colaborador cadastrado com sucesso.';
+            $_SESSION['rh_form_access'] = $result['access'] ?? null;
+
+            header('Location: /rh/colaboradores/novo');
+            exit;
+        } catch (Throwable $e) {
+            foreach (array_reverse($storedFiles) as $storedFile) {
+                MediaStorage::delete($storedFile);
+            }
+
+            $_SESSION['rh_form_error'] = $e->getMessage();
+            header('Location: /rh/colaboradores/novo');
+            exit;
+        }
+    }
+
+    private function defaultFormData() {
+        return [
+            'tipo_cadastro' => 'vigilante',
+            'funcao_administrativa' => 'Administrativo',
+            'tipo_vinculo' => 'CLT',
+            'situacao' => 'Ativo',
+            'curso_formacao' => 'Sim',
+            'situacao_reciclagem' => 'Valida',
+            'outros_cursos' => [],
+            'fator_rh' => '+',
+        ];
+    }
+
+    private function collectOldFormData(array $input) {
+        $old = $this->defaultFormData();
+
+        foreach ($input as $key => $value) {
+            if ($key === 'senha_provisoria') {
+                continue;
+            }
+
+            $old[$key] = $value;
+        }
+
+        $old['outros_cursos'] = array_values(array_filter(
+            is_array($input['outros_cursos'] ?? null) ? $input['outros_cursos'] : [],
+            'is_string'
+        ));
+
+        return $old;
+    }
+
+    private function documentFieldMap() {
+        return [
+            'termo_responsabilidade' => 'Termo de responsabilidade uso do app (assinado)',
+            'contrato_trabalho' => 'Contrato de trabalho',
+            'ficha_epi' => 'Ficha de EPI',
+            'ordem_servico' => 'Ordem de Servico',
+            'regulamento_interno' => 'Regulamento Interno',
+        ];
+    }
+
+    private function storeOptionalFile($file, $folder) {
+        if (!is_array($file) || (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE)) {
+            return null;
+        }
+
+        return MediaStorage::store($file, $folder);
     }
 
     private function buildRhModules(array $colaboradores) {

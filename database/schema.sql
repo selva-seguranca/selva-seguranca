@@ -30,6 +30,14 @@ CREATE TABLE IF NOT EXISTS vigilantes (
     validade_cnh DATE,
     formacao VARCHAR(150),
     validade_reciclagem DATE,
+    numero_cnv VARCHAR(30),
+    validade_cnv DATE,
+    curso_formacao_concluido BOOLEAN DEFAULT false,
+    data_ultima_reciclagem DATE,
+    situacao_reciclagem VARCHAR(30),
+    curso_escolta_armada BOOLEAN DEFAULT false,
+    curso_seguranca_eventos BOOLEAN DEFAULT false,
+    curso_seguranca_vip BOOLEAN DEFAULT false,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -123,6 +131,35 @@ CREATE TABLE IF NOT EXISTS colaboradores (
     data_admissao DATE,
     salario DECIMAL(10,2),
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Detalhes de Colaboradores
+CREATE TABLE IF NOT EXISTS colaborador_detalhes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    colaborador_id UUID NOT NULL UNIQUE REFERENCES colaboradores(id) ON DELETE CASCADE,
+    tipo_cadastro VARCHAR(50) NOT NULL DEFAULT 'financeiro_administrativo',
+    foto_url VARCHAR(255),
+    cpf VARCHAR(14) NOT NULL UNIQUE,
+    rg VARCHAR(30),
+    data_nascimento DATE,
+    telefone_principal VARCHAR(20),
+    telefone_familiar VARCHAR(20),
+    cep VARCHAR(9),
+    logradouro VARCHAR(150),
+    numero VARCHAR(20),
+    bairro VARCHAR(100),
+    complemento VARCHAR(100),
+    cidade VARCHAR(100),
+    uf CHAR(2),
+    endereco_completo TEXT,
+    nome_mae VARCHAR(150),
+    tipo_sanguineo VARCHAR(3),
+    fator_rh VARCHAR(1),
+    tipo_vinculo VARCHAR(30),
+    numero_admissao VARCHAR(30),
+    situacao VARCHAR(30) DEFAULT 'Ativo',
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Contratos
