@@ -189,7 +189,7 @@
 
 <div
     id="collaborator-modal"
-    class="fixed inset-0 z-40 <?= $isCreateModalOpen ? 'flex' : 'hidden' ?> items-center justify-center bg-black/60 p-3 sm:p-5"
+    class="fixed inset-0 z-40 <?= $isCreateModalOpen ? 'flex' : 'hidden' ?> items-start justify-center overflow-y-auto bg-black/60 p-2 sm:items-center sm:p-5"
     aria-hidden="<?= $isCreateModalOpen ? 'false' : 'true' ?>"
 >
     <button
@@ -199,8 +199,8 @@
         aria-label="Fechar cadastro"
     ></button>
 
-    <section class="relative z-10 flex max-h-[calc(100vh-3rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-[28px] bg-gray-50 shadow-2xl sm:max-h-[calc(100vh-4rem)] sm:rounded-[30px]">
-        <header class="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-4 sm:px-5">
+    <section class="relative z-10 my-1 flex max-h-[calc(100dvh-0.5rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-[24px] bg-gray-50 shadow-2xl sm:max-h-[calc(100vh-4rem)] sm:rounded-[30px]">
+        <header class="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-red">RH / Cadastro</p>
                 <h2 class="mt-1 text-xl font-bold text-gray-900 sm:text-2xl">Novo colaborador</h2>
@@ -209,14 +209,14 @@
             <button
                 type="button"
                 data-close-collaborator-modal
-                class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-800"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-800 sm:h-12 sm:w-12"
                 aria-label="Fechar popup"
             >
                 <i class="ph ph-x text-2xl"></i>
             </button>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-3 sm:p-5">
+        <div class="flex-1 overflow-y-auto p-2.5 sm:p-5">
             <?php include __DIR__ . '/create.php'; ?>
         </div>
     </section>
