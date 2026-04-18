@@ -14,6 +14,7 @@ class RhController {
 
         $colaboradores = [];
         $modulosRh = $this->buildRhModules([]);
+        $createModalState = $this->consumeCreateModalState();
         $kpis = [
             'total_ativos' => 0,
             'em_ferias' => 0,
@@ -34,6 +35,11 @@ class RhController {
             'pageTitle' => 'Recursos Humanos',
             'colaboradores' => $colaboradores,
             'modulosRh' => $modulosRh,
+            'formError' => $createModalState['formError'],
+            'successMessage' => $createModalState['successMessage'],
+            'accessInfo' => $createModalState['accessInfo'],
+            'old' => $createModalState['old'],
+            'isCreateModalOpen' => $createModalState['isOpen'],
             'kpis' => $kpis,
             'dbWarning' => $dbWarning,
         ]);
@@ -41,21 +47,8 @@ class RhController {
 
     public function create() {
         Auth::requireAnyProfile(['Coordenador Geral', 'Administrador']);
-
-        $formError = $_SESSION['rh_form_error'] ?? null;
-        $successMessage = $_SESSION['rh_form_success'] ?? null;
-        $accessInfo = $_SESSION['rh_form_access'] ?? null;
-        $old = $_SESSION['rh_form_old'] ?? $this->defaultFormData();
-
-        unset($_SESSION['rh_form_error'], $_SESSION['rh_form_success'], $_SESSION['rh_form_access'], $_SESSION['rh_form_old']);
-
-        View::render('rh/create', [
-            'pageTitle' => 'Novo Colaborador',
-            'formError' => $formError,
-            'successMessage' => $successMessage,
-            'accessInfo' => $accessInfo,
-            'old' => $old,
-        ]);
+        header('Location: /rh?modal=novo-colaborador');
+        exit;
     }
 
     public function store() {
@@ -104,7 +97,7 @@ class RhController {
             $_SESSION['rh_form_success'] = 'Colaborador cadastrado com sucesso.';
             $_SESSION['rh_form_access'] = $result['access'] ?? null;
 
-            header('Location: /rh/colaboradores/novo');
+            header('Location: /rh?modal=novo-colaborador');
             exit;
         } catch (Throwable $e) {
             foreach (array_reverse($storedFiles) as $storedFile) {
@@ -112,9 +105,27 @@ class RhController {
             }
 
             $_SESSION['rh_form_error'] = $e->getMessage();
-            header('Location: /rh/colaboradores/novo');
+            header('Location: /rh?modal=novo-colaborador');
             exit;
         }
+    }
+
+    private function consumeCreateModalState() {
+        $modalParam = trim((string) ($_GET['modal'] ?? ''));
+        $formError = $_SESSION['rh_form_error'] ?? null;
+        $successMessage = $_SESSION['rh_form_success'] ?? null;
+        $accessInfo = $_SESSION['rh_form_access'] ?? null;
+        $old = $_SESSION['rh_form_old'] ?? $this->defaultFormData();
+
+        unset($_SESSION['rh_form_error'], $_SESSION['rh_form_success'], $_SESSION['rh_form_access'], $_SESSION['rh_form_old']);
+
+        return [
+            'formError' => $formError,
+            'successMessage' => $successMessage,
+            'accessInfo' => $accessInfo,
+            'old' => $old,
+            'isOpen' => $modalParam === 'novo-colaborador' || $formError !== null || $successMessage !== null,
+        ];
     }
 
     private function defaultFormData() {

@@ -35,6 +35,7 @@
         'Ativo' => 'bg-green-100 text-green-800',
         'Inativo' => 'bg-gray-200 text-gray-800',
     ];
+    $isCreateModalOpen = !empty($isCreateModalOpen);
     $moduleToneMap = [
         'seguranca_privada' => [
             'container' => 'border-red-100',
@@ -53,7 +54,11 @@
 
 <div class="flex justify-between items-center mb-6">
     <h3 class="text-xl font-semibold text-gray-800">Modulos de Colaboradores</h3>
-    <a href="/rh/colaboradores/novo" class="bg-brand-red hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium shadow transition-colors flex items-center">
+    <a
+        href="/rh?modal=novo-colaborador"
+        data-open-collaborator-modal
+        class="bg-brand-red hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium shadow transition-colors flex items-center"
+    >
         <i class="ph ph-plus-circle text-lg mr-2"></i>
         Novo Colaborador
     </a>
@@ -181,3 +186,113 @@
         </section>
     <?php endforeach; ?>
 </div>
+
+<div
+    id="collaborator-modal"
+    class="fixed inset-0 z-40 <?= $isCreateModalOpen ? 'flex' : 'hidden' ?> items-center justify-center bg-black/60 p-4 sm:p-6"
+    aria-hidden="<?= $isCreateModalOpen ? 'false' : 'true' ?>"
+>
+    <button
+        type="button"
+        data-close-collaborator-modal
+        class="absolute inset-0 h-full w-full cursor-default"
+        aria-label="Fechar cadastro"
+    ></button>
+
+    <section class="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[1440px] flex-col overflow-hidden rounded-[32px] bg-gray-50 shadow-2xl sm:max-h-[calc(100vh-3rem)]">
+        <header class="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-5 py-4 sm:px-6">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-red">RH / Cadastro</p>
+                <h2 class="mt-1 text-xl font-bold text-gray-900 sm:text-2xl">Novo colaborador</h2>
+            </div>
+
+            <button
+                type="button"
+                data-close-collaborator-modal
+                class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-800"
+                aria-label="Fechar popup"
+            >
+                <i class="ph ph-x text-2xl"></i>
+            </button>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+            <?php include __DIR__ . '/create.php'; ?>
+        </div>
+    </section>
+</div>
+
+<script>
+    (() => {
+        const body = document.body;
+        const collaboratorModal = document.getElementById('collaborator-modal');
+        const collaboratorOpeners = document.querySelectorAll('[data-open-collaborator-modal]');
+        const collaboratorClosers = document.querySelectorAll('[data-close-collaborator-modal]');
+        const cropModal = document.getElementById('crop-modal');
+
+        if (!collaboratorModal) {
+            return;
+        }
+
+        function isCropModalOpen() {
+            return cropModal && !cropModal.classList.contains('hidden');
+        }
+
+        function syncBodyScroll() {
+            body.classList.toggle('overflow-hidden', !collaboratorModal.classList.contains('hidden') || isCropModalOpen());
+        }
+
+        function syncModalUrl(isOpen) {
+            const url = new URL(window.location.href);
+
+            if (isOpen) {
+                url.searchParams.set('modal', 'novo-colaborador');
+            } else {
+                url.searchParams.delete('modal');
+            }
+
+            window.history.replaceState({}, '', url.toString());
+        }
+
+        function setCollaboratorModalOpen(isOpen, syncUrl = true) {
+            collaboratorModal.classList.toggle('hidden', !isOpen);
+            collaboratorModal.classList.toggle('flex', isOpen);
+            collaboratorModal.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+
+            if (syncUrl) {
+                syncModalUrl(isOpen);
+            }
+
+            syncBodyScroll();
+        }
+
+        collaboratorOpeners.forEach((trigger) => {
+            trigger.addEventListener('click', (event) => {
+                event.preventDefault();
+                setCollaboratorModalOpen(true);
+            });
+        });
+
+        collaboratorClosers.forEach((trigger) => {
+            trigger.addEventListener('click', () => {
+                setCollaboratorModalOpen(false);
+            });
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') {
+                return;
+            }
+
+            if (isCropModalOpen()) {
+                return;
+            }
+
+            if (!collaboratorModal.classList.contains('hidden')) {
+                setCollaboratorModalOpen(false);
+            }
+        });
+
+        syncBodyScroll();
+    })();
+</script>

@@ -25,22 +25,6 @@
 
 <link rel="stylesheet" href="https://unpkg.com/cropperjs/dist/cropper.min.css">
 
-<div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-    <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-red">RH / Cadastro</p>
-        <h2 class="mt-2 text-2xl font-bold text-gray-900">Novo cadastro de colaborador</h2>
-        <p class="mt-2 max-w-3xl text-sm text-gray-500">
-            Se o cadastro for de vigilante, o formulario abre automaticamente os campos de documentacao, cursos,
-            dados profissionais e uploads internos.
-        </p>
-    </div>
-
-    <a href="/rh" class="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:border-gray-300 hover:text-gray-900">
-        <i class="ph ph-arrow-left mr-2 text-lg"></i>
-        Voltar para RH
-    </a>
-</div>
-
 <?php if (!empty($formError)): ?>
     <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
         <div class="flex items-start gap-3">
@@ -515,6 +499,7 @@
         const cropApplyButton = document.getElementById('crop-apply-button');
         const cropCancelButton = document.getElementById('crop-cancel-button');
         const cropCloseButton = document.getElementById('crop-close-button');
+        const collaboratorModal = document.getElementById('collaborator-modal');
         const form = document.getElementById('rh-create-form');
         const photoSourceInput = document.getElementById('photo-source-input');
         const photoUploadInput = document.getElementById('photo-upload-input');
@@ -650,7 +635,10 @@
             destroyCropper();
             cropModal.classList.add('hidden');
             cropModal.classList.remove('flex');
-            body.classList.remove('overflow-hidden');
+
+            if (!collaboratorModal || collaboratorModal.classList.contains('hidden')) {
+                body.classList.remove('overflow-hidden');
+            }
         }
 
         function openCropModalFromFile(file) {
