@@ -82,7 +82,7 @@
                 <?= $isRhActive ? 'aria-current="page"' : '' ?>
             >
                 <i class="ph ph-users text-xl"></i>
-                <span class="font-medium">RH &amp; Colaboradores</span>
+                <span class="font-medium">RH</span>
             </a>
             
             <a
