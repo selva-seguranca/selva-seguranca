@@ -1,5 +1,18 @@
 <?php
 
+$isHttpsRequest =
+    (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (string) ($_SERVER['SERVER_PORT'] ?? '') === '443'
+    || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
+
+session_set_cookie_params([
+    'lifetime' => 60 * 60 * 24 * 30,
+    'path' => '/',
+    'secure' => $isHttpsRequest,
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
+
 session_start();
 
 spl_autoload_register(function ($class) {
@@ -22,6 +35,8 @@ spl_autoload_register(function ($class) {
         }
     }
 });
+
+\Helpers\Auth::bootstrap();
 
 $router = require_once dirname(__DIR__) . '/routes/web.php';
 

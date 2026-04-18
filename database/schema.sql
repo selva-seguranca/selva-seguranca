@@ -22,6 +22,20 @@ CREATE TABLE IF NOT EXISTS usuarios (
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Sessoes persistentes de login
+CREATE TABLE IF NOT EXISTS auth_persistent_logins (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    selector VARCHAR(32) NOT NULL UNIQUE,
+    token_hash VARCHAR(64) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ultimo_uso_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_auth_persistent_logins_usuario_id
+    ON auth_persistent_logins (usuario_id);
+
 -- Vigilantes
 CREATE TABLE IF NOT EXISTS vigilantes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

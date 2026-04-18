@@ -4,13 +4,14 @@ namespace Controllers;
 
 use Config\Database;
 use Config\Env;
+use Helpers\Auth;
 use Helpers\View;
 use Throwable;
 
 class AuthController {
     public function showLoginForm() {
-        if (isset($_SESSION['user_id'])) {
-            header("Location: /");
+        if (Auth::check()) {
+            header('Location: ' . Auth::defaultRedirectPath());
             exit;
         }
 
@@ -54,11 +55,9 @@ class AuthController {
         }
 
         if ($user && password_verify($password, $user['senha_hash'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_nome'] = $user['nome'];
-            $_SESSION['user_perfil'] = $user['perfil'];
+            Auth::loginUser($user);
 
-            header("Location: /");
+            header('Location: ' . Auth::defaultRedirectPath());
             exit;
         }
 
@@ -68,7 +67,7 @@ class AuthController {
     }
 
     public function logout() {
-        session_destroy();
+        Auth::logoutUser();
         header("Location: /login");
         exit;
     }
