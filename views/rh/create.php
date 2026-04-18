@@ -447,9 +447,23 @@
         </div>
 
         <div class="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-            <div class="overflow-hidden rounded-3xl bg-gray-950/95 p-3">
-                <div class="h-[420px] overflow-hidden rounded-2xl bg-gray-900">
-                    <img id="crop-image" src="" alt="Imagem para crop" class="block max-h-full w-full object-contain">
+            <div class="space-y-4">
+                <div class="overflow-hidden rounded-3xl bg-gray-950/95 p-3">
+                    <div class="h-[420px] overflow-hidden rounded-2xl bg-gray-900">
+                        <img id="crop-image" src="" alt="Imagem para crop" class="block max-h-full w-full object-contain">
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-gray-200 bg-white p-4">
+                    <p class="text-sm font-semibold text-gray-900">Controle de Zoom</p>
+                    <div class="mt-4 flex gap-3">
+                        <button type="button" id="crop-zoom-out-button" class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
+                            <i class="ph ph-minus text-xl"></i>
+                        </button>
+                        <button type="button" id="crop-zoom-in-button" class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
+                            <i class="ph ph-plus text-xl"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -460,19 +474,6 @@
                         Arraste a foto para os lados, aproxime com zoom e priorize rosto e ombros.
                         O sistema salva um recorte quadrado padrao para o cadastro.
                     </p>
-                </div>
-
-                <div class="rounded-2xl border border-gray-200 bg-white p-4">
-                    <p class="text-sm font-semibold text-gray-900">Controles</p>
-                    <div class="mt-4 flex gap-3">
-                        <button type="button" id="crop-zoom-out-button" class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
-                            <i class="ph ph-minus text-xl"></i>
-                        </button>
-                        <button type="button" id="crop-zoom-in-button" class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
-                            <i class="ph ph-plus text-xl"></i>
-                        </button>
-                    </div>
-                    <p class="mt-3 text-xs text-gray-500">Use os botoes de zoom e arraste a imagem diretamente na area de recorte.</p>
                 </div>
 
                 <div class="grid gap-3">
