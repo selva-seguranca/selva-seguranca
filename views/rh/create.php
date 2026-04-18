@@ -413,26 +413,6 @@
             </div>
         </section>
 
-        <section class="rounded-3xl border border-gray-200 bg-brand-dark p-6 text-white shadow-sm">
-            <div class="flex items-center gap-3">
-                <span class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-brand-red">
-                    <i class="ph ph-clipboard-text text-2xl"></i>
-                </span>
-                <div>
-                    <h3 class="text-lg font-bold">Checklist do cadastro</h3>
-                    <p class="text-sm text-gray-300">Revise o que vai ser salvo.</p>
-                </div>
-            </div>
-
-            <div class="mt-6 space-y-3 text-sm text-gray-200">
-                <div class="rounded-2xl bg-white/5 px-4 py-3">Foto com crop antes do envio</div>
-                <div class="rounded-2xl bg-white/5 px-4 py-3">Dados pessoais completos</div>
-                <div class="rounded-2xl bg-white/5 px-4 py-3">Tipo de vinculo, admissao e situacao</div>
-                <div class="rounded-2xl bg-white/5 px-4 py-3 js-vigilante-summary<?= $selectedType === 'vigilante' ? '' : ' hidden' ?>">CNV, reciclagem e cursos complementares</div>
-                <div class="rounded-2xl bg-white/5 px-4 py-3 js-vigilante-summary<?= $selectedType === 'vigilante' ? '' : ' hidden' ?>">Uploads internos do colaborador</div>
-            </div>
-        </section>
-
         <div class="rounded-3xl border border-red-100 bg-red-50 p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-red">Acao</p>
             <h3 class="mt-2 text-lg font-bold text-gray-900">Salvar cadastro</h3>
@@ -513,7 +493,6 @@
         const registrationTypeCards = document.querySelectorAll('[data-type-card]');
         const vigilanteBlocks = document.querySelectorAll('.js-vigilante-only');
         const adminBlocks = document.querySelectorAll('.js-admin-only');
-        const vigilanteSummaryBlocks = document.querySelectorAll('.js-vigilante-summary');
         const vigilanteRequiredFields = document.querySelectorAll('[data-required-for="vigilante"]');
         const cepInput = document.getElementById('cep-input');
         const logradouroInput = document.getElementById('logradouro-input');
@@ -555,10 +534,6 @@
 
             adminBlocks.forEach((element) => {
                 element.classList.toggle('hidden', isVigilante);
-            });
-
-            vigilanteSummaryBlocks.forEach((element) => {
-                element.classList.toggle('hidden', !isVigilante);
             });
 
             vigilanteRequiredFields.forEach((field) => {
