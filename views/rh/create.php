@@ -108,13 +108,18 @@
 
             <div class="grid gap-6 px-6 py-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
                 <div class="flex flex-col items-center">
-                    <div class="relative h-44 w-44 overflow-hidden rounded-3xl border border-dashed border-gray-300 bg-gray-50">
+                    <button
+                        type="button"
+                        id="photo-surface-button"
+                        class="group relative h-44 w-44 overflow-hidden rounded-3xl border border-dashed border-gray-300 bg-gray-50 text-left transition-colors hover:border-brand-red hover:bg-red-50/40 focus:outline-none focus:ring-2 focus:ring-brand-red/20"
+                    >
                         <img id="photo-preview" src="" alt="Preview da foto" class="hidden h-full w-full object-cover">
-                        <div id="photo-placeholder" class="flex h-full w-full flex-col items-center justify-center px-6 text-center text-gray-400">
+                        <div id="photo-placeholder" class="flex h-full w-full flex-col items-center justify-center px-6 text-center text-gray-400 transition-colors group-hover:text-brand-red">
                             <i class="ph ph-user-circle text-5xl"></i>
                             <p class="mt-3 text-sm font-medium">Sem foto recortada</p>
+                            <p class="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-gray-400 group-hover:text-brand-red">Toque para escolher</p>
                         </div>
-                    </div>
+                    </button>
                 </div>
 
                 <div class="space-y-4">
@@ -124,11 +129,11 @@
                     <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4">
                         <p class="text-sm font-semibold text-gray-900">Fluxo da foto</p>
                         <p class="mt-2 text-sm text-gray-500">
-                            1. Escolha a imagem
+                            1. Toque no quadro da foto ou em selecionar foto
                             <br>
-                            2. Ajuste o recorte
+                            2. Ajuste o enquadramento com arraste e zoom
                             <br>
-                            3. Clique em aplicar
+                            3. Clique em ACEITAR
                         </p>
                     </div>
 
@@ -452,14 +457,28 @@
                 <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4">
                     <p class="text-sm font-semibold text-gray-900">Dica de enquadramento</p>
                     <p class="mt-2 text-sm text-gray-500">
-                        Priorize rosto e ombros. O sistema salva um recorte quadrado padrao para o cadastro.
+                        Arraste a foto para os lados, aproxime com zoom e priorize rosto e ombros.
+                        O sistema salva um recorte quadrado padrao para o cadastro.
                     </p>
+                </div>
+
+                <div class="rounded-2xl border border-gray-200 bg-white p-4">
+                    <p class="text-sm font-semibold text-gray-900">Controles</p>
+                    <div class="mt-4 flex gap-3">
+                        <button type="button" id="crop-zoom-out-button" class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
+                            <i class="ph ph-minus text-xl"></i>
+                        </button>
+                        <button type="button" id="crop-zoom-in-button" class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
+                            <i class="ph ph-plus text-xl"></i>
+                        </button>
+                    </div>
+                    <p class="mt-3 text-xs text-gray-500">Use os botoes de zoom e arraste a imagem diretamente na area de recorte.</p>
                 </div>
 
                 <div class="grid gap-3">
                     <button type="button" id="crop-apply-button" class="inline-flex items-center justify-center rounded-2xl bg-brand-red px-4 py-4 text-sm font-semibold text-white transition-colors hover:bg-red-700">
                         <i class="ph ph-check mr-2 text-lg"></i>
-                        Aplicar recorte
+                        ACEITAR
                     </button>
                     <button type="button" id="crop-cancel-button" class="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-4 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900">
                         Cancelar
@@ -479,8 +498,11 @@
         const cropApplyButton = document.getElementById('crop-apply-button');
         const cropCancelButton = document.getElementById('crop-cancel-button');
         const cropCloseButton = document.getElementById('crop-close-button');
+        const cropZoomOutButton = document.getElementById('crop-zoom-out-button');
+        const cropZoomInButton = document.getElementById('crop-zoom-in-button');
         const collaboratorModal = document.getElementById('collaborator-modal');
         const form = document.getElementById('rh-create-form');
+        const photoSurfaceButton = document.getElementById('photo-surface-button');
         const photoSourceInput = document.getElementById('photo-source-input');
         const photoUploadInput = document.getElementById('photo-upload-input');
         const photoSelectButton = document.getElementById('photo-select-button');
@@ -638,12 +660,32 @@
                 autoCropArea: 1,
                 background: false,
                 responsive: true,
-                dragMode: 'move'
+                dragMode: 'move',
+                zoomOnWheel: true,
+                zoomOnTouch: true,
+                cropBoxMovable: false,
+                cropBoxResizable: false,
+                toggleDragModeOnDblclick: false
             });
         }
 
-        photoSelectButton.addEventListener('click', () => {
+        function openPhotoChooser() {
             photoSourceInput.click();
+        }
+
+        photoSurfaceButton.addEventListener('click', () => {
+            const file = photoSourceInput.files && photoSourceInput.files[0];
+
+            if (!file) {
+                openPhotoChooser();
+                return;
+            }
+
+            openCropModalFromFile(file);
+        });
+
+        photoSelectButton.addEventListener('click', () => {
+            openPhotoChooser();
         });
 
         photoSourceInput.addEventListener('change', () => {
@@ -668,6 +710,18 @@
             photoSourceInput.value = '';
             photoUploadInput.value = '';
             updatePhotoPreview(null);
+        });
+
+        cropZoomOutButton.addEventListener('click', () => {
+            if (cropper) {
+                cropper.zoom(-0.1);
+            }
+        });
+
+        cropZoomInButton.addEventListener('click', () => {
+            if (cropper) {
+                cropper.zoom(0.1);
+            }
         });
 
         cropApplyButton.addEventListener('click', () => {
@@ -753,9 +807,9 @@
         form.addEventListener('submit', (event) => {
             if (!photoUploadInput.files || !photoUploadInput.files.length) {
                 event.preventDefault();
-                photoStatus.textContent = 'Selecione a foto, ajuste o crop e aplique antes de salvar.';
+                photoStatus.textContent = 'Selecione a foto, ajuste o enquadramento e clique em ACEITAR antes de salvar.';
                 photoStatus.classList.add('text-brand-red');
-                photoSelectButton.focus();
+                photoSurfaceButton.focus();
             }
         });
 
