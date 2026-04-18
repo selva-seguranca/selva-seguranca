@@ -23,7 +23,7 @@
     };
 ?>
 
-<link rel="stylesheet" href="https://unpkg.com/cropperjs/dist/cropper.min.css">
+<link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css">
 
 <?php if (!empty($formError)): ?>
     <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
@@ -489,7 +489,7 @@
     </div>
 </div>
 
-<script src="https://unpkg.com/cropperjs/dist/cropper.min.js"></script>
+<script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <script>
     (() => {
         const body = document.body;
@@ -524,6 +524,11 @@
 
         let cropper = null;
         let sourceImageUrl = null;
+
+        function setPhotoError(message) {
+            photoStatus.textContent = message;
+            photoStatus.classList.add('text-brand-red');
+        }
 
         function getSelectedRegistrationType() {
             const checkedInput = Array.from(registrationTypeInputs).find((input) => input.checked);
@@ -643,30 +648,49 @@
                 return;
             }
 
+            if (typeof window.Cropper !== 'function') {
+                setPhotoError('O editor de foto nao carregou corretamente. Recarregue a pagina e tente novamente.');
+                return;
+            }
+
             if (sourceImageUrl) {
                 URL.revokeObjectURL(sourceImageUrl);
             }
 
             sourceImageUrl = URL.createObjectURL(file);
-            cropImage.src = sourceImageUrl;
             cropModal.classList.remove('hidden');
             cropModal.classList.add('flex');
             body.classList.add('overflow-hidden');
 
             destroyCropper();
-            cropper = new Cropper(cropImage, {
-                aspectRatio: 1,
-                viewMode: 1,
-                autoCropArea: 1,
-                background: false,
-                responsive: true,
-                dragMode: 'move',
-                zoomOnWheel: true,
-                zoomOnTouch: true,
-                cropBoxMovable: false,
-                cropBoxResizable: false,
-                toggleDragModeOnDblclick: false
-            });
+            cropImage.onload = () => {
+                destroyCropper();
+                cropper = new window.Cropper(cropImage, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    autoCropArea: 0.92,
+                    background: false,
+                    responsive: true,
+                    dragMode: 'move',
+                    zoomOnWheel: true,
+                    zoomOnTouch: true,
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: false,
+                    cropBoxResizable: false,
+                    toggleDragModeOnDblclick: false,
+                    minContainerWidth: 320,
+                    minContainerHeight: 320
+                });
+            };
+
+            cropImage.onerror = () => {
+                setPhotoError('Nao foi possivel abrir a foto selecionada.');
+                closeCropModal();
+            };
+
+            cropImage.src = sourceImageUrl;
         }
 
         function openPhotoChooser() {
@@ -807,8 +831,7 @@
         form.addEventListener('submit', (event) => {
             if (!photoUploadInput.files || !photoUploadInput.files.length) {
                 event.preventDefault();
-                photoStatus.textContent = 'Selecione a foto, ajuste o enquadramento e clique em ACEITAR antes de salvar.';
-                photoStatus.classList.add('text-brand-red');
+                setPhotoError('Selecione a foto, ajuste o enquadramento e clique em ACEITAR antes de salvar.');
                 photoSurfaceButton.focus();
             }
         });
