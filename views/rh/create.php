@@ -101,11 +101,6 @@
         </section>
 
         <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
-            <div class="border-b border-gray-100 px-6 py-5">
-                <h3 class="text-lg font-bold text-gray-900">Foto do colaborador</h3>
-                <p class="mt-1 text-sm text-gray-500">Selecione a imagem, ajuste o crop e confirme antes de salvar.</p>
-            </div>
-
             <div class="grid gap-6 px-6 py-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
                 <div class="flex flex-col items-center">
                     <button
