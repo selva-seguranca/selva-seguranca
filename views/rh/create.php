@@ -455,23 +455,27 @@
                 </div>
 
                 <div class="rounded-2xl border border-gray-200 bg-white p-4">
-                    <p class="text-sm font-semibold text-gray-900">Controle de Zoom</p>
-                    <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                        <button type="button" id="crop-apply-button" class="inline-flex items-center justify-center rounded-2xl bg-brand-red px-4 py-4 text-sm font-semibold text-white transition-colors hover:bg-red-700">
-                            <i class="ph ph-check mr-2 text-lg"></i>
-                            ACEITAR
-                        </button>
-                        <button type="button" id="crop-cancel-button" class="inline-flex items-center justify-center rounded-2xl border border-gray-200 bg-white px-4 py-4 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900">
-                            Escolher outra foto
-                        </button>
-                    </div>
-                    <div class="mt-4 flex gap-3">
-                        <button type="button" id="crop-zoom-out-button" class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
-                            <i class="ph ph-minus text-xl"></i>
-                        </button>
-                        <button type="button" id="crop-zoom-in-button" class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-200 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
-                            <i class="ph ph-plus text-xl"></i>
-                        </button>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <p class="text-sm font-semibold text-gray-900">Controle de Zoom</p>
+
+                        <div class="flex items-center gap-3">
+                            <button type="button" id="crop-zoom-out-button" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
+                                <i class="ph ph-minus text-xl"></i>
+                            </button>
+                            <button type="button" id="crop-zoom-in-button" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50">
+                                <i class="ph ph-plus text-xl"></i>
+                            </button>
+                        </div>
+
+                        <div class="flex flex-1 flex-wrap items-center justify-end gap-3">
+                            <button type="button" id="crop-apply-button" class="inline-flex min-w-[180px] items-center justify-center rounded-xl bg-brand-red px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-700">
+                                <i class="ph ph-check mr-2 text-lg"></i>
+                                ACEITAR
+                            </button>
+                            <button type="button" id="crop-cancel-button" class="inline-flex min-w-[200px] items-center justify-center rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900">
+                                Escolher outra foto
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
