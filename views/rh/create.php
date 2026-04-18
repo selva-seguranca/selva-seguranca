@@ -100,6 +100,25 @@
             </div>
         </section>
 
+        <section class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h3 class="text-lg font-bold text-gray-900">Acesso ao sistema</h3>
+            <p class="mt-2 text-sm text-gray-500">
+                Estes campos sao opcionais. Se voce deixar em branco, o sistema gera um e-mail interno e uma senha provisoria.
+            </p>
+
+            <div class="mt-5 grid gap-4 md:grid-cols-2">
+                <label class="space-y-2">
+                    <span class="text-sm font-semibold text-gray-700">E-mail de acesso</span>
+                    <input type="email" name="email_acesso" value="<?= $oldValue('email_acesso') ?>" placeholder="colaborador@empresa.com" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
+                </label>
+
+                <label class="space-y-2">
+                    <span class="text-sm font-semibold text-gray-700">Senha provisoria</span>
+                    <input type="text" name="senha_provisoria" value="" placeholder="Deixe em branco para gerar" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
+                </label>
+            </div>
+        </section>
+
         <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
             <div class="border-b border-gray-100 px-6 py-5">
                 <h3 class="text-lg font-bold text-gray-900">Dados pessoais</h3>
@@ -360,25 +379,6 @@
     </div>
 
     <aside class="space-y-6">
-        <section class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 class="text-lg font-bold text-gray-900">Acesso ao sistema</h3>
-            <p class="mt-2 text-sm text-gray-500">
-                Estes campos sao opcionais. Se voce deixar em branco, o sistema gera um e-mail interno e uma senha provisoria.
-            </p>
-
-            <div class="mt-5 space-y-4">
-                <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">E-mail de acesso</span>
-                    <input type="email" name="email_acesso" value="<?= $oldValue('email_acesso') ?>" placeholder="colaborador@empresa.com" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
-                </label>
-
-                <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">Senha provisoria</span>
-                    <input type="text" name="senha_provisoria" value="" placeholder="Deixe em branco para gerar" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
-                </label>
-            </div>
-        </section>
-
         <div class="rounded-3xl border border-red-100 bg-red-50 p-6 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-red">Acao</p>
             <h3 class="mt-2 text-lg font-bold text-gray-900">Salvar cadastro</h3>
