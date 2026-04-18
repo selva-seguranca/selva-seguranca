@@ -214,15 +214,8 @@ CREATE TABLE IF NOT EXISTS financeiro (
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Documentos
-CREATE TABLE IF NOT EXISTS documentos (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    entidade_tipo VARCHAR(50), -- usuario, cliente, veiculo, etc.
-    entidade_id UUID,
-    titulo VARCHAR(150) NOT NULL,
-    arquivo_url VARCHAR(255) NOT NULL,
-    data_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- Modulo de documentos internos removido do cadastro de RH
+DROP TABLE IF EXISTS documentos;
 
 -- Logs de Auditoria
 CREATE TABLE IF NOT EXISTS logs_auditoria (

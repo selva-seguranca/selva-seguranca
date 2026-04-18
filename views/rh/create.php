@@ -77,7 +77,7 @@
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <p class="text-sm font-semibold text-gray-900">Colaborador Vigilante</p>
-                            <p class="mt-2 text-sm text-gray-500">Abre CNV, reciclagem, cursos extras e documentos internos.</p>
+                            <p class="mt-2 text-sm text-gray-500">Abre CNV, reciclagem e cursos extras.</p>
                         </div>
                         <span class="inline-flex h-10 w-10 items-center justify-center rounded-full <?= $selectedType === 'vigilante' ? 'bg-brand-red text-white' : 'bg-gray-100 text-gray-500' ?>">
                             <i class="ph ph-shield-check text-xl"></i>
@@ -343,39 +343,6 @@
             </div>
         </section>
 
-        <section class="rounded-3xl border border-gray-200 bg-white shadow-sm js-vigilante-only<?= $selectedType === 'vigilante' ? '' : ' hidden' ?>">
-            <div class="border-b border-gray-100 px-6 py-5">
-                <h3 class="text-lg font-bold text-gray-900">Documentos internos</h3>
-                <p class="mt-1 text-sm text-gray-500">Envie PDF, imagem, DOC ou DOCX para manter os anexos do colaborador.</p>
-            </div>
-
-            <div class="grid gap-5 px-6 py-6 md:grid-cols-2">
-                <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">Termo de responsabilidade uso do app</span>
-                    <input type="file" name="termo_responsabilidade" accept=".pdf,.doc,.docx,image/*" class="block w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-gray-700">
-                </label>
-
-                <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">Contrato de trabalho</span>
-                    <input type="file" name="contrato_trabalho" accept=".pdf,.doc,.docx,image/*" class="block w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-gray-700">
-                </label>
-
-                <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">Ficha de EPI</span>
-                    <input type="file" name="ficha_epi" accept=".pdf,.doc,.docx,image/*" class="block w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-gray-700">
-                </label>
-
-                <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">Ordem de Servico</span>
-                    <input type="file" name="ordem_servico" accept=".pdf,.doc,.docx,image/*" class="block w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-gray-700">
-                </label>
-
-                <label class="space-y-2 md:col-span-2">
-                    <span class="text-sm font-semibold text-gray-700">Regulamento Interno</span>
-                    <input type="file" name="regulamento_interno" accept=".pdf,.doc,.docx,image/*" class="block w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-gray-700">
-                </label>
-            </div>
-        </section>
     </div>
 
     <aside class="space-y-6">

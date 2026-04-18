@@ -72,25 +72,9 @@ class RhController {
                 $storedFiles[] = $photo;
             }
 
-            $documents = [];
-            foreach ($this->documentFieldMap() as $field => $title) {
-                $storedDocument = $this->storeOptionalFile($_FILES[$field] ?? null, 'colaboradores/documentos');
-
-                if ($storedDocument === null) {
-                    continue;
-                }
-
-                $documents[$field] = [
-                    'title' => $title,
-                    'media' => $storedDocument,
-                ];
-                $storedFiles[] = $storedDocument;
-            }
-
             $repository = new PortalRepository();
             $result = $repository->createCollaboratorRegistration($_POST, [
                 'foto' => $photo,
-                'documentos' => $documents,
             ]);
 
             unset($_SESSION['rh_form_old']);
@@ -158,16 +142,6 @@ class RhController {
         ));
 
         return $old;
-    }
-
-    private function documentFieldMap() {
-        return [
-            'termo_responsabilidade' => 'Termo de responsabilidade uso do app (assinado)',
-            'contrato_trabalho' => 'Contrato de trabalho',
-            'ficha_epi' => 'Ficha de EPI',
-            'ordem_servico' => 'Ordem de Servico',
-            'regulamento_interno' => 'Regulamento Interno',
-        ];
     }
 
     private function storeOptionalFile($file, $folder) {

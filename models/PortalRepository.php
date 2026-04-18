@@ -196,7 +196,6 @@ class PortalRepository {
             throw new RuntimeException('O perfil necessario para este cadastro nao foi encontrado no banco.');
         }
 
-        $documentos = is_array($media['documentos'] ?? null) ? $media['documentos'] : [];
         $outrosCursos = is_array($payload['outros_cursos'] ?? null) ? $payload['outros_cursos'] : [];
 
         $tipoSanguineo = strtoupper(trim((string) ($payload['tipo_sanguineo'] ?? '')));
@@ -361,19 +360,6 @@ class PortalRepository {
                         ':curso_escolta_armada' => PDO::PARAM_BOOL,
                         ':curso_seguranca_eventos' => PDO::PARAM_BOOL,
                         ':curso_seguranca_vip' => PDO::PARAM_BOOL,
-                    ]
-                );
-            }
-
-            foreach ($documentos as $documento) {
-                $this->run(
-                    "INSERT INTO documentos (entidade_tipo, entidade_id, titulo, arquivo_url)
-                     VALUES (:entidade_tipo, :entidade_id, :titulo, :arquivo_url)",
-                    [
-                        ':entidade_tipo' => 'colaborador',
-                        ':entidade_id' => $colaborador['id'],
-                        ':titulo' => $documento['title'] ?? 'Documento',
-                        ':arquivo_url' => $documento['media']['url'] ?? null,
                     ]
                 );
             }
