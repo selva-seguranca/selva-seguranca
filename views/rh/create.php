@@ -403,6 +403,8 @@
 <script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <script>
     (() => {
+        const maxPhotoUploadBytes = <?= \Helpers\MediaStorage::getMaxAllowedFileSizeBytes() ?>;
+        const maxPhotoUploadLabel = <?= json_encode(\Helpers\MediaStorage::getMaxAllowedFileSizeLabel(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
         const body = document.body;
         const cropModal = document.getElementById('crop-modal');
         const cropImage = document.getElementById('crop-image');
@@ -438,10 +440,13 @@
 
         function setPhotoError(message) {
             if (!photoStatus) {
+                window.alert(message);
                 return;
             }
 
             photoStatus.textContent = message;
+            photoStatus.classList.remove('sr-only');
+            photoStatus.classList.add('mt-3', 'text-center', 'text-xs');
             photoStatus.classList.add('text-brand-red');
         }
 
@@ -524,6 +529,8 @@
         function updatePhotoPreview(file) {
             if (photoStatus) {
                 photoStatus.classList.remove('text-brand-red');
+                photoStatus.classList.add('sr-only');
+                photoStatus.classList.remove('mt-3', 'text-center', 'text-xs');
             }
 
             if (!file) {
@@ -684,23 +691,55 @@
                 return;
             }
 
-            cropper.getCroppedCanvas({
-                width: 720,
-                height: 720,
-                fillColor: '#ffffff'
-            }).toBlob((blob) => {
-                if (!blob) {
+            const outputVariants = [
+                { width: 720, height: 720, quality: 0.88 },
+                { width: 640, height: 640, quality: 0.84 },
+                { width: 560, height: 560, quality: 0.8 },
+                { width: 480, height: 480, quality: 0.78 }
+            ];
+
+            const tryBuildBlob = (variantIndex = 0) => {
+                if (variantIndex >= outputVariants.length) {
+                    setPhotoError('Nao foi possivel preparar a foto dentro do limite de ' + maxPhotoUploadLabel + '. Escolha outra imagem e tente novamente.');
                     return;
                 }
 
-                const croppedFile = new File([blob], 'foto-colaborador.png', { type: 'image/png' });
-                const fileTransfer = new DataTransfer();
-                fileTransfer.items.add(croppedFile);
-                photoUploadInput.files = fileTransfer.files;
+                const variant = outputVariants[variantIndex];
+                const canvas = cropper.getCroppedCanvas({
+                    width: variant.width,
+                    height: variant.height,
+                    fillColor: '#ffffff',
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high'
+                });
 
-                updatePhotoPreview(croppedFile);
-                closeCropModal();
-            }, 'image/png', 0.95);
+                if (!canvas) {
+                    setPhotoError('Nao foi possivel gerar o recorte da foto.');
+                    return;
+                }
+
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        setPhotoError('Nao foi possivel gerar o arquivo final da foto.');
+                        return;
+                    }
+
+                    if (blob.size > maxPhotoUploadBytes) {
+                        tryBuildBlob(variantIndex + 1);
+                        return;
+                    }
+
+                    const croppedFile = new File([blob], 'foto-colaborador.jpg', { type: 'image/jpeg' });
+                    const fileTransfer = new DataTransfer();
+                    fileTransfer.items.add(croppedFile);
+                    photoUploadInput.files = fileTransfer.files;
+
+                    updatePhotoPreview(croppedFile);
+                    closeCropModal();
+                }, 'image/jpeg', variant.quality);
+            };
+
+            tryBuildBlob();
         });
 
         cropCancelButton.addEventListener('click', () => {

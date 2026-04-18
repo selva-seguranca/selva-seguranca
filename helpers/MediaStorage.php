@@ -92,6 +92,14 @@ class MediaStorage {
         }
     }
 
+    public static function getMaxAllowedFileSizeBytes() {
+        return self::getMaxFileSizeBytes();
+    }
+
+    public static function getMaxAllowedFileSizeLabel() {
+        return self::getMaxFileSizeLabel();
+    }
+
     private static function detectExtension($file) {
         $mime = self::detectMimeType($file);
 
