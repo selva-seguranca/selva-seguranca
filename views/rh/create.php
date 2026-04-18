@@ -125,34 +125,7 @@
                 <div class="space-y-4">
                     <input id="photo-source-input" type="file" accept="image/*" class="hidden">
                     <input id="photo-upload-input" type="file" name="foto_colaborador" accept="image/*" class="hidden">
-
-                    <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                        <p class="text-sm font-semibold text-gray-900">Fluxo da foto</p>
-                        <p class="mt-2 text-sm text-gray-500">
-                            1. Toque no quadro da foto ou em selecionar foto
-                            <br>
-                            2. Ajuste o enquadramento com arraste e zoom
-                            <br>
-                            3. Clique em ACEITAR
-                        </p>
-                    </div>
-
-                    <div class="flex flex-wrap gap-3">
-                        <button type="button" id="photo-select-button" class="inline-flex items-center justify-center rounded-xl bg-brand-red px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-700">
-                            <i class="ph ph-image mr-2 text-lg"></i>
-                            Selecionar foto
-                        </button>
-                        <button type="button" id="photo-edit-button" class="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900" disabled>
-                            <i class="ph ph-crop mr-2 text-lg"></i>
-                            Editar crop
-                        </button>
-                        <button type="button" id="photo-clear-button" class="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-800">
-                            <i class="ph ph-trash mr-2 text-lg"></i>
-                            Limpar
-                        </button>
-                    </div>
-
-                    <p id="photo-status" class="text-sm text-gray-500">Nenhuma imagem selecionada.</p>
+                    <p id="photo-status" class="sr-only" aria-live="polite">Nenhuma imagem selecionada.</p>
                 </div>
             </div>
         </section>
@@ -519,6 +492,10 @@
         let sourceImageUrl = null;
 
         function setPhotoError(message) {
+            if (!photoStatus) {
+                return;
+            }
+
             photoStatus.textContent = message;
             photoStatus.classList.add('text-brand-red');
         }
@@ -600,14 +577,20 @@
         });
 
         function updatePhotoPreview(file) {
-            photoStatus.classList.remove('text-brand-red');
+            if (photoStatus) {
+                photoStatus.classList.remove('text-brand-red');
+            }
 
             if (!file) {
                 photoPreview.src = '';
                 photoPreview.classList.add('hidden');
                 photoPlaceholder.classList.remove('hidden');
-                photoEditButton.disabled = true;
-                photoStatus.textContent = 'Nenhuma imagem selecionada.';
+                if (photoEditButton) {
+                    photoEditButton.disabled = true;
+                }
+                if (photoStatus) {
+                    photoStatus.textContent = 'Nenhuma imagem selecionada.';
+                }
                 return;
             }
 
@@ -615,8 +598,12 @@
             photoPreview.src = previewUrl;
             photoPreview.classList.remove('hidden');
             photoPlaceholder.classList.add('hidden');
-            photoEditButton.disabled = false;
-            photoStatus.textContent = 'Foto pronta para envio.';
+            if (photoEditButton) {
+                photoEditButton.disabled = false;
+            }
+            if (photoStatus) {
+                photoStatus.textContent = 'Foto pronta para envio.';
+            }
         }
 
         function destroyCropper() {
@@ -701,9 +688,11 @@
             openCropModalFromFile(file);
         });
 
-        photoSelectButton.addEventListener('click', () => {
-            openPhotoChooser();
-        });
+        if (photoSelectButton) {
+            photoSelectButton.addEventListener('click', () => {
+                openPhotoChooser();
+            });
+        }
 
         photoSourceInput.addEventListener('change', () => {
             const file = photoSourceInput.files && photoSourceInput.files[0];
@@ -714,20 +703,24 @@
             openCropModalFromFile(file);
         });
 
-        photoEditButton.addEventListener('click', () => {
-            const file = photoSourceInput.files && photoSourceInput.files[0];
-            if (!file) {
-                return;
-            }
+        if (photoEditButton) {
+            photoEditButton.addEventListener('click', () => {
+                const file = photoSourceInput.files && photoSourceInput.files[0];
+                if (!file) {
+                    return;
+                }
 
-            openCropModalFromFile(file);
-        });
+                openCropModalFromFile(file);
+            });
+        }
 
-        photoClearButton.addEventListener('click', () => {
-            photoSourceInput.value = '';
-            photoUploadInput.value = '';
-            updatePhotoPreview(null);
-        });
+        if (photoClearButton) {
+            photoClearButton.addEventListener('click', () => {
+                photoSourceInput.value = '';
+                photoUploadInput.value = '';
+                updatePhotoPreview(null);
+            });
+        }
 
         cropZoomOutButton.addEventListener('click', () => {
             if (cropper) {
