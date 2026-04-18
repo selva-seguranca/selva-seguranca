@@ -189,7 +189,7 @@
 
 <div
     id="collaborator-modal"
-    class="fixed inset-0 z-40 <?= $isCreateModalOpen ? 'flex' : 'hidden' ?> items-start justify-center overflow-y-auto bg-black/60 p-2 sm:items-center sm:p-5"
+    class="fixed inset-0 z-40 <?= $isCreateModalOpen ? 'flex' : 'hidden' ?> items-start justify-center overflow-y-auto bg-black/60 p-3 sm:items-center sm:p-5"
     aria-hidden="<?= $isCreateModalOpen ? 'false' : 'true' ?>"
 >
     <button
@@ -199,7 +199,7 @@
         aria-label="Fechar cadastro"
     ></button>
 
-    <section class="relative z-10 my-1 flex max-h-[calc(100dvh-0.5rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-[24px] bg-gray-50 shadow-2xl sm:max-h-[calc(100vh-4rem)] sm:rounded-[30px]">
+    <section class="relative z-10 my-1 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-[24px] bg-gray-50 shadow-2xl sm:max-h-[calc(100vh-4rem)] sm:rounded-[30px]">
         <header class="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-red">RH / Cadastro</p>
