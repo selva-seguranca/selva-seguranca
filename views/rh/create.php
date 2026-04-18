@@ -101,6 +101,11 @@
         </section>
 
         <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-100 px-6 py-5">
+                <h3 class="text-lg font-bold text-gray-900">Dados pessoais</h3>
+                <p class="mt-1 text-sm text-gray-500">Informacoes basicas do colaborador para o cadastro interno.</p>
+            </div>
+
             <div class="grid gap-6 px-6 py-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
                 <div class="flex flex-col items-center">
                     <button
@@ -115,27 +120,17 @@
                             <p class="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-gray-400 group-hover:text-brand-red">Toque para escolher</p>
                         </div>
                     </button>
-                </div>
 
-                <div class="space-y-4">
                     <input id="photo-source-input" type="file" accept="image/*" class="hidden">
                     <input id="photo-upload-input" type="file" name="foto_colaborador" accept="image/*" class="hidden">
                     <p id="photo-status" class="sr-only" aria-live="polite">Nenhuma imagem selecionada.</p>
                 </div>
-            </div>
-        </section>
 
-        <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
-            <div class="border-b border-gray-100 px-6 py-5">
-                <h3 class="text-lg font-bold text-gray-900">Dados pessoais</h3>
-                <p class="mt-1 text-sm text-gray-500">Informacoes basicas do colaborador para o cadastro interno.</p>
-            </div>
-
-            <div class="grid gap-5 px-6 py-6 md:grid-cols-2">
-                <label class="space-y-2 md:col-span-2">
-                    <span class="text-sm font-semibold text-gray-700">Nome completo</span>
-                    <input type="text" name="nome_completo" value="<?= $oldValue('nome_completo') ?>" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
-                </label>
+                <div class="grid gap-5 md:grid-cols-2">
+                    <label class="space-y-2 md:col-span-2">
+                        <span class="text-sm font-semibold text-gray-700">Nome completo</span>
+                        <input type="text" name="nome_completo" value="<?= $oldValue('nome_completo') ?>" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
+                    </label>
 
                 <label class="space-y-2">
                     <span class="text-sm font-semibold text-gray-700">CPF</span>
@@ -216,10 +211,11 @@
                     <input type="text" name="complemento" value="<?= $oldValue('complemento') ?>" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
-                <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">Cidade</span>
-                    <input type="text" name="cidade" value="<?= $oldValue('cidade') ?>" required id="cidade-input" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
-                </label>
+                    <label class="space-y-2">
+                        <span class="text-sm font-semibold text-gray-700">Cidade</span>
+                        <input type="text" name="cidade" value="<?= $oldValue('cidade') ?>" required id="cidade-input" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
+                    </label>
+                </div>
             </div>
         </section>
 
