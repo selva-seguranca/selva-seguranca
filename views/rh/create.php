@@ -63,7 +63,7 @@
     </div>
 <?php endif; ?>
 
-<form id="rh-create-form" action="/rh/colaboradores" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+<form id="rh-create-form" action="/rh/colaboradores" method="POST" enctype="multipart/form-data" class="w-full">
     <div class="space-y-6">
         <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
             <div class="border-b border-gray-100 px-6 py-5">

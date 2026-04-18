@@ -199,7 +199,7 @@
         aria-label="Fechar cadastro"
     ></button>
 
-    <section class="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[1440px] flex-col overflow-hidden rounded-[32px] bg-gray-50 shadow-2xl sm:max-h-[calc(100vh-3rem)]">
+    <section class="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[1280px] flex-col overflow-hidden rounded-[32px] bg-gray-50 shadow-2xl sm:max-h-[calc(100vh-3rem)]">
         <header class="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-5 py-4 sm:px-6">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-red">RH / Cadastro</p>
