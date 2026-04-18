@@ -106,8 +106,8 @@
                 <p class="mt-1 text-sm text-gray-500">Informacoes basicas do colaborador para o cadastro interno.</p>
             </div>
 
-            <div class="grid gap-6 px-6 py-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
-                <div class="flex flex-col items-center">
+            <div class="grid gap-5 px-6 py-6 md:grid-cols-2 lg:grid-cols-12 lg:items-start">
+                <div class="flex flex-col items-center md:col-span-2 lg:col-span-3 lg:row-span-2 lg:items-start">
                     <button
                         type="button"
                         id="photo-surface-button"
@@ -126,43 +126,42 @@
                     <p id="photo-status" class="sr-only" aria-live="polite">Nenhuma imagem selecionada.</p>
                 </div>
 
-                <div class="grid gap-5 md:grid-cols-2">
-                    <label class="space-y-2 md:col-span-2">
-                        <span class="text-sm font-semibold text-gray-700">Nome completo</span>
-                        <input type="text" name="nome_completo" value="<?= $oldValue('nome_completo') ?>" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
-                    </label>
+                <label class="space-y-2 md:col-span-2 lg:col-span-9">
+                    <span class="text-sm font-semibold text-gray-700">Nome completo</span>
+                    <input type="text" name="nome_completo" value="<?= $oldValue('nome_completo') ?>" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
+                </label>
 
-                <label class="space-y-2">
+                <label class="space-y-2 lg:col-span-4">
                     <span class="text-sm font-semibold text-gray-700">CPF</span>
                     <input type="text" name="cpf" value="<?= $oldValue('cpf') ?>" required maxlength="14" data-mask="cpf" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
-                <label class="space-y-2">
+                <label class="space-y-2 lg:col-span-5">
                     <span class="text-sm font-semibold text-gray-700">RG</span>
                     <input type="text" name="rg" value="<?= $oldValue('rg') ?>" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
-                <label class="space-y-2">
+                <label class="space-y-2 lg:col-span-6">
                     <span class="text-sm font-semibold text-gray-700">Data de nascimento</span>
                     <input type="date" name="data_nascimento" value="<?= $oldValue('data_nascimento') ?>" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
-                <label class="space-y-2">
+                <label class="space-y-2 lg:col-span-6">
                     <span class="text-sm font-semibold text-gray-700">Nome da mae</span>
                     <input type="text" name="nome_mae" value="<?= $oldValue('nome_mae') ?>" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
-                <label class="space-y-2">
+                <label class="space-y-2 lg:col-span-6">
                     <span class="text-sm font-semibold text-gray-700">Telefone principal</span>
                     <input type="text" name="telefone_principal" value="<?= $oldValue('telefone_principal') ?>" required maxlength="15" data-mask="phone" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
-                <label class="space-y-2">
+                <label class="space-y-2 lg:col-span-6">
                     <span class="text-sm font-semibold text-gray-700">Telefone familiar</span>
                     <input type="text" name="telefone_familiar" value="<?= $oldValue('telefone_familiar') ?>" required maxlength="15" data-mask="phone" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
-                <label class="space-y-2">
+                <label class="space-y-2 lg:col-span-3">
                     <span class="text-sm font-semibold text-gray-700">Tipo sanguineo</span>
                     <select name="tipo_sanguineo" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                         <option value="">Selecione</option>
@@ -172,7 +171,7 @@
                     </select>
                 </label>
 
-                <label class="space-y-2">
+                <label class="space-y-2 lg:col-span-3">
                     <span class="text-sm font-semibold text-gray-700">Fator RH</span>
                     <select name="fator_rh" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                         <?php foreach (['+' => 'Positivo (+)', '-' => 'Negativo (-)'] as $factorValue => $factorLabel): ?>
@@ -181,41 +180,40 @@
                     </select>
                 </label>
 
-                <label class="space-y-2">
+                <label class="space-y-2 lg:col-span-4">
                     <span class="text-sm font-semibold text-gray-700">CEP</span>
                     <input type="text" name="cep" value="<?= $oldValue('cep') ?>" required maxlength="9" data-mask="cep" id="cep-input" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
-                <label class="space-y-2">
+                <label class="space-y-2 lg:col-span-2">
                     <span class="text-sm font-semibold text-gray-700">UF</span>
                     <input type="text" name="uf" value="<?= $oldValue('uf') ?>" required maxlength="2" id="uf-input" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm uppercase outline-none transition-colors focus:border-brand-red">
                 </label>
 
-                <label class="space-y-2 md:col-span-2">
+                <label class="space-y-2 md:col-span-2 lg:col-span-12">
                     <span class="text-sm font-semibold text-gray-700">Logradouro</span>
                     <input type="text" name="logradouro" value="<?= $oldValue('logradouro') ?>" required id="logradouro-input" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
-                <label class="space-y-2">
+                <label class="space-y-2 lg:col-span-3">
                     <span class="text-sm font-semibold text-gray-700">Numero</span>
                     <input type="text" name="numero" value="<?= $oldValue('numero') ?>" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
-                <label class="space-y-2">
+                <label class="space-y-2 lg:col-span-3">
                     <span class="text-sm font-semibold text-gray-700">Bairro</span>
                     <input type="text" name="bairro" value="<?= $oldValue('bairro') ?>" required id="bairro-input" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
-                <label class="space-y-2">
+                <label class="space-y-2 lg:col-span-3">
                     <span class="text-sm font-semibold text-gray-700">Complemento</span>
                     <input type="text" name="complemento" value="<?= $oldValue('complemento') ?>" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
-                    <label class="space-y-2">
-                        <span class="text-sm font-semibold text-gray-700">Cidade</span>
-                        <input type="text" name="cidade" value="<?= $oldValue('cidade') ?>" required id="cidade-input" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
-                    </label>
-                </div>
+                <label class="space-y-2 lg:col-span-3">
+                    <span class="text-sm font-semibold text-gray-700">Cidade</span>
+                    <input type="text" name="cidade" value="<?= $oldValue('cidade') ?>" required id="cidade-input" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
+                </label>
             </div>
         </section>
 
