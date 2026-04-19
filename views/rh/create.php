@@ -76,6 +76,25 @@
     </div>
 <?php endif; ?>
 
+<?php if (!empty($successMessage) && !$isEditMode): ?>
+    <div
+        id="rh-create-success-toast"
+        class="fixed left-1/2 top-1/2 z-[90] w-[calc(100%-1.5rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-800 shadow-2xl transition-all duration-300"
+        role="alert"
+        aria-live="polite"
+    >
+        <div class="flex items-start gap-3">
+            <span class="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-green-100 text-green-700">
+                <i class="ph ph-check-circle text-xl"></i>
+            </span>
+            <div class="min-w-0">
+                <p class="font-semibold tracking-[0.04em]">COLABORADOR SALVO COM SUCESSO!</p>
+                <p class="mt-1 text-xs text-green-700">O alerta sera fechado automaticamente apos o tempo de leitura.</p>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
+
 <form id="rh-create-form" action="<?= $formAction ?>" method="POST" enctype="multipart/form-data" class="w-full">
     <?php if ($isEditMode): ?>
         <input type="hidden" name="colaborador_id" value="<?= htmlspecialchars($editCollaboratorId, ENT_QUOTES, 'UTF-8') ?>">
@@ -441,6 +460,7 @@
         const cropZoomOutButton = document.getElementById('crop-zoom-out-button');
         const cropZoomInButton = document.getElementById('crop-zoom-in-button');
         const collaboratorModal = document.getElementById('collaborator-modal');
+        const createSuccessToast = document.getElementById('rh-create-success-toast');
         const form = document.getElementById('rh-create-form');
         const photoSurfaceButton = document.getElementById('photo-surface-button');
         const photoSourceInput = document.getElementById('photo-source-input');
@@ -845,6 +865,16 @@
 
         if (initialPhotoUrl && photoEditButton) {
             photoEditButton.disabled = false;
+        }
+
+        if (createSuccessToast) {
+            window.setTimeout(() => {
+                createSuccessToast.classList.add('pointer-events-none', 'scale-95', 'opacity-0');
+
+                window.setTimeout(() => {
+                    createSuccessToast.remove();
+                }, 320);
+            }, 4200);
         }
 
         syncRegistrationTypeUI();

@@ -144,7 +144,7 @@ class RhController {
             ]);
 
             unset($_SESSION['rh_form_mode'], $_SESSION['rh_form_edit_id'], $_SESSION['rh_form_existing_photo_url'], $_SESSION['rh_form_old']);
-            $_SESSION['rh_form_success'] = 'Colaborador cadastrado com sucesso.';
+            $_SESSION['rh_form_success'] = 'COLABORADOR SALVO COM SUCESSO!';
             $_SESSION['rh_form_access'] = $result['access'] ?? null;
 
             header('Location: /rh?modal=novo-colaborador');
