@@ -2,6 +2,7 @@
 
 namespace Helpers;
 
+use Config\Database;
 use Config\Env;
 use RuntimeException;
 
@@ -190,13 +191,30 @@ class MediaStorage {
             throw new RuntimeException('Nao foi possivel ler o arquivo para envio.');
         }
 
-        self::sendSupabaseRequest(
-            'POST',
-            $uploadUrl,
-            $storageKey,
-            $fileContents,
-            $mime
-        );
+        try {
+            self::sendSupabaseRequest(
+                'POST',
+                $uploadUrl,
+                $storageKey,
+                $fileContents,
+                $mime
+            );
+        } catch (RuntimeException $e) {
+            if (!self::isMissingBucketError($e)) {
+                throw $e;
+            }
+
+            self::ensureSupabaseBucketExists($supabaseUrl, $bucket, $storageKey);
+            usleep(150000);
+
+            self::sendSupabaseRequest(
+                'POST',
+                $uploadUrl,
+                $storageKey,
+                $fileContents,
+                $mime
+            );
+        }
 
         return [
             'driver' => 'supabase',
@@ -260,6 +278,65 @@ class MediaStorage {
         throw new RuntimeException(self::buildSupabaseErrorMessage($statusCode, $responseBody));
     }
 
+    private static function ensureSupabaseBucketExists($supabaseUrl, $bucket, $apiKey) {
+        $bucketUrl = rtrim($supabaseUrl, '/') . '/storage/v1/bucket';
+        $payload = [
+            'id' => $bucket,
+            'name' => $bucket,
+            'public' => true,
+            'allowed_mime_types' => self::resolveBucketAllowedMimeTypes(),
+            'file_size_limit' => self::getMaxFileSizeBytes(),
+        ];
+
+        try {
+            self::sendSupabaseJsonRequest('POST', $bucketUrl, $apiKey, $payload);
+        } catch (RuntimeException $e) {
+            if (self::ensureSupabaseBucketExistsViaDatabase($bucket)) {
+                return;
+            }
+
+            if (self::isBucketAlreadyExistsError($e)) {
+                return;
+            }
+
+            throw new RuntimeException(
+                'Falha ao criar automaticamente o bucket do Supabase: ' . $e->getMessage(),
+                0,
+                $e
+            );
+        }
+    }
+
+    private static function sendSupabaseJsonRequest($method, $url, $apiKey, array $payload) {
+        return self::sendSupabaseRequest(
+            $method,
+            $url,
+            $apiKey,
+            json_encode($payload),
+            'application/json'
+        );
+    }
+
+    private static function ensureSupabaseBucketExistsViaDatabase($bucket) {
+        try {
+            $db = Database::getInstance();
+            $stmt = $db->prepare(
+                'INSERT INTO storage.buckets (id, name, public)
+                 VALUES (:id, :name, true)
+                 ON CONFLICT (id) DO NOTHING'
+            );
+            $stmt->execute([
+                ':id' => $bucket,
+                ':name' => $bucket,
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            error_log('[MediaStorage] bucket SQL fallback failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     private static function extractHttpStatusCode($headers) {
         if (empty($headers) || !preg_match('/\s(\d{3})\s?/', (string) $headers[0], $matches)) {
             return 0;
@@ -293,6 +370,28 @@ class MediaStorage {
         }
 
         return 'Falha no envio para o Supabase. Codigo HTTP: ' . $statusCode . '.';
+    }
+
+    private static function isMissingBucketError(RuntimeException $e) {
+        $message = strtolower(trim($e->getMessage()));
+
+        return strpos($message, 'bucket not found') !== false
+            || strpos($message, 'bucket configurado existe') !== false
+            || strpos($message, 'the resource was not found') !== false;
+    }
+
+    private static function isBucketAlreadyExistsError(RuntimeException $e) {
+        $message = strtolower(trim($e->getMessage()));
+
+        return strpos($message, 'already exists') !== false
+            || strpos($message, 'duplicate') !== false;
+    }
+
+    private static function resolveBucketAllowedMimeTypes() {
+        return array_values(array_unique(array_merge(
+            ['image/*', 'video/*'],
+            array_keys(self::MIME_TO_EXTENSION)
+        )));
     }
 
     private static function resolveSupabaseUrl() {
