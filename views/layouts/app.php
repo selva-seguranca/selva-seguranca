@@ -62,7 +62,7 @@
         </button>
 
         <div class="h-20 flex items-center justify-center border-b border-gray-800 p-4">
-            <img src="/assets/img/logo.png" alt="Logo" class="max-h-full object-contain filter drop-shadow">
+            <img src="/assets/img/logo-icon.png" alt="Ícone Selva Segurança" class="h-full w-auto max-h-14 object-contain filter drop-shadow">
         </div>
         
         <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
