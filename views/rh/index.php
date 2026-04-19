@@ -11,7 +11,7 @@
 
     <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center justify-between">
         <div>
-            <p class="text-sm font-medium text-gray-500 mb-1">Em Ferias</p>
+            <p class="text-sm font-medium text-gray-500 mb-1">Em Férias</p>
             <h3 class="text-3xl font-bold text-gray-800"><?= $kpis['em_ferias'] ?></h3>
         </div>
         <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600">
@@ -21,7 +21,7 @@
 
     <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center justify-between">
         <div>
-            <p class="text-sm font-medium text-gray-500 mb-1">Advertencias Mes</p>
+            <p class="text-sm font-medium text-gray-500 mb-1">Advertências Mês</p>
             <h3 class="text-3xl font-bold text-brand-red"><?= $kpis['advertencias_recentes'] ?></h3>
         </div>
         <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-brand-red">
@@ -44,8 +44,11 @@
     $actionSuccessMessage = trim((string) ($actionSuccess ?? ''));
     $isUpdateSuccessToast = $actionSuccessMessage === 'collaborator_updated';
     $actionSuccessHtml = $isUpdateSuccessToast
-        ? 'ALTERA&Ccedil;&Otilde;ES SALVAS COM SUCESSO!'
+        ? 'ALTERAÇÕES SALVAS COM SUCESSO!'
         : htmlspecialchars($actionSuccessMessage);
+    $roleLabelMap = [
+        'Vigitante' => 'Vigilante',
+    ];
     $moduleToneMap = [
         'seguranca_privada' => [
             'container' => 'border-red-100',
@@ -79,7 +82,7 @@
         <div class="flex items-start gap-3">
             <i class="ph ph-warning-circle mt-0.5 text-lg"></i>
             <div>
-                <p class="font-semibold">Nao foi possivel concluir a acao.</p>
+                <p class="font-semibold">Não foi possível concluir a ação.</p>
                 <p class="mt-1"><?= htmlspecialchars($actionError) ?></p>
             </div>
         </div>
@@ -110,14 +113,14 @@
             </span>
             <div class="min-w-0">
                 <p class="font-semibold tracking-[0.04em]"><?= $actionSuccessHtml ?></p>
-                <p class="mt-1 text-xs text-green-700">Os dados do colaborador foram atualizados no banco e o alerta sera fechado automaticamente.</p>
+                <p class="mt-1 text-xs text-green-700">Os dados do colaborador foram atualizados no banco e o alerta será fechado automaticamente.</p>
             </div>
         </div>
     </div>
 <?php endif; ?>
 
 <div class="flex justify-between items-center mb-6">
-    <h3 class="text-xl font-semibold text-gray-800">Modulos de Colaboradores</h3>
+    <h3 class="text-xl font-semibold text-gray-800">Módulos de Colaboradores</h3>
     <a
         href="/rh?modal=novo-colaborador"
         data-open-collaborator-modal
@@ -136,7 +139,7 @@
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                         <div class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] <?= $tone['badge'] ?>">
-                            Modulo RH
+                            Módulo RH
                         </div>
                         <h4 class="mt-3 text-lg font-bold text-gray-900"><?= htmlspecialchars($modulo['title']) ?></h4>
                         <p class="mt-2 text-sm text-gray-500"><?= htmlspecialchars($modulo['subtitle']) ?></p>
@@ -151,7 +154,7 @@
                 <div class="mt-4 flex flex-wrap gap-2">
                     <?php foreach ($modulo['roles'] as $role): ?>
                         <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold <?= $tone['role'] ?>">
-                            <?= htmlspecialchars($role) ?>
+                            <?= htmlspecialchars($roleLabelMap[$role] ?? $role) ?>
                             <span class="ml-2 rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-bold text-gray-700">
                                 <?= (int) ($modulo['role_counts'][$role] ?? 0) ?>
                             </span>
@@ -162,7 +165,7 @@
 
             <?php if (empty($modulo['colaboradores'])): ?>
                 <div class="p-6 text-sm text-gray-500">
-                    Nenhum colaborador enquadrado neste modulo com base nos cargos e departamentos atuais.
+                    Nenhum colaborador enquadrado neste módulo com base nos cargos e departamentos atuais.
                 </div>
             <?php else: ?>
                 <div class="hidden 2xl:block">
@@ -172,7 +175,7 @@
                                 <th class="px-6 py-4 font-medium">Nome</th>
                                 <th class="px-6 py-4 font-medium">Cargo</th>
                                 <th class="px-6 py-4 font-medium">Status</th>
-                                <th class="px-4 py-4 font-medium text-right whitespace-nowrap">Acoes</th>
+                                <th class="px-4 py-4 font-medium text-right whitespace-nowrap">Ações</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 text-sm">
@@ -227,13 +230,13 @@
                                         </div>
                                     <?php else: ?>
                                         <div class="inline-flex min-w-[124px] items-center justify-end gap-2">
-                                            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-300" title="Cadastro indisponivel">
+                                            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-300" title="Cadastro indisponível">
                                                 <i class="ph ph-eye-slash text-lg"></i>
                                             </span>
-                                            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-300" title="Cadastro indisponivel">
+                                            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-300" title="Cadastro indisponível">
                                                 <i class="ph ph-pencil-simple text-lg"></i>
                                             </span>
-                                            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-300" title="Cadastro indisponivel">
+                                            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-300" title="Cadastro indisponível">
                                                 <i class="ph ph-trash text-lg"></i>
                                             </span>
                                         </div>
@@ -328,7 +331,7 @@
         type="button"
         data-close-collaborator-view
         class="absolute inset-0 h-full w-full cursor-default"
-        aria-label="Fechar visualizacao"
+        aria-label="Fechar visualização"
     ></button>
 
     <section class="relative z-10 my-1 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-[24px] bg-gray-50 shadow-2xl sm:max-h-[calc(100vh-4rem)] sm:rounded-[30px]">
@@ -400,7 +403,7 @@
         type="button"
         data-close-collaborator-delete
         class="absolute inset-0 h-full w-full cursor-default"
-        aria-label="Fechar confirmacao de exclusao"
+        aria-label="Fechar confirmação de exclusão"
     ></button>
 
     <section class="relative z-10 w-full max-w-md rounded-[28px] border border-red-100 bg-white p-6 shadow-2xl sm:p-7">
@@ -409,7 +412,7 @@
         </div>
 
         <div class="mt-5 text-center">
-            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-brand-red">Confirmar exclusao</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-brand-red">Confirmar exclusão</p>
             <h3 class="mt-3 text-lg font-bold text-gray-900 sm:text-xl">TEM CERTEZA QUE DESEJA DELETAR ESSE COLABORADOR?</h3>
         </div>
 

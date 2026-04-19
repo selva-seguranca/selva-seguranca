@@ -10,13 +10,13 @@
     $editCollaboratorId = trim((string) ($editCollaboratorId ?? ($old['colaborador_id'] ?? '')));
     $existingPhotoUrl = trim((string) ($existingPhotoUrl ?? ($old['foto_url_atual'] ?? '')));
     $formAction = $isEditMode ? '/rh/colaboradores/atualizar' : '/rh/colaboradores';
-    $errorTitle = $isEditMode ? 'Nao foi possivel atualizar o cadastro.' : 'Nao foi possivel concluir o cadastro.';
+    $errorTitle = $isEditMode ? 'Não foi possível atualizar o cadastro.' : 'Não foi possível concluir o cadastro.';
     $accessDescription = $isEditMode
-        ? 'Atualize os dados de acesso quando necessario. Deixe a senha em branco para manter a senha atual.'
-        : 'Estes campos sao opcionais. Se voce deixar em branco, o sistema gera um e-mail interno e uma senha provisoria.';
-    $passwordLabel = $isEditMode ? 'Nova senha provisoria' : 'Senha provisoria';
+        ? 'Atualize os dados de acesso quando necessário. Deixe a senha em branco para manter a senha atual.'
+        : 'Estes campos são opcionais. Se você deixar em branco, o sistema gera um e-mail interno e uma senha provisória.';
+    $passwordLabel = $isEditMode ? 'Nova senha provisória' : 'Senha provisória';
     $passwordPlaceholder = $isEditMode ? 'Deixe em branco para manter a atual' : 'Deixe em branco para gerar';
-    $submitLabel = $isEditMode ? 'Salvar alteracoes do colaborador' : 'Salvar novo colaborador';
+    $submitLabel = $isEditMode ? 'Salvar alterações do colaborador' : 'Salvar novo colaborador';
     $submitIcon = $isEditMode ? 'ph-pencil-simple' : 'ph-floppy-disk';
 
     $oldValue = function ($key, $default = '') use ($old) {
@@ -63,7 +63,7 @@
                             <p class="mt-1 font-semibold text-gray-900"><?= htmlspecialchars($accessInfo['email']) ?></p>
                         </div>
                         <div>
-                            <p class="text-[11px] uppercase tracking-wide text-green-700">Senha provisoria</p>
+                            <p class="text-[11px] uppercase tracking-wide text-green-700">Senha provisória</p>
                             <p class="mt-1 font-semibold text-gray-900"><?= htmlspecialchars($accessInfo['password']) ?></p>
                         </div>
                     </div>
@@ -89,7 +89,7 @@
             </span>
             <div class="min-w-0">
                 <p class="font-semibold tracking-[0.04em]">COLABORADOR SALVO COM SUCESSO!</p>
-                <p class="mt-1 text-xs text-green-700">O alerta sera fechado automaticamente apos o tempo de leitura.</p>
+                <p class="mt-1 text-xs text-green-700">O alerta será fechado automaticamente após o tempo de leitura.</p>
             </div>
         </div>
     </div>
@@ -108,7 +108,7 @@
                 <h3 class="text-lg font-bold text-gray-900">Tipo de cadastro</h3>
                 <p class="mt-1 text-sm text-gray-500">
                     <?= $isEditMode
-                        ? 'O tipo de cadastro fica bloqueado na edicao para preservar o perfil e os registros vinculados.'
+                        ? 'O tipo de cadastro fica bloqueado na edição para preservar o perfil e os registros vinculados.'
                         : 'Escolha qual fluxo deve ser aplicado neste colaborador.' ?>
                 </p>
             </div>
@@ -132,7 +132,7 @@
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <p class="text-sm font-semibold text-gray-900">Financeiro / Administrativo</p>
-                            <p class="mt-2 text-sm text-gray-500">Mantem somente dados pessoais e profissionais basicos.</p>
+                            <p class="mt-2 text-sm text-gray-500">Mantém somente dados pessoais e profissionais básicos.</p>
                         </div>
                         <span class="inline-flex h-10 w-10 items-center justify-center rounded-full <?= $selectedType === 'financeiro_administrativo' ? 'bg-brand-red text-white' : 'bg-gray-100 text-gray-500' ?>">
                             <i class="ph ph-briefcase text-xl"></i>
@@ -162,7 +162,7 @@
         <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
             <div class="border-b border-gray-100 px-6 py-5">
                 <h3 class="text-lg font-bold text-gray-900">Dados pessoais</h3>
-                <p class="mt-1 text-sm text-gray-500">Informacoes basicas do colaborador para o cadastro interno.</p>
+                <p class="mt-1 text-sm text-gray-500">Informações básicas do colaborador para o cadastro interno.</p>
             </div>
 
             <div class="grid gap-5 px-6 py-6 md:grid-cols-2 lg:grid-cols-12 lg:items-start">
@@ -210,7 +210,7 @@
                 </label>
 
                 <label class="space-y-2 lg:col-span-6">
-                    <span class="text-sm font-semibold text-gray-700">Nome da mae</span>
+                    <span class="text-sm font-semibold text-gray-700">Nome da mãe</span>
                     <input type="text" name="nome_mae" value="<?= $oldValue('nome_mae') ?>" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
@@ -225,7 +225,7 @@
                 </label>
 
                 <label class="space-y-2 lg:col-span-3">
-                    <span class="text-sm font-semibold text-gray-700">Tipo sanguineo</span>
+                    <span class="text-sm font-semibold text-gray-700">Tipo sanguíneo</span>
                     <select name="tipo_sanguineo" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                         <option value="">Selecione</option>
                         <?php foreach (['A', 'B', 'AB', 'O'] as $bloodType): ?>
@@ -259,7 +259,7 @@
                 </label>
 
                 <label class="space-y-2 lg:col-span-3">
-                    <span class="text-sm font-semibold text-gray-700">Numero</span>
+                    <span class="text-sm font-semibold text-gray-700">Número</span>
                     <input type="text" name="numero" value="<?= $oldValue('numero') ?>" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
@@ -283,17 +283,17 @@
         <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
             <div class="border-b border-gray-100 px-6 py-5">
                 <h3 class="text-lg font-bold text-gray-900">Dados profissionais</h3>
-                <p class="mt-1 text-sm text-gray-500">Dados de vinculo, admissao e situacao atual do colaborador.</p>
+                <p class="mt-1 text-sm text-gray-500">Dados de vínculo, admissão e situação atual do colaborador.</p>
             </div>
 
             <div class="grid gap-5 px-6 py-6 md:grid-cols-2">
                 <div class="space-y-2 js-vigilante-only<?= $selectedType === 'vigilante' ? '' : ' hidden' ?>">
-                    <span class="text-sm font-semibold text-gray-700">Funcao</span>
+                    <span class="text-sm font-semibold text-gray-700">Função</span>
                     <input type="text" value="VIGILANTE" readonly class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700">
                 </div>
 
                 <label class="space-y-2 js-admin-only<?= $selectedType === 'vigilante' ? ' hidden' : '' ?>">
-                    <span class="text-sm font-semibold text-gray-700">Funcao</span>
+                    <span class="text-sm font-semibold text-gray-700">Função</span>
                     <select name="funcao_administrativa" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                         <option value="Administrativo" <?= $selectedAdminRole === 'Administrativo' ? 'selected' : '' ?>>Administrativo</option>
                         <option value="Financeiro" <?= $selectedAdminRole === 'Financeiro' ? 'selected' : '' ?>>Financeiro</option>
@@ -301,7 +301,7 @@
                 </label>
 
                 <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">Tipo de vinculo</span>
+                    <span class="text-sm font-semibold text-gray-700">Tipo de vínculo</span>
                     <select name="tipo_vinculo" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                         <option value="CLT" <?= $isChecked('tipo_vinculo', 'CLT', true) ? 'selected' : '' ?>>CLT</option>
                         <option value="Freelancer" <?= $isChecked('tipo_vinculo', 'Freelancer') ? 'selected' : '' ?>>Freelancer</option>
@@ -309,17 +309,17 @@
                 </label>
 
                 <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">Data de admissao</span>
+                    <span class="text-sm font-semibold text-gray-700">Data de admissão</span>
                     <input type="date" name="data_admissao" value="<?= $oldValue('data_admissao') ?>" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
                 <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">Numero da admissao</span>
+                    <span class="text-sm font-semibold text-gray-700">Número da admissão</span>
                     <input type="text" name="numero_admissao" value="<?= $oldValue('numero_admissao') ?>" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
                 <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">Situacao</span>
+                    <span class="text-sm font-semibold text-gray-700">Situação</span>
                     <select name="situacao" required class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                         <option value="Ativo" <?= $isChecked('situacao', 'Ativo', true) ? 'selected' : '' ?>>Ativo</option>
                         <option value="Inativo" <?= $isChecked('situacao', 'Inativo') ? 'selected' : '' ?>>Inativo</option>
@@ -331,8 +331,8 @@
 
         <section class="rounded-3xl border border-gray-200 bg-white shadow-sm js-vigilante-only<?= $selectedType === 'vigilante' ? '' : ' hidden' ?>">
             <div class="border-b border-gray-100 px-6 py-5">
-                <h3 class="text-lg font-bold text-gray-900">Dados de formacao do vigilante</h3>
-                <p class="mt-1 text-sm text-gray-500">Campos especificos para CNV, reciclagem e cursos complementares.</p>
+                <h3 class="text-lg font-bold text-gray-900">Dados de formação do vigilante</h3>
+                <p class="mt-1 text-sm text-gray-500">Campos específicos para CNV, reciclagem e cursos complementares.</p>
             </div>
 
             <div class="grid gap-5 px-6 py-6 md:grid-cols-2">
@@ -347,22 +347,22 @@
                 </label>
 
                 <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">Curso de formacao</span>
+                    <span class="text-sm font-semibold text-gray-700">Curso de formação</span>
                     <select name="curso_formacao" data-required-for="vigilante" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                         <option value="Sim" <?= $isChecked('curso_formacao', 'Sim', true) ? 'selected' : '' ?>>Sim</option>
-                        <option value="Nao" <?= $isChecked('curso_formacao', 'Nao') ? 'selected' : '' ?>>Nao</option>
+                        <option value="Nao" <?= $isChecked('curso_formacao', 'Nao') ? 'selected' : '' ?>>Não</option>
                     </select>
                 </label>
 
                 <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">Data da ultima reciclagem</span>
+                    <span class="text-sm font-semibold text-gray-700">Data da última reciclagem</span>
                     <input type="date" name="data_ultima_reciclagem" value="<?= $oldValue('data_ultima_reciclagem') ?>" data-required-for="vigilante" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
                 <label class="space-y-2 md:col-span-2">
-                    <span class="text-sm font-semibold text-gray-700">Situacao da reciclagem</span>
+                    <span class="text-sm font-semibold text-gray-700">Situação da reciclagem</span>
                     <select name="situacao_reciclagem" data-required-for="vigilante" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
-                        <option value="Valida" <?= $isChecked('situacao_reciclagem', 'Valida', true) ? 'selected' : '' ?>>Valida</option>
+                        <option value="Valida" <?= $isChecked('situacao_reciclagem', 'Valida', true) ? 'selected' : '' ?>>Válida</option>
                         <option value="Vencida" <?= $isChecked('situacao_reciclagem', 'Vencida') ? 'selected' : '' ?>>Vencida</option>
                         <option value="Em andamento" <?= $isChecked('situacao_reciclagem', 'Em andamento') ? 'selected' : '' ?>>Em andamento</option>
                     </select>
@@ -377,11 +377,11 @@
                         </label>
                         <label class="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
                             <input type="checkbox" name="outros_cursos[]" value="seguranca_eventos" <?= $hasCourse('seguranca_eventos') ? 'checked' : '' ?> class="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red">
-                            Seguranca de Eventos
+                            Segurança de Eventos
                         </label>
                         <label class="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
                             <input type="checkbox" name="outros_cursos[]" value="seguranca_vip" <?= $hasCourse('seguranca_vip') ? 'checked' : '' ?> class="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red">
-                            Seguranca VIP
+                            Segurança VIP
                         </label>
                     </div>
                 </div>
@@ -629,7 +629,7 @@
             }
 
             if (typeof window.Cropper !== 'function') {
-                setPhotoError('O editor de foto nao carregou corretamente. Recarregue a pagina e tente novamente.');
+                setPhotoError('O editor de foto não carregou corretamente. Recarregue a página e tente novamente.');
                 return;
             }
 
@@ -666,7 +666,7 @@
             };
 
             cropImage.onerror = () => {
-                setPhotoError('Nao foi possivel abrir a foto selecionada.');
+                setPhotoError('Não foi possível abrir a foto selecionada.');
                 closeCropModal();
             };
 
@@ -751,7 +751,7 @@
 
             const tryBuildBlob = (variantIndex = 0) => {
                 if (variantIndex >= outputVariants.length) {
-                    setPhotoError('Nao foi possivel preparar a foto dentro do limite de ' + maxPhotoUploadLabel + '. Escolha outra imagem e tente novamente.');
+                    setPhotoError('Não foi possível preparar a foto dentro do limite de ' + maxPhotoUploadLabel + '. Escolha outra imagem e tente novamente.');
                     return;
                 }
 
@@ -765,13 +765,13 @@
                 });
 
                 if (!canvas) {
-                    setPhotoError('Nao foi possivel gerar o recorte da foto.');
+                    setPhotoError('Não foi possível gerar o recorte da foto.');
                     return;
                 }
 
                 canvas.toBlob((blob) => {
                     if (!blob) {
-                        setPhotoError('Nao foi possivel gerar o arquivo final da foto.');
+                        setPhotoError('Não foi possível gerar o arquivo final da foto.');
                         return;
                     }
 

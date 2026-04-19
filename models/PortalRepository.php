@@ -57,7 +57,7 @@ class PortalRepository {
         return array_map(function ($row) {
             $row['veiculo'] = $row['modelo'] && $row['placa']
                 ? $row['modelo'] . ' - ' . $row['placa']
-                : 'Sem veiculo';
+                : 'Sem veículo';
             $row['status_label'] = $this->formatRoundStatus($row['status']);
             return $row;
         }, $rows);
@@ -77,7 +77,7 @@ class PortalRepository {
         );
 
         return array_map(function ($row) {
-            $row['tipo_label'] = $this->humanize($row['tipo']);
+            $row['tipo_label'] = $this->formatOccurrenceType($row['tipo']);
             return $row;
         }, $rows);
     }
@@ -168,8 +168,8 @@ class PortalRepository {
         $row['curso_seguranca_vip'] = $this->toBoolean($row['curso_seguranca_vip'] ?? false);
         $row['outros_cursos'] = array_values(array_filter([
             $row['curso_escolta_armada'] ? 'Escolta armada' : null,
-            $row['curso_seguranca_eventos'] ? 'Seguranca de eventos' : null,
-            $row['curso_seguranca_vip'] ? 'Seguranca VIP' : null,
+            $row['curso_seguranca_eventos'] ? 'Segurança de Eventos' : null,
+            $row['curso_seguranca_vip'] ? 'Segurança VIP' : null,
         ]));
 
         return $row;
@@ -200,11 +200,11 @@ class PortalRepository {
         );
 
         if ($target === null) {
-            throw new RuntimeException('Cadastro do colaborador nao encontrado.');
+            throw new RuntimeException('Cadastro do colaborador não encontrado.');
         }
 
         if ($this->toBoolean($target['has_rounds'] ?? false) || $this->toBoolean($target['has_checklists'] ?? false)) {
-            throw new RuntimeException('Nao e possivel excluir este colaborador porque existem registros operacionais vinculados ao cadastro.');
+            throw new RuntimeException('Não é possível excluir este colaborador porque existem registros operacionais vinculados ao cadastro.');
         }
 
         try {
@@ -242,15 +242,15 @@ class PortalRepository {
         }
 
         if ($fotoUrl === null || $fotoUrl === '') {
-            throw new RuntimeException('A foto do colaborador e obrigatoria para este cadastro.');
+            throw new RuntimeException('A foto do colaborador é obrigatória para este cadastro.');
         }
 
         if (strlen($cpf) !== 11) {
-            throw new RuntimeException('Informe um CPF valido com 11 digitos.');
+            throw new RuntimeException('Informe um CPF válido com 11 dígitos.');
         }
 
         if ($this->collaboratorCpfExists($cpf)) {
-            throw new RuntimeException('Ja existe um colaborador cadastrado com este CPF.');
+            throw new RuntimeException('Já existe um colaborador cadastrado com este CPF.');
         }
 
         foreach ([
@@ -258,19 +258,19 @@ class PortalRepository {
             'data_nascimento' => 'Informe a data de nascimento.',
             'telefone_principal' => 'Informe o telefone principal.',
             'telefone_familiar' => 'Informe o telefone familiar.',
-            'cep' => 'Informe o CEP do endereco.',
-            'logradouro' => 'Informe o logradouro do endereco.',
-            'numero' => 'Informe o numero do endereco.',
+            'cep' => 'Informe o CEP do endereço.',
+            'logradouro' => 'Informe o logradouro do endereço.',
+            'numero' => 'Informe o número do endereço.',
             'bairro' => 'Informe o bairro.',
             'cidade' => 'Informe a cidade.',
             'uf' => 'Informe a UF.',
-            'nome_mae' => 'Informe o nome da mae.',
-            'tipo_sanguineo' => 'Informe o tipo sanguineo.',
+            'nome_mae' => 'Informe o nome da mãe.',
+            'tipo_sanguineo' => 'Informe o tipo sanguíneo.',
             'fator_rh' => 'Informe o fator RH.',
-            'tipo_vinculo' => 'Informe o tipo de vinculo.',
-            'data_admissao' => 'Informe a data de admissao.',
-            'numero_admissao' => 'Informe o numero da admissao.',
-            'situacao' => 'Informe a situacao do colaborador.',
+            'tipo_vinculo' => 'Informe o tipo de vínculo.',
+            'data_admissao' => 'Informe a data de admissão.',
+            'numero_admissao' => 'Informe o número da admissão.',
+            'situacao' => 'Informe a situação do colaborador.',
         ] as $field => $message) {
             if ($this->nullIfBlank($payload[$field] ?? null) === null) {
                 throw new RuntimeException($message);
@@ -279,11 +279,11 @@ class PortalRepository {
 
         if ($tipoCadastro === 'vigilante') {
             foreach ([
-                'numero_cnv' => 'Informe o numero da CNV.',
+                'numero_cnv' => 'Informe o número da CNV.',
                 'validade_cnv' => 'Informe a validade da CNV.',
-                'curso_formacao' => 'Informe se o colaborador possui curso de formacao.',
-                'data_ultima_reciclagem' => 'Informe a data da ultima reciclagem.',
-                'situacao_reciclagem' => 'Informe a situacao da reciclagem.',
+                'curso_formacao' => 'Informe se o colaborador possui curso de formação.',
+                'data_ultima_reciclagem' => 'Informe a data da última reciclagem.',
+                'situacao_reciclagem' => 'Informe a situação da reciclagem.',
             ] as $field => $message) {
                 if ($this->nullIfBlank($payload[$field] ?? null) === null) {
                     throw new RuntimeException($message);
@@ -297,11 +297,11 @@ class PortalRepository {
         }
 
         if (!filter_var($emailAcesso, FILTER_VALIDATE_EMAIL)) {
-            throw new RuntimeException('Informe um e-mail de acesso valido.');
+            throw new RuntimeException('Informe um e-mail de acesso válido.');
         }
 
         if ($this->emailExists($emailAcesso)) {
-            throw new RuntimeException('Ja existe um usuario com este e-mail de acesso.');
+            throw new RuntimeException('Já existe um usuário com este e-mail de acesso.');
         }
 
         $senhaProvisoria = trim((string) ($payload['senha_provisoria'] ?? ''));
@@ -312,7 +312,7 @@ class PortalRepository {
         }
 
         if (strlen($senhaProvisoria) < 6) {
-            throw new RuntimeException('A senha provisoria deve ter pelo menos 6 caracteres.');
+            throw new RuntimeException('A senha provisória deve ter pelo menos 6 caracteres.');
         }
 
         $situacao = $this->normalizeEmploymentStatus($payload['situacao'] ?? 'Ativo');
@@ -324,7 +324,7 @@ class PortalRepository {
         $perfilId = $this->findProfileIdByName($perfilNome);
 
         if ($perfilId === null) {
-            throw new RuntimeException('O perfil necessario para este cadastro nao foi encontrado no banco.');
+            throw new RuntimeException('O perfil necessário para este cadastro não foi encontrado no banco.');
         }
 
         $outrosCursos = is_array($payload['outros_cursos'] ?? null) ? $payload['outros_cursos'] : [];
@@ -475,7 +475,7 @@ class PortalRepository {
                         ':usuario_id' => $usuario['id'],
                         ':cnh' => null,
                         ':validade_cnh' => null,
-                        ':formacao' => $cursoFormacao ? 'Curso de formacao concluido' : null,
+                        ':formacao' => $cursoFormacao ? 'Curso de formação concluído' : null,
                         ':validade_reciclagem' => null,
                         ':numero_cnv' => $this->nullIfBlank($payload['numero_cnv'] ?? null),
                         ':validade_cnv' => $this->nullIfBlank($payload['validade_cnv'] ?? null),
@@ -538,7 +538,7 @@ class PortalRepository {
         );
 
         if ($target === null) {
-            throw new RuntimeException('Cadastro do colaborador nao encontrado.');
+            throw new RuntimeException('Cadastro do colaborador não encontrado.');
         }
 
         $existingType = $this->normalizeRegistrationType(
@@ -547,7 +547,7 @@ class PortalRepository {
         $tipoCadastro = $this->normalizeRegistrationType($payload['tipo_cadastro'] ?? $existingType);
 
         if ($tipoCadastro !== $existingType) {
-            throw new RuntimeException('Nao e permitido alterar o tipo de cadastro de um colaborador existente.');
+            throw new RuntimeException('Não é permitido alterar o tipo de cadastro de um colaborador existente.');
         }
 
         $nomeCompleto = trim((string) ($payload['nome_completo'] ?? ''));
@@ -559,15 +559,15 @@ class PortalRepository {
         }
 
         if ($fotoUrl === '') {
-            throw new RuntimeException('A foto do colaborador e obrigatoria para este cadastro.');
+            throw new RuntimeException('A foto do colaborador é obrigatória para este cadastro.');
         }
 
         if (strlen($cpf) !== 11) {
-            throw new RuntimeException('Informe um CPF valido com 11 digitos.');
+            throw new RuntimeException('Informe um CPF válido com 11 dígitos.');
         }
 
         if ($this->collaboratorCpfExistsForOther($cpf, $collaboratorId)) {
-            throw new RuntimeException('Ja existe um colaborador cadastrado com este CPF.');
+            throw new RuntimeException('Já existe um colaborador cadastrado com este CPF.');
         }
 
         foreach ([
@@ -575,19 +575,19 @@ class PortalRepository {
             'data_nascimento' => 'Informe a data de nascimento.',
             'telefone_principal' => 'Informe o telefone principal.',
             'telefone_familiar' => 'Informe o telefone familiar.',
-            'cep' => 'Informe o CEP do endereco.',
-            'logradouro' => 'Informe o logradouro do endereco.',
-            'numero' => 'Informe o numero do endereco.',
+            'cep' => 'Informe o CEP do endereço.',
+            'logradouro' => 'Informe o logradouro do endereço.',
+            'numero' => 'Informe o número do endereço.',
             'bairro' => 'Informe o bairro.',
             'cidade' => 'Informe a cidade.',
             'uf' => 'Informe a UF.',
-            'nome_mae' => 'Informe o nome da mae.',
-            'tipo_sanguineo' => 'Informe o tipo sanguineo.',
+            'nome_mae' => 'Informe o nome da mãe.',
+            'tipo_sanguineo' => 'Informe o tipo sanguíneo.',
             'fator_rh' => 'Informe o fator RH.',
-            'tipo_vinculo' => 'Informe o tipo de vinculo.',
-            'data_admissao' => 'Informe a data de admissao.',
-            'numero_admissao' => 'Informe o numero da admissao.',
-            'situacao' => 'Informe a situacao do colaborador.',
+            'tipo_vinculo' => 'Informe o tipo de vínculo.',
+            'data_admissao' => 'Informe a data de admissão.',
+            'numero_admissao' => 'Informe o número da admissão.',
+            'situacao' => 'Informe a situação do colaborador.',
         ] as $field => $message) {
             if ($this->nullIfBlank($payload[$field] ?? null) === null) {
                 throw new RuntimeException($message);
@@ -596,11 +596,11 @@ class PortalRepository {
 
         if ($tipoCadastro === 'vigilante') {
             foreach ([
-                'numero_cnv' => 'Informe o numero da CNV.',
+                'numero_cnv' => 'Informe o número da CNV.',
                 'validade_cnv' => 'Informe a validade da CNV.',
-                'curso_formacao' => 'Informe se o colaborador possui curso de formacao.',
-                'data_ultima_reciclagem' => 'Informe a data da ultima reciclagem.',
-                'situacao_reciclagem' => 'Informe a situacao da reciclagem.',
+                'curso_formacao' => 'Informe se o colaborador possui curso de formação.',
+                'data_ultima_reciclagem' => 'Informe a data da última reciclagem.',
+                'situacao_reciclagem' => 'Informe a situação da reciclagem.',
             ] as $field => $message) {
                 if ($this->nullIfBlank($payload[$field] ?? null) === null) {
                     throw new RuntimeException($message);
@@ -617,16 +617,16 @@ class PortalRepository {
         }
 
         if (!filter_var($emailAcesso, FILTER_VALIDATE_EMAIL)) {
-            throw new RuntimeException('Informe um e-mail de acesso valido.');
+            throw new RuntimeException('Informe um e-mail de acesso válido.');
         }
 
         if ($this->emailExistsForOther($emailAcesso, $target['usuario_id'])) {
-            throw new RuntimeException('Ja existe um usuario com este e-mail de acesso.');
+            throw new RuntimeException('Já existe um usuário com este e-mail de acesso.');
         }
 
         $senhaProvisoria = trim((string) ($payload['senha_provisoria'] ?? ''));
         if ($senhaProvisoria !== '' && strlen($senhaProvisoria) < 6) {
-            throw new RuntimeException('A senha provisoria deve ter pelo menos 6 caracteres.');
+            throw new RuntimeException('A senha provisória deve ter pelo menos 6 caracteres.');
         }
 
         $situacao = $this->normalizeEmploymentStatus($payload['situacao'] ?? 'Ativo');
@@ -638,7 +638,7 @@ class PortalRepository {
         $perfilId = $this->findProfileIdByName($perfilNome);
 
         if ($perfilId === null) {
-            throw new RuntimeException('O perfil necessario para este cadastro nao foi encontrado no banco.');
+            throw new RuntimeException('O perfil necessário para este cadastro não foi encontrado no banco.');
         }
 
         $outrosCursos = is_array($payload['outros_cursos'] ?? null) ? $payload['outros_cursos'] : [];
@@ -805,7 +805,7 @@ class PortalRepository {
                     ':usuario_id' => $target['usuario_id'],
                     ':cnh' => null,
                     ':validade_cnh' => null,
-                    ':formacao' => $cursoFormacao ? 'Curso de formacao concluido' : null,
+                    ':formacao' => $cursoFormacao ? 'Curso de formação concluído' : null,
                     ':validade_reciclagem' => null,
                     ':numero_cnv' => $this->nullIfBlank($payload['numero_cnv'] ?? null),
                     ':validade_cnv' => $this->nullIfBlank($payload['validade_cnv'] ?? null),
@@ -946,7 +946,7 @@ class PortalRepository {
     public function getContracts() {
         $rows = $this->fetchAll(
             "SELECT c.id,
-                    COALESCE(cli.nome_razao_social, u.nome, 'Sem vinculo') AS cliente,
+                    COALESCE(cli.nome_razao_social, u.nome, 'Sem vínculo') AS cliente,
                     c.tipo,
                     c.valor,
                     c.status,
@@ -1121,7 +1121,7 @@ class PortalRepository {
 
         $vigilanteId = $this->findVigilanteIdByUserId($userId);
         if ($vigilanteId === null) {
-            throw new RuntimeException('Seu usuario nao possui cadastro de vigilante.');
+            throw new RuntimeException('Seu usuário não possui cadastro de vigilante.');
         }
 
         try {
@@ -1136,15 +1136,15 @@ class PortalRepository {
             );
 
             if ($vehicle === null) {
-                throw new RuntimeException('Veiculo nao encontrado.');
+                throw new RuntimeException('Veículo não encontrado.');
             }
 
             if (strtolower((string) $vehicle['status']) !== 'disponivel') {
-                throw new RuntimeException('Este veiculo nao esta disponivel para iniciar uma nova ronda.');
+                throw new RuntimeException('Este veículo não está disponível para iniciar uma nova ronda.');
             }
 
             if ($kmInicial < (int) $vehicle['km_atual']) {
-                throw new RuntimeException('A quilometragem informada nao pode ser menor que a atual do veiculo.');
+                throw new RuntimeException('A quilometragem informada não pode ser menor que a atual do veículo.');
             }
 
             $round = $this->run(
@@ -1228,7 +1228,7 @@ class PortalRepository {
         }
 
         if ($roundId === null || $roundId === '') {
-            throw new RuntimeException('Nenhuma ronda ativa foi encontrada para finalizacao.');
+            throw new RuntimeException('Nenhuma ronda ativa foi encontrada para finalização.');
         }
 
         try {
@@ -1248,7 +1248,7 @@ class PortalRepository {
             );
 
             if ($round === null) {
-                throw new RuntimeException('Ronda nao encontrada para este vigilante.');
+                throw new RuntimeException('Ronda não encontrada para este vigilante.');
             }
 
             if (strtolower((string) $round['status']) !== 'em_andamento') {
@@ -1576,9 +1576,9 @@ class PortalRepository {
 
     private function formatVehicleStatus($status) {
         $map = [
-            'disponivel' => 'Disponivel',
+            'disponivel' => 'Disponível',
             'em_uso' => 'Em Uso',
-            'manutencao' => 'Manutencao',
+            'manutencao' => 'Manutenção',
         ];
 
         $key = strtolower((string) $status);
@@ -1589,7 +1589,7 @@ class PortalRepository {
     private function formatRoundStatus($status) {
         $map = [
             'em_andamento' => 'Em Rota',
-            'concluido' => 'Concluido',
+            'concluido' => 'Concluído',
         ];
 
         $key = strtolower((string) $status);
@@ -1654,6 +1654,21 @@ class PortalRepository {
         $map = [
             'receita' => 'Receita',
             'despesa' => 'Despesa',
+        ];
+
+        $key = strtolower((string) $type);
+
+        return $map[$key] ?? $this->humanize($key);
+    }
+
+    private function formatOccurrenceType($type) {
+        $map = [
+            'suspeita' => 'Atividade Suspeita',
+            'invasao' => 'Invasão / Arrombamento',
+            'veiculo_suspeito' => 'Veículo Suspeito',
+            'pane' => 'Pane Mecânica / Elétrica',
+            'apoio' => 'Solicitação de Apoio',
+            'outros' => 'Outros',
         ];
 
         $key = strtolower((string) $type);

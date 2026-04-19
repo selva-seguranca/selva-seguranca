@@ -30,7 +30,7 @@ class FinanceiroController {
             $lancamentos = $repository->getFinancialEntries();
             $agendaFinanceira = $repository->getUpcomingFinancialEntries();
         } catch (Throwable $e) {
-            $dbWarning = 'Nao foi possivel carregar os dados financeiros direto do banco.';
+            $dbWarning = 'Não foi possível carregar os dados financeiros direto do banco.';
         }
 
         View::render('financeiro/index', [

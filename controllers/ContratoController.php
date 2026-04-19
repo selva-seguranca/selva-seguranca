@@ -18,11 +18,11 @@ class ContratoController {
             $repository = new PortalRepository();
             $contratos = $repository->getContracts();
         } catch (Throwable $e) {
-            $dbWarning = 'Nao foi possivel carregar os contratos direto do banco.';
+            $dbWarning = 'Não foi possível carregar os contratos direto do banco.';
         }
 
         View::render('contratos/index', [
-            'pageTitle' => 'Gestao de Contratos',
+            'pageTitle' => 'Gestão de Contratos',
             'contratos' => $contratos,
             'dbWarning' => $dbWarning,
         ]);

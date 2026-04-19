@@ -11,7 +11,7 @@ class DebugController {
     public function db() {
         if (!Env::isTruthy('APP_DEBUG') && !Env::isTruthy('DB_DEBUG_MESSAGE')) {
             http_response_code(404);
-            echo '404 - Pagina nao encontrada.';
+            echo '404 - Página não encontrada.';
             return;
         }
 

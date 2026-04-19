@@ -44,7 +44,7 @@
 
         <div class="mt-6 flex space-x-2">
             <button class="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 py-2 rounded-lg text-sm font-medium transition-colors">Ver Detalhes</button>
-            <button class="flex-1 bg-gray-800 hover:bg-gray-900 text-white py-2 rounded-lg text-sm font-medium transition-colors shadow">PDF / Orcamento</button>
+            <button class="flex-1 bg-gray-800 hover:bg-gray-900 text-white py-2 rounded-lg text-sm font-medium transition-colors shadow">PDF / Orçamento</button>
         </div>
     </div>
     <?php endforeach; ?>

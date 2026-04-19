@@ -40,7 +40,7 @@ class RhController {
                     $createModalState['old'] = $this->defaultFormData();
 
                     if ($actionFlash['error'] === null) {
-                        $actionFlash['error'] = 'Selecione um colaborador valido para editar.';
+                        $actionFlash['error'] = 'Selecione um colaborador válido para editar.';
                     }
                 } else {
                     $editCollaborator = $repository->getCollaboratorDetails($editCollaboratorId);
@@ -53,7 +53,7 @@ class RhController {
                         $createModalState['old'] = $this->defaultFormData();
 
                         if ($actionFlash['error'] === null) {
-                            $actionFlash['error'] = 'Cadastro do colaborador nao encontrado.';
+                            $actionFlash['error'] = 'Cadastro do colaborador não encontrado.';
                         }
                     } else {
                         if ($createModalState['hasOldInput']) {
@@ -76,11 +76,11 @@ class RhController {
                 $viewCollaborator = $repository->getCollaboratorDetails($viewCollaboratorId);
 
                 if ($viewCollaborator === null && $actionFlash['error'] === null) {
-                    $actionFlash['error'] = 'Cadastro do colaborador nao encontrado.';
+                    $actionFlash['error'] = 'Cadastro do colaborador não encontrado.';
                 }
             }
         } catch (Throwable $e) {
-            $dbWarning = 'Nao foi possivel carregar os dados de RH direto do banco.';
+            $dbWarning = 'Não foi possível carregar os dados de RH direto do banco.';
         }
 
         View::render('rh/index', [
@@ -170,7 +170,7 @@ class RhController {
 
         $collaboratorId = trim((string) ($_POST['colaborador_id'] ?? ''));
         if ($collaboratorId === '') {
-            $_SESSION['rh_action_error'] = 'Selecione um colaborador valido para editar.';
+            $_SESSION['rh_action_error'] = 'Selecione um colaborador válido para editar.';
             header('Location: /rh');
             exit;
         }
@@ -186,7 +186,7 @@ class RhController {
             $repository = new PortalRepository();
 
             if ($repository->getCollaboratorDetails($collaboratorId) === null) {
-                throw new \RuntimeException('Cadastro do colaborador nao encontrado.');
+                throw new \RuntimeException('Cadastro do colaborador não encontrado.');
             }
 
             $photo = $this->storeOptionalFile(
@@ -237,7 +237,7 @@ class RhController {
         $collaboratorId = trim((string) ($_POST['colaborador_id'] ?? ''));
 
         if ($collaboratorId === '') {
-            $_SESSION['rh_action_error'] = 'Selecione um colaborador valido para excluir.';
+            $_SESSION['rh_action_error'] = 'Selecione um colaborador válido para excluir.';
             header('Location: /rh');
             exit;
         }
@@ -247,17 +247,17 @@ class RhController {
             $collaborator = $repository->getCollaboratorDetails($collaboratorId);
 
             if ($collaborator === null) {
-                throw new \RuntimeException('Cadastro do colaborador nao encontrado.');
+                throw new \RuntimeException('Cadastro do colaborador não encontrado.');
             }
 
             if (($collaborator['user_id'] ?? null) === ($_SESSION['user_id'] ?? null)) {
-                throw new \RuntimeException('Nao e possivel excluir o usuario atualmente logado.');
+                throw new \RuntimeException('Não é possível excluir o usuário atualmente logado.');
             }
 
             $result = $repository->deleteCollaboratorRegistration($collaboratorId);
             $this->deleteCollaboratorPhoto($result['photo_url'] ?? null);
 
-            $_SESSION['rh_action_success'] = 'Colaborador excluido com sucesso.';
+            $_SESSION['rh_action_success'] = 'Colaborador excluído com sucesso.';
         } catch (Throwable $e) {
             $_SESSION['rh_action_error'] = $e->getMessage();
         }
@@ -462,20 +462,20 @@ class RhController {
         $modulos = [
             'seguranca_privada' => [
                 'slug' => 'seguranca_privada',
-                'title' => 'COLABORADORES SELVA SEGURANCA PRIVADA',
-                'subtitle' => 'Base administrativa, operacional e tecnica da operacao principal.',
-                'roles' => ['Administrativo', 'Vigilante', 'Tecnico'],
+                'title' => 'COLABORADORES SELVA SEGURANÇA PRIVADA',
+                'subtitle' => 'Base administrativa, operacional e técnica da operação principal.',
+                'roles' => ['Administrativo', 'Vigilante', 'Técnico'],
                 'colaboradores' => [],
                 'role_counts' => [
                     'Administrativo' => 0,
                     'Vigilante' => 0,
-                    'Tecnico' => 0,
+                    'Técnico' => 0,
                 ],
             ],
             'servicos_terceirizacoes' => [
                 'slug' => 'servicos_terceirizacoes',
-                'title' => 'COLABORADORES SELVA SERVICOS E TERCEIRIZACOES',
-                'subtitle' => 'Equipe dedicada a postos de apoio, portaria e servicos terceirizados.',
+                'title' => 'COLABORADORES SELVA SERVIÇOS E TERCEIRIZAÇÕES',
+                'subtitle' => 'Equipe dedicada a postos de apoio, portaria e serviços terceirizados.',
                 'roles' => ['Porteiro', 'Vigitante'],
                 'colaboradores' => [],
                 'role_counts' => [

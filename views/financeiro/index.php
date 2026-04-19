@@ -1,14 +1,14 @@
 <?php
     $resumoCards = [
         [
-            'label' => 'Receitas do Mes',
+            'label' => 'Receitas do Mês',
             'valor' => $summary['receitas_mes'] ?? 0,
             'icon' => 'ph-trend-up',
             'tone' => 'emerald',
             'suffix' => '',
         ],
         [
-            'label' => 'Despesas do Mes',
+            'label' => 'Despesas do Mês',
             'valor' => $summary['despesas_mes'] ?? 0,
             'icon' => 'ph-trend-down',
             'tone' => 'rose',
@@ -22,7 +22,7 @@
             'suffix' => '',
         ],
         [
-            'label' => 'Lancamentos Atrasados',
+            'label' => 'Lançamentos Atrasados',
             'valor' => $summary['atrasados'] ?? 0,
             'icon' => 'ph-warning-circle',
             'tone' => (($summary['atrasados'] ?? 0) > 0 ? 'amber' : 'slate'),
@@ -65,15 +65,15 @@
                 <div class="mb-3 inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-red-100">
                     Painel Financeiro
                 </div>
-                <h2 class="text-2xl font-bold leading-tight md:text-3xl">Visao consolidada do fluxo financeiro da operacao</h2>
+                <h2 class="text-2xl font-bold leading-tight md:text-3xl">Visão consolidada do fluxo financeiro da operação</h2>
                 <p class="mt-3 text-sm text-gray-300 md:text-base">
-                    Acompanhe receitas, despesas, titulos pendentes e vencimentos em um unico painel conectado ao banco de dados.
+                    Acompanhe receitas, despesas, títulos pendentes e vencimentos em um único painel conectado ao banco de dados.
                 </p>
             </div>
 
             <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
                 <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                    <p class="text-xs uppercase tracking-wide text-gray-400">Recebido no Mes</p>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Recebido no Mês</p>
                     <p class="mt-1 text-lg font-semibold"><?= $fmtMoney($summary['recebido_mes'] ?? 0) ?></p>
                 </div>
                 <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
@@ -116,8 +116,8 @@
         <div class="rounded-3xl border border-gray-200 bg-white shadow-sm">
             <div class="flex items-center justify-between border-b border-gray-100 px-6 py-5">
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-900">Lancamentos Financeiros</h3>
-                    <p class="mt-1 text-sm text-gray-500">Titulos ordenados por urgencia e vencimento.</p>
+                    <h3 class="text-lg font-semibold text-gray-900">Lançamentos Financeiros</h3>
+                    <p class="mt-1 text-sm text-gray-500">Títulos ordenados por urgência e vencimento.</p>
                 </div>
                 <div class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-600">
                     <?= count($lancamentos) ?> registro(s)
@@ -126,7 +126,7 @@
 
             <?php if (empty($lancamentos)): ?>
                 <div class="px-6 py-10 text-sm text-gray-500">
-                    Nenhum lancamento encontrado na tabela financeiro.
+                    Nenhum lançamento encontrado na tabela financeiro.
                 </div>
             <?php else: ?>
                 <div class="hidden overflow-x-auto md:block">
@@ -134,7 +134,7 @@
                         <thead class="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                             <tr>
                                 <th class="px-6 py-4 font-semibold">Tipo</th>
-                                <th class="px-6 py-4 font-semibold">Descricao</th>
+                                <th class="px-6 py-4 font-semibold">Descrição</th>
                                 <th class="px-6 py-4 font-semibold">Vencimento</th>
                                 <th class="px-6 py-4 font-semibold">Pagamento</th>
                                 <th class="px-6 py-4 font-semibold">Valor</th>
@@ -217,12 +217,12 @@
             <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
                 <div class="border-b border-gray-100 px-6 py-5">
                     <h3 class="text-lg font-semibold text-gray-900">Agenda Financeira</h3>
-                    <p class="mt-1 text-sm text-gray-500">Proximos titulos abertos ou vencidos aguardando baixa.</p>
+                    <p class="mt-1 text-sm text-gray-500">Próximos títulos abertos ou vencidos aguardando baixa.</p>
                 </div>
 
                 <?php if (empty($agendaFinanceira)): ?>
                     <div class="px-6 py-10 text-sm text-gray-500">
-                        Nenhum titulo pendente encontrado.
+                        Nenhum título pendente encontrado.
                     </div>
                 <?php else: ?>
                     <div class="divide-y divide-gray-100">
@@ -257,10 +257,10 @@
             </section>
 
             <section class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-                <h3 class="text-lg font-semibold text-gray-900">Leitura Rapida</h3>
+                <h3 class="text-lg font-semibold text-gray-900">Leitura Rápida</h3>
                 <div class="mt-5 space-y-4">
                     <div class="rounded-2xl bg-gray-50 p-4">
-                        <p class="text-xs uppercase tracking-wide text-gray-400">Disponivel para receber</p>
+                        <p class="text-xs uppercase tracking-wide text-gray-400">Disponível para receber</p>
                         <p class="mt-2 text-2xl font-black text-emerald-600"><?= $fmtMoney($summary['a_receber'] ?? 0) ?></p>
                     </div>
                     <div class="rounded-2xl bg-gray-50 p-4">

@@ -1,18 +1,18 @@
 <div class="flex justify-between items-center mb-6">
     <div class="flex space-x-3 text-sm">
-        <button class="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-gray-50">Visualizacao: Mensal</button>
+        <button class="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-gray-50">Visualização: Mensal</button>
         <span class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg font-medium"><?= htmlspecialchars($calendarTitle) ?></span>
     </div>
     <a href="#" class="bg-brand-red hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium shadow transition-colors flex items-center">
         <i class="ph ph-plus text-lg mr-2"></i>
-        Novo Plantao
+        Novo Plantão
     </a>
 </div>
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-    <h3 class="text-lg font-semibold text-gray-800 mb-4">Plantoes do Mes</h3>
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">Plantões do Mês</h3>
     <?php if (empty($plantoes)): ?>
-        <p class="text-sm text-gray-500">Nenhuma ronda cadastrada para este periodo.</p>
+        <p class="text-sm text-gray-500">Nenhuma ronda cadastrada para este período.</p>
     <?php else: ?>
         <div class="space-y-4">
             <?php foreach($plantoes as $p): ?>

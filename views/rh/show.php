@@ -5,7 +5,7 @@
         return;
     }
 
-    $detailValue = function ($value, $fallback = 'Nao informado') {
+    $detailValue = function ($value, $fallback = 'Não informado') {
         $value = trim((string) $value);
         return $value !== '' ? htmlspecialchars($value, ENT_QUOTES, 'UTF-8') : $fallback;
     };
@@ -74,7 +74,7 @@
                         <p class="mt-1 break-all font-semibold text-gray-800"><?= $detailValue($viewCollaborator['email'] ?? null) ?></p>
                     </div>
                     <div class="rounded-2xl bg-gray-50 px-4 py-3">
-                        <p class="text-[11px] uppercase tracking-wide text-gray-400">Admissao</p>
+                        <p class="text-[11px] uppercase tracking-wide text-gray-400">Admissão</p>
                         <p class="mt-1 font-semibold text-gray-800"><?= $detailValue($viewCollaborator['data_admissao'] ?? null) ?></p>
                     </div>
                 </div>
@@ -99,7 +99,7 @@
                     <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['data_nascimento'] ?? null) ?></p>
                 </div>
                 <div>
-                    <p class="text-xs uppercase tracking-wide text-gray-400">Nome da mae</p>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Nome da mãe</p>
                     <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['nome_mae'] ?? null) ?></p>
                 </div>
                 <div>
@@ -111,7 +111,7 @@
                     <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['telefone_familiar'] ?? null) ?></p>
                 </div>
                 <div>
-                    <p class="text-xs uppercase tracking-wide text-gray-400">Tipo sanguineo</p>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Tipo sanguíneo</p>
                     <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['tipo_sanguineo'] ?? null) ?></p>
                 </div>
                 <div>
@@ -122,7 +122,7 @@
         </article>
 
         <article class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h4 class="text-lg font-bold text-gray-900">Endereco</h4>
+            <h4 class="text-lg font-bold text-gray-900">Endereço</h4>
             <div class="mt-5 grid gap-4 sm:grid-cols-2">
                 <div>
                     <p class="text-xs uppercase tracking-wide text-gray-400">CEP</p>
@@ -137,7 +137,7 @@
                     <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['logradouro'] ?? null) ?></p>
                 </div>
                 <div>
-                    <p class="text-xs uppercase tracking-wide text-gray-400">Numero</p>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Número</p>
                     <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['numero'] ?? null) ?></p>
                 </div>
                 <div>
@@ -153,7 +153,7 @@
                     <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['cidade'] ?? null) ?></p>
                 </div>
                 <div class="sm:col-span-2">
-                    <p class="text-xs uppercase tracking-wide text-gray-400">Endereco completo</p>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Endereço completo</p>
                     <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['endereco_completo'] ?? null) ?></p>
                 </div>
             </div>
@@ -172,11 +172,11 @@
                 <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['departamento'] ?? null) ?></p>
             </div>
             <div>
-                <p class="text-xs uppercase tracking-wide text-gray-400">Tipo de vinculo</p>
+                <p class="text-xs uppercase tracking-wide text-gray-400">Tipo de vínculo</p>
                 <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['tipo_vinculo'] ?? null) ?></p>
             </div>
             <div>
-                <p class="text-xs uppercase tracking-wide text-gray-400">Numero da admissao</p>
+                <p class="text-xs uppercase tracking-wide text-gray-400">Número da admissão</p>
                 <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['numero_admissao'] ?? null) ?></p>
             </div>
         </div>
@@ -187,7 +187,7 @@
             <h4 class="text-lg font-bold text-gray-900">Dados de vigilante</h4>
             <div class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div>
-                    <p class="text-xs uppercase tracking-wide text-gray-400">Numero da CNV</p>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Número da CNV</p>
                     <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['numero_cnv'] ?? null) ?></p>
                 </div>
                 <div>
@@ -195,15 +195,15 @@
                     <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['validade_cnv'] ?? null) ?></p>
                 </div>
                 <div>
-                    <p class="text-xs uppercase tracking-wide text-gray-400">Curso de formacao</p>
-                    <p class="mt-1 font-medium text-gray-800"><?= !empty($viewCollaborator['curso_formacao_concluido']) ? 'Sim' : 'Nao' ?></p>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Curso de formação</p>
+                    <p class="mt-1 font-medium text-gray-800"><?= !empty($viewCollaborator['curso_formacao_concluido']) ? 'Sim' : 'Não' ?></p>
                 </div>
                 <div>
-                    <p class="text-xs uppercase tracking-wide text-gray-400">Ultima reciclagem</p>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Última reciclagem</p>
                     <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['data_ultima_reciclagem'] ?? null) ?></p>
                 </div>
                 <div class="sm:col-span-2 xl:col-span-4">
-                    <p class="text-xs uppercase tracking-wide text-gray-400">Situacao da reciclagem</p>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Situação da reciclagem</p>
                     <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['situacao_reciclagem'] ?? null) ?></p>
                 </div>
             </div>

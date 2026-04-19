@@ -33,7 +33,7 @@ class VigilanteController {
 
             $veiculos = $repository->getChecklistVehicles();
         } catch (Throwable $e) {
-            $dbWarning = 'Nao foi possivel carregar os veiculos disponiveis.';
+            $dbWarning = 'Não foi possível carregar os veículos disponíveis.';
         }
 
         View::render('vigilante/ronda', [
@@ -107,7 +107,7 @@ class VigilanteController {
                 'ronda' => $ronda,
             ], null);
         } catch (Throwable $e) {
-            $_SESSION['ronda_error'] = 'Nao foi possivel carregar a ronda ativa.';
+            $_SESSION['ronda_error'] = 'Não foi possível carregar a ronda ativa.';
             header("Location: /vigilante/ronda");
             exit;
         }
@@ -117,28 +117,28 @@ class VigilanteController {
         if (!Auth::check()) {
             header('Content-Type: application/json');
             http_response_code(401);
-            echo json_encode(['success' => false, 'error' => 'Sessao expirada.']);
+            echo json_encode(['success' => false, 'error' => 'Sessão expirada.']);
             exit;
         }
 
         if (!Auth::hasAnyProfile(['Vigilante'])) {
             header('Content-Type: application/json');
             http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Acesso negado para registrar ocorrencias.']);
+            echo json_encode(['success' => false, 'error' => 'Acesso negado para registrar ocorrências.']);
             exit;
         }
 
         try {
             $rondaId = $_POST['ronda_id'] ?? ($_SESSION['ronda_id'] ?? null);
             if (!$rondaId) {
-                throw new \RuntimeException('Ronda nao identificada.');
+                throw new \RuntimeException('Ronda não identificada.');
             }
 
             $repository = new PortalRepository();
 
             $ronda = $repository->getRoundByIdForUser($rondaId, $_SESSION['user_id']);
             if ($ronda === null) {
-                throw new \RuntimeException('Ronda nao encontrada para este vigilante.');
+                throw new \RuntimeException('Ronda não encontrada para este vigilante.');
             }
              
             $fotoUrl = null;
@@ -179,7 +179,7 @@ class VigilanteController {
             echo json_encode([
                 'success' => true, 
                 'ocorrencia' => $ocorrencia,
-                'message' => 'Ocorrencia registrada com sucesso.'
+                'message' => 'Ocorrência registrada com sucesso.'
             ]);
         } catch (Throwable $e) {
             header('Content-Type: application/json');

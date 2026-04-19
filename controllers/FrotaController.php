@@ -18,11 +18,11 @@ class FrotaController {
             $repository = new PortalRepository();
             $veiculos = $repository->getVehicles();
         } catch (Throwable $e) {
-            $dbWarning = 'Nao foi possivel carregar a frota direto do banco.';
+            $dbWarning = 'Não foi possível carregar a frota direto do banco.';
         }
 
         View::render('frota/index', [
-            'pageTitle' => 'Gestao de Frota',
+            'pageTitle' => 'Gestão de Frota',
             'veiculos' => $veiculos,
             'dbWarning' => $dbWarning,
         ]);

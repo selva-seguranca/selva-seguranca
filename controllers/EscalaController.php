@@ -21,11 +21,11 @@ class EscalaController {
             $repository = new PortalRepository();
             $plantoes = $repository->getScaleEntries($monthStart, $monthEnd);
         } catch (Throwable $e) {
-            $dbWarning = 'Nao foi possivel carregar as escalas a partir do banco.';
+            $dbWarning = 'Não foi possível carregar as escalas a partir do banco.';
         }
 
         View::render('escalas/calendario', [
-            'pageTitle' => 'Escalas e Plantoes',
+            'pageTitle' => 'Escalas e Plantões',
             'plantoes' => $plantoes,
             'calendarTitle' => $monthStart->format('m/Y'),
             'calendarDays' => $this->buildCalendarDays($monthStart, $plantoes),

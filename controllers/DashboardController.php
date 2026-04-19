@@ -33,7 +33,7 @@ class DashboardController {
             $rondasAtivas = $repository->getActiveRounds();
             $ocorrenciasRecentes = $repository->getRecentOccurrences();
         } catch (Throwable $e) {
-            $dbWarning = 'Nao foi possivel carregar os indicadores em tempo real do banco.';
+            $dbWarning = 'Não foi possível carregar os indicadores em tempo real do banco.';
         }
 
         View::render('dashboard/index', [

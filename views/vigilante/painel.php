@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ronda Ativa - Selva Seguranca</title>
+    <title>Ronda Ativa - Selva Segurança</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -46,8 +46,8 @@
                 <p class="text-xs uppercase tracking-wider text-gray-400 mb-2">Ronda Atual</p>
                 <div class="flex items-center justify-between gap-4">
                     <div>
-                        <p class="text-lg font-semibold text-white"><?= htmlspecialchars(($ronda['modelo'] ?? 'Sem veiculo') . (!empty($ronda['placa']) ? ' - ' . $ronda['placa'] : '')) ?></p>
-                        <p class="text-sm text-gray-400">Inicio: <?= date('d/m/Y H:i', strtotime($ronda['data_inicio'])) ?></p>
+                        <p class="text-lg font-semibold text-white"><?= htmlspecialchars(($ronda['modelo'] ?? 'Sem veículo') . (!empty($ronda['placa']) ? ' - ' . $ronda['placa'] : '')) ?></p>
+                        <p class="text-sm text-gray-400">Início: <?= date('d/m/Y H:i', strtotime($ronda['data_inicio'])) ?></p>
                     </div>
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-300">
                         <?= htmlspecialchars($ronda['status']) ?>
@@ -68,7 +68,7 @@
                             <p class="text-gray-300">KM inicial: <span class="text-white font-semibold"><?= number_format((int) $ronda['km_inicial'], 0, ',', '.') ?> km</span></p>
                         <?php endif; ?>
                         <?php if (!empty($ronda['combustivel_nivel'])): ?>
-                            <p class="text-gray-300">Combustivel: <span class="text-white font-semibold"><?= htmlspecialchars(ucfirst($ronda['combustivel_nivel'])) ?></span></p>
+                            <p class="text-gray-300">Combustível: <span class="text-white font-semibold"><?= htmlspecialchars(ucfirst($ronda['combustivel_nivel'])) ?></span></p>
                         <?php endif; ?>
                         <?php if (!empty($ronda['foto_painel_url'])): ?>
                             <a href="<?= htmlspecialchars($ronda['foto_painel_url']) ?>" target="_blank" rel="noopener noreferrer" class="inline-flex text-sm text-brand-red font-medium">Abrir foto do painel</a>
@@ -81,7 +81,7 @@
         <div class="w-full h-48 bg-gray-800 rounded-xl border border-gray-700 flex flex-col items-center justify-center relative overflow-hidden">
             <div class="absolute inset-0 opacity-20" style="background-image: url('data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%239C92AC\' fill-opacity=\'0.4\' fill-rule=\'evenodd\'%3E%3Ccircle cx=\'3\' cy=\'3\' r=\'3\'/%3E%3Ccircle cx=\'13\' cy=\'13\' r=\'3\'/%3E%3C/g%3E%3C/svg%3E');"></div>
             <i class="ph ph-map-pin-line text-4xl text-brand-red mb-2 z-10"></i>
-            <p class="text-sm font-medium z-10" id="location-text">Obtendo localizacao GPS...</p>
+            <p class="text-sm font-medium z-10" id="location-text">Obtendo localização GPS...</p>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -96,7 +96,7 @@
                 <div class="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center text-yellow-500">
                     <i class="ph ph-warning-circle text-2xl"></i>
                 </div>
-                <span class="text-sm font-medium">Ocorrencia</span>
+                <span class="text-sm font-medium">Ocorrência</span>
             </button>
 
             <label class="bg-brand-gray border border-gray-700 rounded-xl p-5 flex flex-col items-center justify-center space-y-2 hover:bg-gray-800 transition-colors col-span-2 relative overflow-hidden cursor-pointer">
@@ -104,13 +104,13 @@
                 <div class="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center text-brand-red mb-1">
                     <i class="ph ph-camera text-2xl"></i>
                 </div>
-                <span class="text-sm font-medium">Capturar Evidencia (Foto/Video)</span>
+                <span class="text-sm font-medium">Capturar Evidência (Foto/Vídeo)</span>
                 <input type="file" id="evidencia-direta" capture="environment" accept="image/*,video/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="enviarEvidenciaDireta(this)">
             </label>
         </div>
     </div>
 
-    <!-- Modal Ocorrencia -->
+    <!-- Modal Ocorrência -->
     <div id="modal-ocorrencia" class="fixed inset-0 z-[100] hidden">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeOcorrencia()"></div>
         <div class="absolute bottom-0 w-full bg-brand-gray border-t border-gray-700 rounded-t-3xl p-6 transform transition-transform translate-y-full" id="modal-content">
@@ -118,7 +118,7 @@
             
             <h2 class="text-xl font-bold mb-6 flex items-center">
                 <i class="ph ph-warning-circle text-yellow-500 mr-2"></i>
-                Nova Ocorrencia
+                Nova Ocorrência
             </h2>
 
             <form id="form-ocorrencia" class="space-y-4">
@@ -127,19 +127,19 @@
                 <input type="hidden" name="longitude" id="input-lng">
 
                 <div>
-                    <label class="block text-xs uppercase text-gray-400 mb-1">Tipo de Ocorrencia</label>
+                    <label class="block text-xs uppercase text-gray-400 mb-1">Tipo de Ocorrência</label>
                     <select name="tipo" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-brand-red outline-none">
                         <option value="suspeita">Atividade Suspeita</option>
-                        <option value="invasao">Invasao / Arrombamento</option>
-                        <option value="veiculo_suspeito">Veiculo Suspeito</option>
-                        <option value="pane">Pane Mecanica / Eletrica</option>
-                        <option value="apoio">Solicitacao de Apoio</option>
+                        <option value="invasao">Invasão / Arrombamento</option>
+                        <option value="veiculo_suspeito">Veículo Suspeito</option>
+                        <option value="pane">Pane Mecânica / Elétrica</option>
+                        <option value="apoio">Solicitação de Apoio</option>
                         <option value="outros" selected>Outros</option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="block text-xs uppercase text-gray-400 mb-1">Descricao</label>
+                    <label class="block text-xs uppercase text-gray-400 mb-1">Descrição</label>
                     <textarea name="descricao" rows="3" placeholder="Descreva os detalhes..." class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-brand-red outline-none resize-none"></textarea>
                 </div>
 
@@ -151,14 +151,14 @@
                     </label>
                     <label class="flex flex-col items-center justify-center border-2 border-dashed border-gray-700 rounded-xl p-4 hover:border-brand-red transition-colors cursor-pointer relative">
                         <i class="ph ph-video-camera text-2xl mb-1 text-gray-400"></i>
-                        <span class="text-[10px] uppercase font-bold text-gray-500">Adicionar Video</span>
+                        <span class="text-[10px] uppercase font-bold text-gray-500">Adicionar Vídeo</span>
                         <input type="file" name="video" accept="video/*" class="absolute inset-0 opacity-0 cursor-pointer">
                     </label>
                 </div>
 
                 <button type="submit" id="btn-submit-ocorrencia" class="w-full bg-brand-red text-white font-bold py-4 rounded-xl mt-4 flex items-center justify-center group">
                     <i class="ph ph-paper-plane-tilt text-xl mr-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform"></i>
-                    ENVIAR RELATORIO
+                    ENVIAR RELATÓRIO
                 </button>
             </form>
         </div>
@@ -228,11 +228,11 @@
         function enviarEvidenciaDireta(input) {
             if (!input.files || input.files.length === 0) return;
             
-            if (confirm('Deseja enviar este arquivo como uma ocorrencia rapida?')) {
+            if (confirm('Deseja enviar este arquivo como uma ocorrência rápida?')) {
                 const formData = new FormData();
                 formData.append('evidencia', input.files[0]);
                 formData.append('tipo', 'outros');
-                formData.append('descricao', 'Evidencia capturada rapidamente pelo painel.');
+                formData.append('descricao', 'Evidência capturada rapidamente pelo painel.');
                 formData.append('latitude', lastLat);
                 formData.append('longitude', lastLng);
 
@@ -264,14 +264,14 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    alert('Ocorrencia registrada com sucesso!');
+                    alert('Ocorrência registrada com sucesso!');
                     closeOcorrencia();
                     document.getElementById('form-ocorrencia').reset();
                 } else {
                     alert('Erro: ' + result.error);
                 }
             } catch (error) {
-                alert('Erro na comunicacao com o servidor.');
+                alert('Erro na comunicação com o servidor.');
             } finally {
                 if (btn) {
                     btn.disabled = false;

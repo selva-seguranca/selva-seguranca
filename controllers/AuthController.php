@@ -61,7 +61,7 @@ class AuthController {
             exit;
         }
 
-        $_SESSION['login_error'] = "E-mail ou senha invalidos.";
+        $_SESSION['login_error'] = "E-mail ou senha inválidos.";
         header("Location: /login");
         exit;
     }
@@ -74,14 +74,14 @@ class AuthController {
 
     private function getDatabaseConnectionErrorMessage(Throwable $e) {
         if ($this->shouldExposeDatabaseError()) {
-            return 'Falha na conexao com o banco: ' . $e->getMessage();
+            return 'Falha na conexão com o banco: ' . $e->getMessage();
         }
 
         if ($this->isLikelyInvalidSupabaseVercelConfiguration()) {
-            return 'Na Vercel, use o connection string do Supabase Transaction Pooler (porta 6543) ou DATABASE_URL do botao Connect.';
+            return 'Na Vercel, use a connection string do Supabase Transaction Pooler (porta 6543) ou a DATABASE_URL do botão Connect.';
         }
 
-        return 'Nao foi possivel conectar ao banco de dados. Revise a configuracao do Supabase.';
+        return 'Não foi possível conectar ao banco de dados. Revise a configuração do Supabase.';
     }
 
     private function isLikelyInvalidSupabaseVercelConfiguration() {

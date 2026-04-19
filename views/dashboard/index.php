@@ -1,9 +1,9 @@
 <?php
 $cards = [
     ['label' => 'Vigilantes em Campo', 'value' => $stats['vigilantes_em_campo'] ?? 0, 'icon' => 'ph-shield-check', 'tone' => 'green'],
-    ['label' => 'Veiculos em Ronda', 'value' => $stats['veiculos_em_ronda'] ?? 0, 'icon' => 'ph-car', 'tone' => 'blue'],
-    ['label' => 'Manutencoes Criticas', 'value' => $stats['manutencoes_criticas'] ?? 0, 'icon' => 'ph-bell-ringing', 'tone' => 'red'],
-    ['label' => 'Ocorrencias Hoje', 'value' => $stats['ocorrencias_hoje'] ?? 0, 'icon' => 'ph-warning-circle', 'tone' => 'yellow'],
+    ['label' => 'Veículos em Ronda', 'value' => $stats['veiculos_em_ronda'] ?? 0, 'icon' => 'ph-car', 'tone' => 'blue'],
+    ['label' => 'Manutenções Críticas', 'value' => $stats['manutencoes_criticas'] ?? 0, 'icon' => 'ph-bell-ringing', 'tone' => 'red'],
+    ['label' => 'Ocorrências Hoje', 'value' => $stats['ocorrencias_hoje'] ?? 0, 'icon' => 'ph-warning-circle', 'tone' => 'yellow'],
 ];
 $tones = [
     'green' => ['bg' => 'bg-green-100', 'text' => 'text-green-600'],
@@ -41,8 +41,8 @@ $tones = [
                     <thead>
                         <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                             <th class="px-6 py-4 font-medium">Vigilante</th>
-                            <th class="px-6 py-4 font-medium">Veiculo / Placa</th>
-                            <th class="px-6 py-4 font-medium">Inicio</th>
+                            <th class="px-6 py-4 font-medium">Veículo / Placa</th>
+                            <th class="px-6 py-4 font-medium">Início</th>
                             <th class="px-6 py-4 font-medium">Status</th>
                         </tr>
                     </thead>
@@ -66,9 +66,9 @@ $tones = [
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-6">Ultimas Ocorrencias</h3>
+        <h3 class="text-lg font-semibold text-gray-800 mb-6">Últimas Ocorrências</h3>
         <?php if (empty($ocorrenciasRecentes)): ?>
-            <p class="text-sm text-gray-500">Nenhuma ocorrencia registrada ate o momento.</p>
+            <p class="text-sm text-gray-500">Nenhuma ocorrência registrada até o momento.</p>
         <?php else: ?>
             <div class="space-y-6">
                 <?php foreach ($ocorrenciasRecentes as $ocorrencia): ?>

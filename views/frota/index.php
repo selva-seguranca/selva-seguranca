@@ -1,15 +1,15 @@
 <div class="mb-6 flex justify-between items-center">
-    <h3 class="text-xl font-semibold text-gray-800">Status dos Veiculos</h3>
+    <h3 class="text-xl font-semibold text-gray-800">Status dos Veículos</h3>
     <a href="#" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg font-medium shadow transition-colors flex items-center">
         <i class="ph ph-wrench text-lg mr-2"></i>
-        Nova Manutencao
+        Nova Manutenção
     </a>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <?php if (empty($veiculos)): ?>
         <div class="col-span-full bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-sm text-gray-500">
-            Nenhum veiculo encontrado no banco.
+            Nenhum veículo encontrado no banco.
         </div>
     <?php endif; ?>
     <?php foreach($veiculos as $v): ?>
@@ -19,6 +19,11 @@
         $oleoUrgente = ($proxOleo > 0) && ($v['km_atual'] >= ($proxOleo - 1000));
         $revisaoUrgente = ($proxRevisao > 0) && ($v['km_atual'] >= ($proxRevisao - 2000));
         $barraOleo = $proxOleo > 0 ? min(100, ($v['km_atual'] / $proxOleo) * 100) : 0;
+        $statusLabelMap = [
+            'Disponivel' => 'Disponível',
+            'Manutencao' => 'Manutenção',
+        ];
+        $statusLabel = $statusLabelMap[$v['status']] ?? $v['status'];
     ?>
     <div class="bg-white rounded-xl shadow-sm border <?= $oleoUrgente ? 'border-brand-red ring-1 ring-brand-red' : 'border-gray-200' ?> overflow-hidden flex flex-col">
         <div class="p-5 flex justify-between items-start bg-gray-50 border-b border-gray-100">
@@ -28,7 +33,7 @@
             </div>
             <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold uppercase
                 <?= $v['status'] == 'Em Uso' ? 'bg-green-100 text-green-800' : ($v['status'] == 'Manutencao' ? 'bg-red-100 text-red-800' : 'bg-gray-200 text-gray-800') ?>">
-                <?= htmlspecialchars($v['status']) ?>
+                <?= htmlspecialchars($statusLabel) ?>
             </span>
         </div>
 
@@ -41,7 +46,7 @@
             <div class="space-y-3 pt-2 border-t border-gray-100">
                 <div class="flex justify-between items-center">
                     <span class="text-sm text-gray-600 flex items-center">
-                        <i class="ph ph-drop text-gray-400 mr-2"></i> Prox. Oleo
+                        <i class="ph ph-drop text-gray-400 mr-2"></i> Próx. Óleo
                     </span>
                     <span class="text-sm font-bold <?= $oleoUrgente ? 'text-brand-red animate-pulse' : 'text-gray-800' ?>">
                         <?= $proxOleo > 0 ? number_format($proxOleo, 0, ',', '.') . ' km' : 'N/D' ?>
@@ -53,7 +58,7 @@
 
                 <div class="flex justify-between items-center pt-2">
                     <span class="text-sm text-gray-600 flex items-center">
-                        <i class="ph ph-wrench text-gray-400 mr-2"></i> Prox. Revisao
+                        <i class="ph ph-wrench text-gray-400 mr-2"></i> Próx. Revisão
                     </span>
                     <span class="text-sm font-bold <?= $revisaoUrgente ? 'text-orange-500' : 'text-gray-800' ?>">
                         <?= $proxRevisao > 0 ? number_format($proxRevisao, 0, ',', '.') . ' km' : 'N/D' ?>
@@ -63,8 +68,8 @@
         </div>
 
         <div class="p-4 border-t border-gray-100 bg-gray-50 flex justify-end space-x-2">
-            <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors">Historico</button>
-            <button class="px-3 py-1.5 text-sm font-medium text-white bg-brand-red rounded hover:bg-red-700 transition-colors shadow">Registrar Oleo</button>
+            <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors">Histórico</button>
+            <button class="px-3 py-1.5 text-sm font-medium text-white bg-brand-red rounded hover:bg-red-700 transition-colors shadow">Registrar Óleo</button>
         </div>
     </div>
     <?php endforeach; ?>
