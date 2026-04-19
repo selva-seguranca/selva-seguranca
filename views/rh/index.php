@@ -169,11 +169,10 @@
                     <table class="w-full table-fixed text-left border-collapse">
                         <thead>
                             <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                                <th class="w-[32%] px-6 py-4 font-medium">Nome</th>
-                                <th class="w-[22%] px-6 py-4 font-medium">Cargo</th>
-                                <th class="w-[20%] px-6 py-4 font-medium">Departamento</th>
-                                <th class="w-[12%] px-6 py-4 font-medium">Status</th>
-                                <th class="w-[14%] px-6 py-4 font-medium text-right">Acoes</th>
+                                <th class="w-[42%] px-6 py-4 font-medium">Nome</th>
+                                <th class="w-[26%] px-6 py-4 font-medium">Cargo</th>
+                                <th class="w-[14%] px-6 py-4 font-medium">Status</th>
+                                <th class="w-[18%] px-6 py-4 font-medium text-right">Acoes</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 text-sm">
@@ -193,7 +192,6 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 align-top whitespace-normal break-words leading-6 text-gray-600"><?= htmlspecialchars($c['cargo']) ?></td>
-                                <td class="px-6 py-4 align-top whitespace-normal break-words leading-6 text-gray-600"><?= htmlspecialchars($c['departamento']) ?></td>
                                 <td class="px-6 py-4 align-top">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusClassMap[$c['status']] ?? 'bg-gray-200 text-gray-800' ?>">
                                         <?= htmlspecialchars($c['status']) ?>
@@ -272,14 +270,10 @@
                                 </span>
                             </div>
 
-                            <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                            <div class="mt-4 text-sm">
                                 <div class="rounded-xl bg-gray-50 px-3 py-2">
                                     <p class="text-xs uppercase tracking-wide text-gray-400">Cargo</p>
                                     <p class="mt-1 font-medium text-gray-700"><?= htmlspecialchars($c['cargo']) ?></p>
-                                </div>
-                                <div class="rounded-xl bg-gray-50 px-3 py-2">
-                                    <p class="text-xs uppercase tracking-wide text-gray-400">Departamento</p>
-                                    <p class="mt-1 font-medium text-gray-700"><?= htmlspecialchars($c['departamento']) ?></p>
                                 </div>
                             </div>
 
