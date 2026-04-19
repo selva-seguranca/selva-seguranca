@@ -100,7 +100,7 @@
 <?php if ($isUpdateSuccessToast): ?>
     <div
         id="rh-action-success-toast"
-        class="fixed left-1/2 top-5 z-[80] w-[calc(100%-1.5rem)] max-w-xl -translate-x-1/2 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-800 shadow-2xl transition-all duration-300 sm:top-6"
+        class="fixed left-1/2 top-1/2 z-[80] w-[calc(100%-1.5rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-800 shadow-2xl transition-all duration-300"
         role="alert"
         aria-live="polite"
     >
@@ -533,7 +533,7 @@
 
         if (successToast) {
             window.setTimeout(() => {
-                successToast.classList.add('pointer-events-none', 'translate-y-[-10px]', 'opacity-0');
+                successToast.classList.add('pointer-events-none', 'scale-95', 'opacity-0');
 
                 window.setTimeout(() => {
                     successToast.remove();
