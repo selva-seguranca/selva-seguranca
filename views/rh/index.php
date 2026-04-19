@@ -38,6 +38,9 @@
     ];
     $isCreateModalOpen = !empty($isCreateModalOpen);
     $isViewModalOpen = !empty($isViewModalOpen);
+    $formMode = ($formMode ?? 'create') === 'edit' ? 'edit' : 'create';
+    $isEditMode = $formMode === 'edit';
+    $editCollaboratorId = trim((string) ($editCollaboratorId ?? ''));
     $moduleToneMap = [
         'seguranca_privada' => [
             'container' => 'border-red-100',
@@ -151,11 +154,16 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100 text-sm">
                             <?php foreach ($modulo['colaboradores'] as $c): ?>
+                            <?php $photoUrl = trim((string) ($c['foto_url'] ?? '')); ?>
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-6 py-4 font-medium text-gray-800">
                                     <div class="flex items-center">
-                                        <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold mr-3 text-xs <?= $tone['avatar'] ?>">
-                                            <?= substr($c['nome'], 0, 1) ?>
+                                        <div class="mr-3 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-white/80 text-xs font-bold shadow-sm <?= $photoUrl !== '' ? 'bg-white' : $tone['avatar'] ?>">
+                                            <?php if ($photoUrl !== ''): ?>
+                                                <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Foto de <?= htmlspecialchars($c['nome']) ?>" class="h-full w-full object-cover" loading="lazy">
+                                            <?php else: ?>
+                                                <?= htmlspecialchars(substr($c['nome'], 0, 1)) ?>
+                                            <?php endif; ?>
                                         </div>
                                         <span><?= htmlspecialchars($c['nome']) ?></span>
                                     </div>
@@ -177,6 +185,13 @@
                                             >
                                                 <i class="ph ph-eye text-lg"></i>
                                             </a>
+                                            <a
+                                                href="/rh?modal=editar-colaborador&edit=<?= urlencode((string) $c['collaborator_id']) ?>"
+                                                class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:border-amber-200 hover:text-amber-600"
+                                                title="Editar cadastro"
+                                            >
+                                                <i class="ph ph-pencil-simple text-lg"></i>
+                                            </a>
                                             <form method="POST" action="/rh/colaboradores/excluir" onsubmit="return confirm('Deseja excluir este colaborador? Esta acao nao pode ser desfeita.')" class="inline-flex">
                                                 <input type="hidden" name="colaborador_id" value="<?= htmlspecialchars((string) $c['collaborator_id']) ?>">
                                                 <button
@@ -189,9 +204,17 @@
                                             </form>
                                         </div>
                                     <?php else: ?>
-                                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-300" title="Cadastro indisponivel">
-                                            <i class="ph ph-eye-slash text-lg"></i>
-                                        </span>
+                                        <div class="inline-flex items-center gap-2">
+                                            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-300" title="Cadastro indisponivel">
+                                                <i class="ph ph-eye-slash text-lg"></i>
+                                            </span>
+                                            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-300" title="Cadastro indisponivel">
+                                                <i class="ph ph-pencil-simple text-lg"></i>
+                                            </span>
+                                            <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-300" title="Cadastro indisponivel">
+                                                <i class="ph ph-trash text-lg"></i>
+                                            </span>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -202,12 +225,17 @@
 
                 <div class="space-y-4 p-4 lg:hidden">
                     <?php foreach ($modulo['colaboradores'] as $c): ?>
+                        <?php $photoUrl = trim((string) ($c['foto_url'] ?? '')); ?>
                         <article class="rounded-2xl border border-gray-200 p-4 shadow-sm">
                             <div class="flex items-start justify-between gap-4">
                                 <div class="min-w-0">
                                     <div class="flex items-center">
-                                        <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold mr-3 text-xs shrink-0 <?= $tone['avatar'] ?>">
-                                            <?= substr($c['nome'], 0, 1) ?>
+                                        <div class="mr-3 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/80 text-xs font-bold shadow-sm <?= $photoUrl !== '' ? 'bg-white' : $tone['avatar'] ?>">
+                                            <?php if ($photoUrl !== ''): ?>
+                                                <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Foto de <?= htmlspecialchars($c['nome']) ?>" class="h-full w-full object-cover" loading="lazy">
+                                            <?php else: ?>
+                                                <?= htmlspecialchars(substr($c['nome'], 0, 1)) ?>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="min-w-0">
                                             <h5 class="truncate text-sm font-semibold text-gray-900"><?= htmlspecialchars($c['nome']) ?></h5>
@@ -240,6 +268,13 @@
                                     >
                                         <i class="ph ph-eye text-lg"></i>
                                     </a>
+                                    <a
+                                        href="/rh?modal=editar-colaborador&edit=<?= urlencode((string) $c['collaborator_id']) ?>"
+                                        class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:border-amber-200 hover:text-amber-600"
+                                        title="Editar cadastro"
+                                    >
+                                        <i class="ph ph-pencil-simple text-lg"></i>
+                                    </a>
                                     <form method="POST" action="/rh/colaboradores/excluir" onsubmit="return confirm('Deseja excluir este colaborador? Esta acao nao pode ser desfeita.')" class="inline-flex">
                                         <input type="hidden" name="colaborador_id" value="<?= htmlspecialchars((string) $c['collaborator_id']) ?>">
                                         <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:border-red-200 hover:text-brand-red" title="Excluir colaborador">
@@ -249,6 +284,12 @@
                                 <?php else: ?>
                                     <span class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-300">
                                         <i class="ph ph-eye-slash text-lg"></i>
+                                    </span>
+                                    <span class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-300">
+                                        <i class="ph ph-pencil-simple text-lg"></i>
+                                    </span>
+                                    <span class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-300">
+                                        <i class="ph ph-trash text-lg"></i>
                                     </span>
                                 <?php endif; ?>
                             </div>
@@ -297,6 +338,8 @@
 
 <div
     id="collaborator-modal"
+    data-modal-mode="<?= $isEditMode ? 'edit' : 'create' ?>"
+    data-edit-id="<?= htmlspecialchars($editCollaboratorId, ENT_QUOTES, 'UTF-8') ?>"
     class="fixed inset-0 z-40 <?= $isCreateModalOpen ? 'flex' : 'hidden' ?> items-start justify-center overflow-y-auto bg-black/60 p-3 sm:items-center sm:p-5"
     aria-hidden="<?= $isCreateModalOpen ? 'false' : 'true' ?>"
 >
@@ -311,7 +354,7 @@
         <header class="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-red">RH / Cadastro</p>
-                <h2 class="mt-1 text-xl font-bold text-gray-900 sm:text-2xl">Novo colaborador</h2>
+                <h2 class="mt-1 text-xl font-bold text-gray-900 sm:text-2xl"><?= $isEditMode ? 'Editar colaborador' : 'Novo colaborador' ?></h2>
             </div>
 
             <button
@@ -361,11 +404,20 @@
 
         function syncModalUrl(isOpen) {
             const url = new URL(window.location.href);
+            const modalMode = collaboratorModal.dataset.modalMode || 'create';
+            const editId = collaboratorModal.dataset.editId || '';
 
             if (isOpen) {
-                url.searchParams.set('modal', 'novo-colaborador');
+                if (modalMode === 'edit' && editId !== '') {
+                    url.searchParams.set('modal', 'editar-colaborador');
+                    url.searchParams.set('edit', editId);
+                } else {
+                    url.searchParams.set('modal', 'novo-colaborador');
+                    url.searchParams.delete('edit');
+                }
             } else {
                 url.searchParams.delete('modal');
+                url.searchParams.delete('edit');
             }
 
             window.history.replaceState({}, '', url.toString());
@@ -411,7 +463,13 @@
 
         collaboratorOpeners.forEach((trigger) => {
             trigger.addEventListener('click', (event) => {
+                if ((collaboratorModal.dataset.modalMode || 'create') === 'edit') {
+                    return;
+                }
+
                 event.preventDefault();
+                collaboratorModal.dataset.modalMode = 'create';
+                collaboratorModal.dataset.editId = '';
                 setCollaboratorViewModalOpen(false);
                 setCollaboratorModalOpen(true);
             });

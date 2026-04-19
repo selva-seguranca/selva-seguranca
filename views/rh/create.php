@@ -1,10 +1,23 @@
 <?php
     $old = is_array($old ?? null) ? $old : [];
-    $selectedType = $old['tipo_cadastro'] ?? 'vigilante';
+    $formMode = ($formMode ?? 'create') === 'edit' ? 'edit' : 'create';
+    $isEditMode = $formMode === 'edit';
+    $selectedType = ($old['tipo_cadastro'] ?? 'vigilante') === 'vigilante' ? 'vigilante' : 'financeiro_administrativo';
     $selectedAdminRole = $old['funcao_administrativa'] ?? 'Administrativo';
     $selectedCourses = is_array($old['outros_cursos'] ?? null) ? $old['outros_cursos'] : [];
     $selectedBloodType = $old['tipo_sanguineo'] ?? '';
     $selectedRhFactor = $old['fator_rh'] ?? '+';
+    $editCollaboratorId = trim((string) ($editCollaboratorId ?? ($old['colaborador_id'] ?? '')));
+    $existingPhotoUrl = trim((string) ($existingPhotoUrl ?? ($old['foto_url_atual'] ?? '')));
+    $formAction = $isEditMode ? '/rh/colaboradores/atualizar' : '/rh/colaboradores';
+    $errorTitle = $isEditMode ? 'Nao foi possivel atualizar o cadastro.' : 'Nao foi possivel concluir o cadastro.';
+    $accessDescription = $isEditMode
+        ? 'Atualize os dados de acesso quando necessario. Deixe a senha em branco para manter a senha atual.'
+        : 'Estes campos sao opcionais. Se voce deixar em branco, o sistema gera um e-mail interno e uma senha provisoria.';
+    $passwordLabel = $isEditMode ? 'Nova senha provisoria' : 'Senha provisoria';
+    $passwordPlaceholder = $isEditMode ? 'Deixe em branco para manter a atual' : 'Deixe em branco para gerar';
+    $submitLabel = $isEditMode ? 'Salvar alteracoes do colaborador' : 'Salvar novo colaborador';
+    $submitIcon = $isEditMode ? 'ph-pencil-simple' : 'ph-floppy-disk';
 
     $oldValue = function ($key, $default = '') use ($old) {
         return htmlspecialchars((string) ($old[$key] ?? $default), ENT_QUOTES, 'UTF-8');
@@ -30,7 +43,7 @@
         <div class="flex items-start gap-3">
             <i class="ph ph-warning-circle mt-0.5 text-lg"></i>
             <div>
-                <p class="font-semibold">Nao foi possivel concluir o cadastro.</p>
+                <p class="font-semibold"><?= $errorTitle ?></p>
                 <p class="mt-1"><?= htmlspecialchars($formError) ?></p>
             </div>
         </div>
@@ -63,17 +76,27 @@
     </div>
 <?php endif; ?>
 
-<form id="rh-create-form" action="/rh/colaboradores" method="POST" enctype="multipart/form-data" class="w-full">
+<form id="rh-create-form" action="<?= $formAction ?>" method="POST" enctype="multipart/form-data" class="w-full">
+    <?php if ($isEditMode): ?>
+        <input type="hidden" name="colaborador_id" value="<?= htmlspecialchars($editCollaboratorId, ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" name="tipo_cadastro" value="<?= htmlspecialchars($selectedType, ENT_QUOTES, 'UTF-8') ?>">
+    <?php endif; ?>
+    <input type="hidden" id="photo-current-url-input" name="foto_url_atual" value="<?= htmlspecialchars($existingPhotoUrl, ENT_QUOTES, 'UTF-8') ?>">
+
     <div class="space-y-6">
         <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
             <div class="border-b border-gray-100 px-6 py-5">
                 <h3 class="text-lg font-bold text-gray-900">Tipo de cadastro</h3>
-                <p class="mt-1 text-sm text-gray-500">Escolha qual fluxo deve ser aplicado neste colaborador.</p>
+                <p class="mt-1 text-sm text-gray-500">
+                    <?= $isEditMode
+                        ? 'O tipo de cadastro fica bloqueado na edicao para preservar o perfil e os registros vinculados.'
+                        : 'Escolha qual fluxo deve ser aplicado neste colaborador.' ?>
+                </p>
             </div>
 
             <div class="grid gap-4 px-6 py-6 md:grid-cols-2">
-                <label data-type-card="vigilante" class="group cursor-pointer rounded-2xl border p-5 transition-colors <?= $selectedType === 'vigilante' ? 'border-brand-red bg-red-50' : 'border-gray-200 hover:border-red-200' ?>">
-                    <input type="radio" name="tipo_cadastro" value="vigilante" class="sr-only js-registration-type" <?= $selectedType === 'vigilante' ? 'checked' : '' ?>>
+                <label data-type-card="vigilante" class="group rounded-2xl border p-5 transition-colors <?= $isEditMode ? 'cursor-default' : 'cursor-pointer' ?> <?= $selectedType === 'vigilante' ? 'border-brand-red bg-red-50' : 'border-gray-200 hover:border-red-200' ?>">
+                    <input type="radio" name="<?= $isEditMode ? 'tipo_cadastro_visual' : 'tipo_cadastro' ?>" value="vigilante" class="sr-only js-registration-type" <?= $selectedType === 'vigilante' ? 'checked' : '' ?> <?= $isEditMode ? 'disabled' : '' ?>>
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <p class="text-sm font-semibold text-gray-900">Colaborador Vigilante</p>
@@ -85,8 +108,8 @@
                     </div>
                 </label>
 
-                <label data-type-card="financeiro_administrativo" class="group cursor-pointer rounded-2xl border p-5 transition-colors <?= $selectedType === 'financeiro_administrativo' ? 'border-brand-red bg-red-50' : 'border-gray-200 hover:border-red-200' ?>">
-                    <input type="radio" name="tipo_cadastro" value="financeiro_administrativo" class="sr-only js-registration-type" <?= $selectedType === 'financeiro_administrativo' ? 'checked' : '' ?>>
+                <label data-type-card="financeiro_administrativo" class="group rounded-2xl border p-5 transition-colors <?= $isEditMode ? 'cursor-default' : 'cursor-pointer' ?> <?= $selectedType === 'financeiro_administrativo' ? 'border-brand-red bg-red-50' : 'border-gray-200 hover:border-red-200' ?>">
+                    <input type="radio" name="<?= $isEditMode ? 'tipo_cadastro_visual' : 'tipo_cadastro' ?>" value="financeiro_administrativo" class="sr-only js-registration-type" <?= $selectedType === 'financeiro_administrativo' ? 'checked' : '' ?> <?= $isEditMode ? 'disabled' : '' ?>>
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <p class="text-sm font-semibold text-gray-900">Financeiro / Administrativo</p>
@@ -102,9 +125,7 @@
 
         <section class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
             <h3 class="text-lg font-bold text-gray-900">Acesso ao sistema</h3>
-            <p class="mt-2 text-sm text-gray-500">
-                Estes campos sao opcionais. Se voce deixar em branco, o sistema gera um e-mail interno e uma senha provisoria.
-            </p>
+            <p class="mt-2 text-sm text-gray-500"><?= $accessDescription ?></p>
 
             <div class="mt-5 grid gap-4 md:grid-cols-2">
                 <label class="space-y-2">
@@ -113,8 +134,8 @@
                 </label>
 
                 <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">Senha provisoria</span>
-                    <input type="text" name="senha_provisoria" value="" placeholder="Deixe em branco para gerar" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
+                    <span class="text-sm font-semibold text-gray-700"><?= $passwordLabel ?></span>
+                    <input type="text" name="senha_provisoria" value="" placeholder="<?= $passwordPlaceholder ?>" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
             </div>
         </section>
@@ -132,8 +153,13 @@
                         id="photo-surface-button"
                         class="group relative h-44 w-44 overflow-hidden rounded-3xl border border-dashed border-gray-300 bg-gray-50 text-left transition-colors hover:border-brand-red hover:bg-red-50/40 focus:outline-none focus:ring-2 focus:ring-brand-red/20"
                     >
-                        <img id="photo-preview" src="" alt="Preview da foto" class="hidden h-full w-full object-cover">
-                        <div id="photo-placeholder" class="flex h-full w-full flex-col items-center justify-center px-6 text-center text-gray-400 transition-colors group-hover:text-brand-red">
+                        <img
+                            id="photo-preview"
+                            src="<?= htmlspecialchars($existingPhotoUrl, ENT_QUOTES, 'UTF-8') ?>"
+                            alt="Preview da foto"
+                            class="<?= $existingPhotoUrl !== '' ? '' : 'hidden ' ?>h-full w-full object-cover"
+                        >
+                        <div id="photo-placeholder" class="<?= $existingPhotoUrl !== '' ? 'hidden ' : '' ?>flex h-full w-full flex-col items-center justify-center px-6 text-center text-gray-400 transition-colors group-hover:text-brand-red">
                             <i class="ph ph-user-circle text-5xl"></i>
                             <p class="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-gray-400 group-hover:text-brand-red">Toque para escolher</p>
                         </div>
@@ -141,7 +167,7 @@
 
                     <input id="photo-source-input" type="file" accept="image/*" class="hidden">
                     <input id="photo-upload-input" type="file" name="foto_colaborador" accept="image/*" class="hidden">
-                    <p id="photo-status" class="sr-only" aria-live="polite">Nenhuma imagem selecionada.</p>
+                    <p id="photo-status" class="sr-only" aria-live="polite"><?= $existingPhotoUrl !== '' ? 'Foto atual carregada.' : 'Nenhuma imagem selecionada.' ?></p>
                 </div>
 
                 <label class="space-y-2 md:col-span-2 lg:col-span-9">
@@ -345,8 +371,8 @@
 
         <div class="pt-1">
             <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl bg-brand-red px-4 py-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-700">
-                <i class="ph ph-floppy-disk mr-2 text-lg"></i>
-                Salvar novo colaborador
+                <i class="ph <?= $submitIcon ?> mr-2 text-lg"></i>
+                <?= $submitLabel ?>
             </button>
         </div>
     </div>
@@ -405,6 +431,7 @@
     (() => {
         const maxPhotoUploadBytes = <?= \Helpers\MediaStorage::getMaxAllowedFileSizeBytes() ?>;
         const maxPhotoUploadLabel = <?= json_encode(\Helpers\MediaStorage::getMaxAllowedFileSizeLabel(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+        const initialPhotoUrl = <?= json_encode($existingPhotoUrl, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
         const body = document.body;
         const cropModal = document.getElementById('crop-modal');
         const cropImage = document.getElementById('crop-image');
@@ -418,6 +445,7 @@
         const photoSurfaceButton = document.getElementById('photo-surface-button');
         const photoSourceInput = document.getElementById('photo-source-input');
         const photoUploadInput = document.getElementById('photo-upload-input');
+        const photoCurrentUrlInput = document.getElementById('photo-current-url-input');
         const photoSelectButton = document.getElementById('photo-select-button');
         const photoEditButton = document.getElementById('photo-edit-button');
         const photoClearButton = document.getElementById('photo-clear-button');
@@ -670,6 +698,9 @@
             photoClearButton.addEventListener('click', () => {
                 photoSourceInput.value = '';
                 photoUploadInput.value = '';
+                if (photoCurrentUrlInput) {
+                    photoCurrentUrlInput.value = '';
+                }
                 updatePhotoPreview(null);
             });
         }
@@ -802,12 +833,19 @@
         cepInput.addEventListener('blur', lookupCep);
 
         form.addEventListener('submit', (event) => {
-            if (!photoUploadInput.files || !photoUploadInput.files.length) {
+            const hasUploadedPhoto = !!(photoUploadInput.files && photoUploadInput.files.length);
+            const hasCurrentPhoto = !!(photoCurrentUrlInput && photoCurrentUrlInput.value.trim() !== '');
+
+            if (!hasUploadedPhoto && !hasCurrentPhoto) {
                 event.preventDefault();
                 setPhotoError('Selecione a foto, ajuste o enquadramento e clique em ACEITAR antes de salvar.');
                 photoSurfaceButton.focus();
             }
         });
+
+        if (initialPhotoUrl && photoEditButton) {
+            photoEditButton.disabled = false;
+        }
 
         syncRegistrationTypeUI();
     })();

@@ -89,6 +89,7 @@ class PortalRepository {
             "SELECT c.id AS collaborator_id,
                     u.id AS user_id,
                     u.nome,
+                    cd.foto_url,
                     COALESCE(c.cargo, CASE WHEN p.nome = 'Vigilante' THEN 'Vigilante' ELSE p.nome END) AS cargo,
                     COALESCE(c.departamento, CASE WHEN p.nome = 'Vigilante' THEN 'Operacional' ELSE 'Administrativo' END) AS departamento,
                     COALESCE(cd.situacao, CASE WHEN u.ativo THEN 'Ativo' ELSE 'Inativo' END) AS status
@@ -498,6 +499,387 @@ class PortalRepository {
                     'password' => $senhaProvisoria,
                     'generated_password' => $senhaFoiGerada,
                 ],
+            ];
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
+    public function updateCollaboratorRegistration($collaboratorId, array $payload, array $media = []) {
+        $this->ensureCollaboratorRegistrationSchema();
+
+        $target = $this->fetchOne(
+            "SELECT c.id AS collaborator_id,
+                    c.usuario_id,
+                    cd.tipo_cadastro,
+                    cd.foto_url,
+                    u.email,
+                    EXISTS(
+                        SELECT 1
+                        FROM vigilantes v
+                        WHERE v.usuario_id = c.usuario_id
+                    ) AS has_vigilante
+             FROM colaboradores c
+             JOIN usuarios u ON u.id = c.usuario_id
+             LEFT JOIN colaborador_detalhes cd ON cd.colaborador_id = c.id
+             WHERE c.id = :collaborator_id
+             LIMIT 1",
+            [':collaborator_id' => $collaboratorId]
+        );
+
+        if ($target === null) {
+            throw new RuntimeException('Cadastro do colaborador nao encontrado.');
+        }
+
+        $existingType = $this->normalizeRegistrationType(
+            $target['tipo_cadastro'] ?? ($this->toBoolean($target['has_vigilante'] ?? false) ? 'vigilante' : 'financeiro_administrativo')
+        );
+        $tipoCadastro = $this->normalizeRegistrationType($payload['tipo_cadastro'] ?? $existingType);
+
+        if ($tipoCadastro !== $existingType) {
+            throw new RuntimeException('Nao e permitido alterar o tipo de cadastro de um colaborador existente.');
+        }
+
+        $nomeCompleto = trim((string) ($payload['nome_completo'] ?? ''));
+        $cpf = $this->normalizeDigits($payload['cpf'] ?? '');
+        $fotoUrl = trim((string) ($media['foto']['url'] ?? ($payload['foto_url_atual'] ?? ($target['foto_url'] ?? ''))));
+
+        if ($nomeCompleto === '') {
+            throw new RuntimeException('Informe o nome completo do colaborador.');
+        }
+
+        if ($fotoUrl === '') {
+            throw new RuntimeException('A foto do colaborador e obrigatoria para este cadastro.');
+        }
+
+        if (strlen($cpf) !== 11) {
+            throw new RuntimeException('Informe um CPF valido com 11 digitos.');
+        }
+
+        if ($this->collaboratorCpfExistsForOther($cpf, $collaboratorId)) {
+            throw new RuntimeException('Ja existe um colaborador cadastrado com este CPF.');
+        }
+
+        foreach ([
+            'rg' => 'Informe o RG do colaborador.',
+            'data_nascimento' => 'Informe a data de nascimento.',
+            'telefone_principal' => 'Informe o telefone principal.',
+            'telefone_familiar' => 'Informe o telefone familiar.',
+            'cep' => 'Informe o CEP do endereco.',
+            'logradouro' => 'Informe o logradouro do endereco.',
+            'numero' => 'Informe o numero do endereco.',
+            'bairro' => 'Informe o bairro.',
+            'cidade' => 'Informe a cidade.',
+            'uf' => 'Informe a UF.',
+            'nome_mae' => 'Informe o nome da mae.',
+            'tipo_sanguineo' => 'Informe o tipo sanguineo.',
+            'fator_rh' => 'Informe o fator RH.',
+            'tipo_vinculo' => 'Informe o tipo de vinculo.',
+            'data_admissao' => 'Informe a data de admissao.',
+            'numero_admissao' => 'Informe o numero da admissao.',
+            'situacao' => 'Informe a situacao do colaborador.',
+        ] as $field => $message) {
+            if ($this->nullIfBlank($payload[$field] ?? null) === null) {
+                throw new RuntimeException($message);
+            }
+        }
+
+        if ($tipoCadastro === 'vigilante') {
+            foreach ([
+                'numero_cnv' => 'Informe o numero da CNV.',
+                'validade_cnv' => 'Informe a validade da CNV.',
+                'curso_formacao' => 'Informe se o colaborador possui curso de formacao.',
+                'data_ultima_reciclagem' => 'Informe a data da ultima reciclagem.',
+                'situacao_reciclagem' => 'Informe a situacao da reciclagem.',
+            ] as $field => $message) {
+                if ($this->nullIfBlank($payload[$field] ?? null) === null) {
+                    throw new RuntimeException($message);
+                }
+            }
+        }
+
+        $emailAcesso = trim((string) ($payload['email_acesso'] ?? ''));
+        if ($emailAcesso === '') {
+            $emailAcesso = trim((string) ($target['email'] ?? ''));
+        }
+        if ($emailAcesso === '') {
+            $emailAcesso = ($tipoCadastro === 'vigilante' ? 'vigilante.' : 'colaborador.') . $cpf . '@selva.local';
+        }
+
+        if (!filter_var($emailAcesso, FILTER_VALIDATE_EMAIL)) {
+            throw new RuntimeException('Informe um e-mail de acesso valido.');
+        }
+
+        if ($this->emailExistsForOther($emailAcesso, $target['usuario_id'])) {
+            throw new RuntimeException('Ja existe um usuario com este e-mail de acesso.');
+        }
+
+        $senhaProvisoria = trim((string) ($payload['senha_provisoria'] ?? ''));
+        if ($senhaProvisoria !== '' && strlen($senhaProvisoria) < 6) {
+            throw new RuntimeException('A senha provisoria deve ter pelo menos 6 caracteres.');
+        }
+
+        $situacao = $this->normalizeEmploymentStatus($payload['situacao'] ?? 'Ativo');
+        $cargo = $this->resolveCollaboratorRole($tipoCadastro, $payload['funcao_administrativa'] ?? null);
+        $departamento = $tipoCadastro === 'vigilante'
+            ? 'Operacional'
+            : ($cargo === 'Financeiro' ? 'Financeiro' : 'Administrativo');
+        $perfilNome = $tipoCadastro === 'vigilante' ? 'Vigilante' : 'Colaborador Interno';
+        $perfilId = $this->findProfileIdByName($perfilNome);
+
+        if ($perfilId === null) {
+            throw new RuntimeException('O perfil necessario para este cadastro nao foi encontrado no banco.');
+        }
+
+        $outrosCursos = is_array($payload['outros_cursos'] ?? null) ? $payload['outros_cursos'] : [];
+        $tipoSanguineo = strtoupper(trim((string) ($payload['tipo_sanguineo'] ?? '')));
+        $fatorRh = trim((string) ($payload['fator_rh'] ?? ''));
+
+        try {
+            $this->db->beginTransaction();
+
+            $userParams = [
+                ':usuario_id' => $target['usuario_id'],
+                ':nome' => $nomeCompleto,
+                ':email' => $emailAcesso,
+                ':perfil_id' => $perfilId,
+                ':ativo' => $situacao === 'Ativo',
+            ];
+            $userTypes = [
+                ':perfil_id' => PDO::PARAM_INT,
+                ':ativo' => PDO::PARAM_BOOL,
+            ];
+
+            if ($senhaProvisoria !== '') {
+                $userParams[':senha_hash'] = password_hash($senhaProvisoria, PASSWORD_DEFAULT);
+
+                $this->run(
+                    "UPDATE usuarios
+                     SET nome = :nome,
+                         email = :email,
+                         senha_hash = :senha_hash,
+                         perfil_id = :perfil_id,
+                         ativo = :ativo
+                     WHERE id = :usuario_id",
+                    $userParams,
+                    $userTypes
+                );
+            } else {
+                $this->run(
+                    "UPDATE usuarios
+                     SET nome = :nome,
+                         email = :email,
+                         perfil_id = :perfil_id,
+                         ativo = :ativo
+                     WHERE id = :usuario_id",
+                    $userParams,
+                    $userTypes
+                );
+            }
+
+            $this->run(
+                "UPDATE colaboradores
+                 SET cargo = :cargo,
+                     departamento = :departamento,
+                     data_admissao = :data_admissao
+                 WHERE id = :collaborator_id",
+                [
+                    ':collaborator_id' => $collaboratorId,
+                    ':cargo' => $cargo,
+                    ':departamento' => $departamento,
+                    ':data_admissao' => $this->nullIfBlank($payload['data_admissao'] ?? null),
+                ]
+            );
+
+            $this->run(
+                "INSERT INTO colaborador_detalhes (
+                    colaborador_id,
+                    tipo_cadastro,
+                    foto_url,
+                    cpf,
+                    rg,
+                    data_nascimento,
+                    telefone_principal,
+                    telefone_familiar,
+                    cep,
+                    logradouro,
+                    numero,
+                    bairro,
+                    complemento,
+                    cidade,
+                    uf,
+                    endereco_completo,
+                    nome_mae,
+                    tipo_sanguineo,
+                    fator_rh,
+                    tipo_vinculo,
+                    numero_admissao,
+                    situacao
+                 ) VALUES (
+                    :colaborador_id,
+                    :tipo_cadastro,
+                    :foto_url,
+                    :cpf,
+                    :rg,
+                    :data_nascimento,
+                    :telefone_principal,
+                    :telefone_familiar,
+                    :cep,
+                    :logradouro,
+                    :numero,
+                    :bairro,
+                    :complemento,
+                    :cidade,
+                    :uf,
+                    :endereco_completo,
+                    :nome_mae,
+                    :tipo_sanguineo,
+                    :fator_rh,
+                    :tipo_vinculo,
+                    :numero_admissao,
+                    :situacao
+                 )
+                 ON CONFLICT (colaborador_id) DO UPDATE SET
+                    tipo_cadastro = EXCLUDED.tipo_cadastro,
+                    foto_url = EXCLUDED.foto_url,
+                    cpf = EXCLUDED.cpf,
+                    rg = EXCLUDED.rg,
+                    data_nascimento = EXCLUDED.data_nascimento,
+                    telefone_principal = EXCLUDED.telefone_principal,
+                    telefone_familiar = EXCLUDED.telefone_familiar,
+                    cep = EXCLUDED.cep,
+                    logradouro = EXCLUDED.logradouro,
+                    numero = EXCLUDED.numero,
+                    bairro = EXCLUDED.bairro,
+                    complemento = EXCLUDED.complemento,
+                    cidade = EXCLUDED.cidade,
+                    uf = EXCLUDED.uf,
+                    endereco_completo = EXCLUDED.endereco_completo,
+                    nome_mae = EXCLUDED.nome_mae,
+                    tipo_sanguineo = EXCLUDED.tipo_sanguineo,
+                    fator_rh = EXCLUDED.fator_rh,
+                    tipo_vinculo = EXCLUDED.tipo_vinculo,
+                    numero_admissao = EXCLUDED.numero_admissao,
+                    situacao = EXCLUDED.situacao,
+                    atualizado_em = CURRENT_TIMESTAMP",
+                [
+                    ':colaborador_id' => $collaboratorId,
+                    ':tipo_cadastro' => $tipoCadastro,
+                    ':foto_url' => $fotoUrl,
+                    ':cpf' => $cpf,
+                    ':rg' => $this->nullIfBlank($payload['rg'] ?? null),
+                    ':data_nascimento' => $this->nullIfBlank($payload['data_nascimento'] ?? null),
+                    ':telefone_principal' => $this->nullIfBlank($payload['telefone_principal'] ?? null),
+                    ':telefone_familiar' => $this->nullIfBlank($payload['telefone_familiar'] ?? null),
+                    ':cep' => $this->nullIfBlank($payload['cep'] ?? null),
+                    ':logradouro' => $this->nullIfBlank($payload['logradouro'] ?? null),
+                    ':numero' => $this->nullIfBlank($payload['numero'] ?? null),
+                    ':bairro' => $this->nullIfBlank($payload['bairro'] ?? null),
+                    ':complemento' => $this->nullIfBlank($payload['complemento'] ?? null),
+                    ':cidade' => $this->nullIfBlank($payload['cidade'] ?? null),
+                    ':uf' => $this->nullIfBlank($payload['uf'] ?? null),
+                    ':endereco_completo' => $this->buildAddressLine($payload),
+                    ':nome_mae' => $this->nullIfBlank($payload['nome_mae'] ?? null),
+                    ':tipo_sanguineo' => $tipoSanguineo !== '' ? $tipoSanguineo : null,
+                    ':fator_rh' => $fatorRh !== '' ? $fatorRh : null,
+                    ':tipo_vinculo' => $this->nullIfBlank($payload['tipo_vinculo'] ?? null),
+                    ':numero_admissao' => $this->nullIfBlank($payload['numero_admissao'] ?? null),
+                    ':situacao' => $situacao,
+                ]
+            );
+
+            if ($tipoCadastro === 'vigilante') {
+                $cursoFormacao = strtolower(trim((string) ($payload['curso_formacao'] ?? 'nao'))) === 'sim';
+
+                $vigilanteParams = [
+                    ':usuario_id' => $target['usuario_id'],
+                    ':cnh' => null,
+                    ':validade_cnh' => null,
+                    ':formacao' => $cursoFormacao ? 'Curso de formacao concluido' : null,
+                    ':validade_reciclagem' => null,
+                    ':numero_cnv' => $this->nullIfBlank($payload['numero_cnv'] ?? null),
+                    ':validade_cnv' => $this->nullIfBlank($payload['validade_cnv'] ?? null),
+                    ':curso_formacao_concluido' => $cursoFormacao,
+                    ':data_ultima_reciclagem' => $this->nullIfBlank($payload['data_ultima_reciclagem'] ?? null),
+                    ':situacao_reciclagem' => $this->nullIfBlank($payload['situacao_reciclagem'] ?? null),
+                    ':curso_escolta_armada' => in_array('escolta_armada', $outrosCursos, true),
+                    ':curso_seguranca_eventos' => in_array('seguranca_eventos', $outrosCursos, true),
+                    ':curso_seguranca_vip' => in_array('seguranca_vip', $outrosCursos, true),
+                ];
+                $vigilanteTypes = [
+                    ':curso_formacao_concluido' => PDO::PARAM_BOOL,
+                    ':curso_escolta_armada' => PDO::PARAM_BOOL,
+                    ':curso_seguranca_eventos' => PDO::PARAM_BOOL,
+                    ':curso_seguranca_vip' => PDO::PARAM_BOOL,
+                ];
+
+                $updated = $this->run(
+                    "UPDATE vigilantes
+                     SET cnh = :cnh,
+                         validade_cnh = :validade_cnh,
+                         formacao = :formacao,
+                         validade_reciclagem = :validade_reciclagem,
+                         numero_cnv = :numero_cnv,
+                         validade_cnv = :validade_cnv,
+                         curso_formacao_concluido = :curso_formacao_concluido,
+                         data_ultima_reciclagem = :data_ultima_reciclagem,
+                         situacao_reciclagem = :situacao_reciclagem,
+                         curso_escolta_armada = :curso_escolta_armada,
+                         curso_seguranca_eventos = :curso_seguranca_eventos,
+                         curso_seguranca_vip = :curso_seguranca_vip
+                     WHERE usuario_id = :usuario_id",
+                    $vigilanteParams,
+                    $vigilanteTypes
+                );
+
+                if ($updated->rowCount() === 0) {
+                    $this->run(
+                        "INSERT INTO vigilantes (
+                            usuario_id,
+                            cnh,
+                            validade_cnh,
+                            formacao,
+                            validade_reciclagem,
+                            numero_cnv,
+                            validade_cnv,
+                            curso_formacao_concluido,
+                            data_ultima_reciclagem,
+                            situacao_reciclagem,
+                            curso_escolta_armada,
+                            curso_seguranca_eventos,
+                            curso_seguranca_vip
+                         ) VALUES (
+                            :usuario_id,
+                            :cnh,
+                            :validade_cnh,
+                            :formacao,
+                            :validade_reciclagem,
+                            :numero_cnv,
+                            :validade_cnv,
+                            :curso_formacao_concluido,
+                            :data_ultima_reciclagem,
+                            :situacao_reciclagem,
+                            :curso_escolta_armada,
+                            :curso_seguranca_eventos,
+                            :curso_seguranca_vip
+                         )",
+                        $vigilanteParams,
+                        $vigilanteTypes
+                    );
+                }
+            }
+
+            $this->db->commit();
+
+            return [
+                'collaborator_id' => $collaboratorId,
+                'photo_url' => $fotoUrl,
+                'previous_photo_url' => $target['foto_url'] ?? null,
+                'photo_changed' => ($target['foto_url'] ?? null) !== $fotoUrl,
             ];
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) {
@@ -979,10 +1361,38 @@ class PortalRepository {
         );
     }
 
+    private function emailExistsForOther($email, $userId) {
+        return (bool) $this->fetchValue(
+            "SELECT 1
+             FROM usuarios
+             WHERE email = :email
+               AND id <> :user_id
+             LIMIT 1",
+            [
+                ':email' => $email,
+                ':user_id' => $userId,
+            ]
+        );
+    }
+
     private function collaboratorCpfExists($cpf) {
         return (bool) $this->fetchValue(
             "SELECT 1 FROM colaborador_detalhes WHERE cpf = :cpf LIMIT 1",
             [':cpf' => $cpf]
+        );
+    }
+
+    private function collaboratorCpfExistsForOther($cpf, $collaboratorId) {
+        return (bool) $this->fetchValue(
+            "SELECT 1
+             FROM colaborador_detalhes
+             WHERE cpf = :cpf
+               AND colaborador_id <> :collaborator_id
+             LIMIT 1",
+            [
+                ':cpf' => $cpf,
+                ':collaborator_id' => $collaboratorId,
+            ]
         );
     }
 

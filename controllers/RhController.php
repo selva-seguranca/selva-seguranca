@@ -25,12 +25,52 @@ class RhController {
         $dbWarning = null;
         $viewCollaborator = null;
         $viewCollaboratorId = trim((string) ($_GET['view'] ?? ''));
+        $editCollaboratorId = $createModalState['editCollaboratorId'];
 
         try {
             $repository = new PortalRepository();
             $colaboradores = $repository->getCollaborators();
             $modulosRh = $this->buildRhModules($colaboradores);
             $kpis = $repository->getRhKpis();
+
+            if ($createModalState['formMode'] === 'edit') {
+                if ($editCollaboratorId === '') {
+                    $createModalState['formMode'] = 'create';
+                    $createModalState['isOpen'] = false;
+                    $createModalState['old'] = $this->defaultFormData();
+
+                    if ($actionFlash['error'] === null) {
+                        $actionFlash['error'] = 'Selecione um colaborador valido para editar.';
+                    }
+                } else {
+                    $editCollaborator = $repository->getCollaboratorDetails($editCollaboratorId);
+
+                    if ($editCollaborator === null) {
+                        $createModalState['formMode'] = 'create';
+                        $createModalState['isOpen'] = false;
+                        $createModalState['editCollaboratorId'] = '';
+                        $createModalState['existingPhotoUrl'] = '';
+                        $createModalState['old'] = $this->defaultFormData();
+
+                        if ($actionFlash['error'] === null) {
+                            $actionFlash['error'] = 'Cadastro do colaborador nao encontrado.';
+                        }
+                    } else {
+                        if ($createModalState['hasOldInput']) {
+                            $createModalState['old']['colaborador_id'] = $editCollaborator['collaborator_id'] ?? $editCollaboratorId;
+
+                            if (($createModalState['old']['foto_url_atual'] ?? '') === '') {
+                                $createModalState['old']['foto_url_atual'] = $editCollaborator['foto_url'] ?? '';
+                            }
+                        } else {
+                            $createModalState['old'] = $this->mapCollaboratorToFormData($editCollaborator);
+                        }
+
+                        $createModalState['editCollaboratorId'] = (string) ($editCollaborator['collaborator_id'] ?? $editCollaboratorId);
+                        $createModalState['existingPhotoUrl'] = trim((string) ($createModalState['old']['foto_url_atual'] ?? ($editCollaborator['foto_url'] ?? '')));
+                    }
+                }
+            }
 
             if ($viewCollaboratorId !== '') {
                 $viewCollaborator = $repository->getCollaboratorDetails($viewCollaboratorId);
@@ -52,6 +92,9 @@ class RhController {
             'accessInfo' => $createModalState['accessInfo'],
             'old' => $createModalState['old'],
             'isCreateModalOpen' => $createModalState['isOpen'],
+            'formMode' => $createModalState['formMode'],
+            'editCollaboratorId' => $createModalState['editCollaboratorId'],
+            'existingPhotoUrl' => $createModalState['existingPhotoUrl'],
             'actionSuccess' => $actionFlash['success'],
             'actionError' => $actionFlash['error'],
             'viewCollaborator' => $viewCollaborator,
@@ -75,6 +118,9 @@ class RhController {
             exit;
         }
 
+        $_SESSION['rh_form_mode'] = 'create';
+        $_SESSION['rh_form_edit_id'] = '';
+        $_SESSION['rh_form_existing_photo_url'] = '';
         $_SESSION['rh_form_old'] = $this->collectOldFormData($_POST);
         $storedFiles = [];
 
@@ -97,7 +143,7 @@ class RhController {
                 'foto' => $photo,
             ]);
 
-            unset($_SESSION['rh_form_old']);
+            unset($_SESSION['rh_form_mode'], $_SESSION['rh_form_edit_id'], $_SESSION['rh_form_existing_photo_url'], $_SESSION['rh_form_old']);
             $_SESSION['rh_form_success'] = 'Colaborador cadastrado com sucesso.';
             $_SESSION['rh_form_access'] = $result['access'] ?? null;
 
@@ -110,6 +156,72 @@ class RhController {
 
             $_SESSION['rh_form_error'] = $e->getMessage();
             header('Location: /rh?modal=novo-colaborador');
+            exit;
+        }
+    }
+
+    public function update() {
+        Auth::requireAnyProfile(['Coordenador Geral', 'Administrador']);
+
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            header('Location: /rh');
+            exit;
+        }
+
+        $collaboratorId = trim((string) ($_POST['colaborador_id'] ?? ''));
+        if ($collaboratorId === '') {
+            $_SESSION['rh_action_error'] = 'Selecione um colaborador valido para editar.';
+            header('Location: /rh');
+            exit;
+        }
+
+        $_SESSION['rh_form_mode'] = 'edit';
+        $_SESSION['rh_form_edit_id'] = $collaboratorId;
+        $_SESSION['rh_form_existing_photo_url'] = trim((string) ($_POST['foto_url_atual'] ?? ''));
+        $_SESSION['rh_form_old'] = $this->collectOldFormData($_POST);
+
+        $storedFiles = [];
+
+        try {
+            $repository = new PortalRepository();
+
+            if ($repository->getCollaboratorDetails($collaboratorId) === null) {
+                throw new \RuntimeException('Cadastro do colaborador nao encontrado.');
+            }
+
+            $photo = $this->storeOptionalFile(
+                $_FILES['foto_colaborador'] ?? null,
+                'colaboradores/fotos',
+                trim((string) Env::get('SUPABASE_COLLABORATORS_BUCKET', Env::get('SUPABASE_COLABORADORES_BUCKET', 'colaboradores')))
+            );
+
+            if ($photo !== null) {
+                $storedFiles[] = $photo;
+            }
+
+            $result = $repository->updateCollaboratorRegistration($collaboratorId, $_POST, [
+                'foto' => $photo,
+            ]);
+
+            unset($_SESSION['rh_form_mode'], $_SESSION['rh_form_edit_id'], $_SESSION['rh_form_existing_photo_url'], $_SESSION['rh_form_old']);
+
+            if (!empty($result['photo_changed']) && !empty($result['previous_photo_url'])) {
+                try {
+                    $this->deleteCollaboratorPhoto($result['previous_photo_url']);
+                } catch (Throwable $cleanupError) {
+                }
+            }
+
+            $_SESSION['rh_action_success'] = 'Cadastro do colaborador atualizado com sucesso.';
+            header('Location: /rh');
+            exit;
+        } catch (Throwable $e) {
+            foreach (array_reverse($storedFiles) as $storedFile) {
+                MediaStorage::delete($storedFile);
+            }
+
+            $_SESSION['rh_form_error'] = $e->getMessage();
+            header('Location: /rh?modal=editar-colaborador&edit=' . urlencode($collaboratorId));
             exit;
         }
     }
@@ -156,19 +268,38 @@ class RhController {
 
     private function consumeCreateModalState() {
         $modalParam = trim((string) ($_GET['modal'] ?? ''));
+        $sessionMode = trim((string) ($_SESSION['rh_form_mode'] ?? ''));
+        $editParam = trim((string) ($_GET['edit'] ?? ''));
+        $storedEditId = trim((string) ($_SESSION['rh_form_edit_id'] ?? ''));
         $formError = $_SESSION['rh_form_error'] ?? null;
         $successMessage = $_SESSION['rh_form_success'] ?? null;
         $accessInfo = $_SESSION['rh_form_access'] ?? null;
-        $old = $_SESSION['rh_form_old'] ?? $this->defaultFormData();
+        $hasOldInput = is_array($_SESSION['rh_form_old'] ?? null);
+        $old = $hasOldInput ? $_SESSION['rh_form_old'] : $this->defaultFormData();
+        $formMode = ($modalParam === 'editar-colaborador' || $sessionMode === 'edit') ? 'edit' : 'create';
+        $editCollaboratorId = $editParam !== '' ? $editParam : $storedEditId;
+        $existingPhotoUrl = trim((string) ($_SESSION['rh_form_existing_photo_url'] ?? ($old['foto_url_atual'] ?? '')));
 
-        unset($_SESSION['rh_form_error'], $_SESSION['rh_form_success'], $_SESSION['rh_form_access'], $_SESSION['rh_form_old']);
+        unset(
+            $_SESSION['rh_form_error'],
+            $_SESSION['rh_form_success'],
+            $_SESSION['rh_form_access'],
+            $_SESSION['rh_form_old'],
+            $_SESSION['rh_form_mode'],
+            $_SESSION['rh_form_edit_id'],
+            $_SESSION['rh_form_existing_photo_url']
+        );
 
         return [
             'formError' => $formError,
             'successMessage' => $successMessage,
             'accessInfo' => $accessInfo,
             'old' => $old,
-            'isOpen' => $modalParam === 'novo-colaborador' || $formError !== null || $successMessage !== null,
+            'hasOldInput' => $hasOldInput,
+            'formMode' => $formMode,
+            'editCollaboratorId' => $editCollaboratorId,
+            'existingPhotoUrl' => $existingPhotoUrl,
+            'isOpen' => in_array($modalParam, ['novo-colaborador', 'editar-colaborador'], true) || $formError !== null || $successMessage !== null,
         ];
     }
 
@@ -186,6 +317,7 @@ class RhController {
 
     private function defaultFormData() {
         return [
+            'colaborador_id' => '',
             'tipo_cadastro' => 'vigilante',
             'funcao_administrativa' => 'Administrativo',
             'tipo_vinculo' => 'CLT',
@@ -194,6 +326,7 @@ class RhController {
             'situacao_reciclagem' => 'Valida',
             'outros_cursos' => [],
             'fator_rh' => '+',
+            'foto_url_atual' => '',
         ];
     }
 
@@ -214,6 +347,52 @@ class RhController {
         ));
 
         return $old;
+    }
+
+    private function mapCollaboratorToFormData(array $collaborator) {
+        $registrationType = ($collaborator['tipo_cadastro'] ?? '') === 'vigilante'
+            || ($collaborator['perfil'] ?? '') === 'Vigilante'
+            || ($collaborator['cargo'] ?? '') === 'Vigilante'
+            ? 'vigilante'
+            : 'financeiro_administrativo';
+
+        return array_merge($this->defaultFormData(), [
+            'colaborador_id' => (string) ($collaborator['collaborator_id'] ?? ''),
+            'tipo_cadastro' => $registrationType,
+            'funcao_administrativa' => (($collaborator['cargo'] ?? '') === 'Financeiro') ? 'Financeiro' : 'Administrativo',
+            'email_acesso' => (string) ($collaborator['email'] ?? ''),
+            'nome_completo' => (string) ($collaborator['nome'] ?? ''),
+            'cpf' => (string) ($collaborator['cpf'] ?? ''),
+            'rg' => (string) ($collaborator['rg'] ?? ''),
+            'data_nascimento' => (string) ($collaborator['data_nascimento'] ?? ''),
+            'telefone_principal' => (string) ($collaborator['telefone_principal'] ?? ''),
+            'telefone_familiar' => (string) ($collaborator['telefone_familiar'] ?? ''),
+            'cep' => (string) ($collaborator['cep'] ?? ''),
+            'logradouro' => (string) ($collaborator['logradouro'] ?? ''),
+            'numero' => (string) ($collaborator['numero'] ?? ''),
+            'bairro' => (string) ($collaborator['bairro'] ?? ''),
+            'complemento' => (string) ($collaborator['complemento'] ?? ''),
+            'cidade' => (string) ($collaborator['cidade'] ?? ''),
+            'uf' => (string) ($collaborator['uf'] ?? ''),
+            'nome_mae' => (string) ($collaborator['nome_mae'] ?? ''),
+            'tipo_sanguineo' => (string) ($collaborator['tipo_sanguineo'] ?? ''),
+            'fator_rh' => (string) ($collaborator['fator_rh'] ?? '+'),
+            'tipo_vinculo' => (string) ($collaborator['tipo_vinculo'] ?? 'CLT'),
+            'data_admissao' => (string) ($collaborator['data_admissao'] ?? ''),
+            'numero_admissao' => (string) ($collaborator['numero_admissao'] ?? ''),
+            'situacao' => (string) ($collaborator['situacao'] ?? 'Ativo'),
+            'numero_cnv' => (string) ($collaborator['numero_cnv'] ?? ''),
+            'validade_cnv' => (string) ($collaborator['validade_cnv'] ?? ''),
+            'curso_formacao' => !empty($collaborator['curso_formacao_concluido']) ? 'Sim' : 'Nao',
+            'data_ultima_reciclagem' => (string) ($collaborator['data_ultima_reciclagem'] ?? ''),
+            'situacao_reciclagem' => (string) ($collaborator['situacao_reciclagem'] ?? 'Valida'),
+            'outros_cursos' => array_values(array_filter([
+                !empty($collaborator['curso_escolta_armada']) ? 'escolta_armada' : null,
+                !empty($collaborator['curso_seguranca_eventos']) ? 'seguranca_eventos' : null,
+                !empty($collaborator['curso_seguranca_vip']) ? 'seguranca_vip' : null,
+            ])),
+            'foto_url_atual' => (string) ($collaborator['foto_url'] ?? ''),
+        ]);
     }
 
     private function storeOptionalFile($file, $folder, $bucket = null) {
