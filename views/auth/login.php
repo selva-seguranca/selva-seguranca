@@ -37,7 +37,7 @@
     <div class="relative z-10 w-full max-w-md px-6">
         <div class="bg-brand-gray/80 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-white/10">
             <div class="flex justify-center mb-8">
-                <img src="/assets/img/logo-login.png" alt="Selva Segurança" class="h-28 w-auto object-contain filter drop-shadow-lg">
+                <img src="/assets/img/logo-login.png" alt="Selva Segurança" class="h-40 w-auto max-w-full object-contain filter drop-shadow-lg">
             </div>
 
             <h2 class="text-2xl font-semibold text-center mb-6 text-gray-100">Portal de Acesso</h2>
