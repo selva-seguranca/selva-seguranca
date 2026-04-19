@@ -166,13 +166,13 @@
                 </div>
             <?php else: ?>
                 <div class="hidden 2xl:block">
-                    <table class="w-full table-fixed text-left border-collapse">
+                    <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                                <th class="w-[42%] px-6 py-4 font-medium">Nome</th>
-                                <th class="w-[26%] px-6 py-4 font-medium">Cargo</th>
-                                <th class="w-[14%] px-6 py-4 font-medium">Status</th>
-                                <th class="w-[18%] px-6 py-4 font-medium text-right">Acoes</th>
+                                <th class="px-6 py-4 font-medium">Nome</th>
+                                <th class="px-6 py-4 font-medium">Cargo</th>
+                                <th class="px-6 py-4 font-medium">Status</th>
+                                <th class="px-4 py-4 font-medium text-right whitespace-nowrap">Acoes</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 text-sm">
@@ -197,9 +197,9 @@
                                         <?= htmlspecialchars($c['status']) ?>
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-right align-top whitespace-nowrap">
+                                <td class="px-4 py-4 text-right align-top whitespace-nowrap">
                                     <?php if (!empty($c['collaborator_id'])): ?>
-                                        <div class="inline-flex items-center gap-2">
+                                        <div class="inline-flex min-w-[124px] items-center justify-end gap-2">
                                             <a
                                                 href="/rh?view=<?= urlencode((string) $c['collaborator_id']) ?>"
                                                 class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:border-blue-200 hover:text-blue-600"
@@ -226,7 +226,7 @@
                                             </form>
                                         </div>
                                     <?php else: ?>
-                                        <div class="inline-flex items-center gap-2">
+                                        <div class="inline-flex min-w-[124px] items-center justify-end gap-2">
                                             <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-300" title="Cadastro indisponivel">
                                                 <i class="ph ph-eye-slash text-lg"></i>
                                             </span>
