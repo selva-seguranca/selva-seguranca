@@ -27,10 +27,11 @@ class MediaStorage {
      * Store a file in the configured storage driver.
      * 
      * @param array $file The $_FILES entry
-     * @param string $folder The subfolder/bucket to store the file in (e.g., 'ocorrencias')
+     * @param string $folder The object path prefix (e.g., 'ocorrencias')
+     * @param string|null $bucketOverride Optional bucket name for this upload flow
      * @return array Stored file information (url, path, driver)
      */
-    public static function store($file, string $folder = 'uploads') {
+    public static function store($file, string $folder = 'uploads', ?string $bucketOverride = null) {
         if (!is_array($file) || !isset($file['error'])) {
             throw new RuntimeException('Arquivo nao recebido corretamente.');
         }
@@ -66,7 +67,7 @@ class MediaStorage {
         }
 
         if ($driver === 'supabase') {
-            return self::storeInSupabase($file, $extension, $folder);
+            return self::storeInSupabase($file, $extension, $folder, $bucketOverride);
         }
 
         throw new RuntimeException('Driver de armazenamento de media invalido.');
@@ -161,9 +162,9 @@ class MediaStorage {
         ];
     }
 
-    private static function storeInSupabase($file, $extension, $folder) {
+    private static function storeInSupabase($file, $extension, $folder, $bucketOverride = null) {
         $supabaseUrl = self::resolveSupabaseUrl();
-        $bucket = self::resolveSupabaseBucket();
+        $bucket = self::resolveSupabaseBucket($bucketOverride, $folder);
         $storageKey = self::resolveSupabaseStorageKey();
 
         if ($supabaseUrl === '' || $storageKey === '') {
@@ -413,7 +414,24 @@ class MediaStorage {
         return '';
     }
 
-    private static function resolveSupabaseBucket() {
+    private static function resolveSupabaseBucket($bucketOverride = null, $folder = null) {
+        $bucketOverride = trim((string) $bucketOverride);
+        if ($bucketOverride !== '') {
+            return $bucketOverride;
+        }
+
+        $normalizedFolder = trim(str_replace('\\', '/', strtolower((string) $folder)), '/');
+        if ($normalizedFolder === 'colaboradores/fotos' || strpos($normalizedFolder, 'colaboradores/') === 0) {
+            $bucket = self::getFirstNonEmptyEnv([
+                'SUPABASE_COLLABORATORS_BUCKET',
+                'SUPABASE_COLABORADORES_BUCKET',
+            ]);
+
+            if ($bucket !== null) {
+                return $bucket;
+            }
+        }
+
         $bucket = self::getFirstNonEmptyEnv([
             'SUPABASE_STORAGE_BUCKET',
             'SUPABASE_BUCKET',

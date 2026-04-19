@@ -2,6 +2,7 @@
 
 namespace Controllers;
 
+use Config\Env;
 use Helpers\Auth;
 use Helpers\MediaStorage;
 use Helpers\View;
@@ -63,7 +64,11 @@ class RhController {
         $storedFiles = [];
 
         try {
-            $photo = $this->storeOptionalFile($_FILES['foto_colaborador'] ?? null, 'colaboradores/fotos');
+            $photo = $this->storeOptionalFile(
+                $_FILES['foto_colaborador'] ?? null,
+                'colaboradores/fotos',
+                trim((string) Env::get('SUPABASE_COLLABORATORS_BUCKET', Env::get('SUPABASE_COLABORADORES_BUCKET', 'colaboradores')))
+            );
             if ($photo === null) {
                 throw new \RuntimeException('Selecione a foto do colaborador e aplique o crop antes de salvar.');
             }
@@ -144,12 +149,12 @@ class RhController {
         return $old;
     }
 
-    private function storeOptionalFile($file, $folder) {
+    private function storeOptionalFile($file, $folder, $bucket = null) {
         if (!is_array($file) || (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE)) {
             return null;
         }
 
-        return MediaStorage::store($file, $folder);
+        return MediaStorage::store($file, $folder, $bucket);
     }
 
     private function buildRhModules(array $colaboradores) {
