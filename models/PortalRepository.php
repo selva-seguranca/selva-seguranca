@@ -9,10 +9,16 @@ use RuntimeException;
 use Throwable;
 
 class PortalRepository {
+    private static $legacySeedCleanupAttempted = false;
     private $db;
 
     public function __construct() {
         $this->db = Database::getInstance();
+
+        if (!self::$legacySeedCleanupAttempted) {
+            self::$legacySeedCleanupAttempted = true;
+            $this->cleanupLegacyMockCollaborator();
+        }
     }
 
     public function getDashboardStats() {
@@ -1466,6 +1472,75 @@ class PortalRepository {
         );
 
         return $result !== false ? $result : null;
+    }
+
+    private function cleanupLegacyMockCollaborator() {
+        try {
+            $mockUser = $this->fetchOne(
+                "SELECT
+                    u.id AS usuario_id,
+                    v.id AS vigilante_id
+                 FROM usuarios u
+                 LEFT JOIN vigilantes v ON v.usuario_id = u.id
+                 JOIN perfis p ON p.id = u.perfil_id
+                 WHERE u.email = :email
+                   AND p.nome = 'Vigilante'
+                 LIMIT 1",
+                [
+                    ':email' => 'joao@selvaseguranca.com',
+                ]
+            );
+
+            if ($mockUser === null) {
+                return;
+            }
+
+            $this->db->beginTransaction();
+
+            if (!empty($mockUser['vigilante_id'])) {
+                $this->run(
+                    "DELETE FROM ocorrencias
+                     WHERE ronda_id IN (
+                         SELECT id
+                         FROM rondas
+                         WHERE vigilante_id = :vigilante_id
+                     )",
+                    [':vigilante_id' => $mockUser['vigilante_id']]
+                );
+
+                $this->run(
+                    "DELETE FROM checklist_veiculos
+                     WHERE vigilante_id = :vigilante_id",
+                    [':vigilante_id' => $mockUser['vigilante_id']]
+                );
+
+                $this->run(
+                    "DELETE FROM rondas
+                     WHERE vigilante_id = :vigilante_id",
+                    [':vigilante_id' => $mockUser['vigilante_id']]
+                );
+            }
+
+            $this->run(
+                "DELETE FROM logs_auditoria
+                 WHERE usuario_id = :usuario_id",
+                [':usuario_id' => $mockUser['usuario_id']]
+            );
+
+            $this->run(
+                "DELETE FROM usuarios
+                 WHERE id = :usuario_id",
+                [':usuario_id' => $mockUser['usuario_id']]
+            );
+
+            $this->db->commit();
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            error_log('[PortalRepository] failed to clean legacy mock collaborator: ' . $e->getMessage());
+        }
     }
 
     private function fetchAll($sql, $params = [], $types = []) {

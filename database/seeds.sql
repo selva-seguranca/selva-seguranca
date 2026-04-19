@@ -32,23 +32,6 @@ SET nome = EXCLUDED.nome,
     perfil_id = EXCLUDED.perfil_id,
     ativo = true;
 
--- Inserir Usuario Vigilante Exemplo
--- Senha padrao: vigilante123
-INSERT INTO usuarios (nome, email, senha_hash, perfil_id)
-SELECT 'Joao Vigilante', 'joao@selvaseguranca.com', '$2y$10$a4nHziZVZHbmdwdzCCNo3e4Lg6VVnWTs9xA47RvvLkgMC6XEbm2tm', id
-FROM perfis WHERE nome = 'Vigilante'
-ON CONFLICT (email) DO NOTHING;
-
--- Inserir Vigilante na respectiva tabela (referenciando o usuario criado)
-INSERT INTO vigilantes (usuario_id, cnh, validade_cnh, formacao)
-SELECT id, '12345678901', '2028-12-31', 'Curso Basico de Vigilancia'
-FROM usuarios WHERE email = 'joao@selvaseguranca.com'
-AND NOT EXISTS (
-    SELECT 1
-    FROM vigilantes
-    WHERE vigilantes.usuario_id = usuarios.id
-);
-
 -- Inserir Veiculos Exemplo
 INSERT INTO veiculos (placa, modelo, marca, ano, km_atual, data_prox_troca_oleo, km_prox_troca_oleo, data_prox_revisao, km_prox_revisao) VALUES
 ('ABC1D23', 'Gol', 'Volkswagen', 2021, 49500, '2026-05-10', 50000, '2026-06-15', 55000),
