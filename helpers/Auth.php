@@ -221,7 +221,7 @@ class Auth {
         }
     }
 
-    private static function deleteRememberTokenBySelector($selector, PDO $db = null) {
+    private static function deleteRememberTokenBySelector($selector, ?PDO $db = null) {
         $db = $db ?: Database::getInstance();
         self::ensureRememberTokenSchema($db);
 
