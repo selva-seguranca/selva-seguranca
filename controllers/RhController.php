@@ -212,7 +212,7 @@ class RhController {
                 }
             }
 
-            $_SESSION['rh_action_success'] = 'Cadastro do colaborador atualizado com sucesso.';
+            $_SESSION['rh_action_success'] = 'collaborator_updated';
             header('Location: /rh');
             exit;
         } catch (Throwable $e) {

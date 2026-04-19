@@ -41,6 +41,11 @@
     $formMode = ($formMode ?? 'create') === 'edit' ? 'edit' : 'create';
     $isEditMode = $formMode === 'edit';
     $editCollaboratorId = trim((string) ($editCollaboratorId ?? ''));
+    $actionSuccessMessage = trim((string) ($actionSuccess ?? ''));
+    $isUpdateSuccessToast = $actionSuccessMessage === 'collaborator_updated';
+    $actionSuccessHtml = $isUpdateSuccessToast
+        ? 'ALTERA&Ccedil;&Otilde;ES SALVAS COM SUCESSO!'
+        : htmlspecialchars($actionSuccessMessage);
     $moduleToneMap = [
         'seguranca_privada' => [
             'container' => 'border-red-100',
@@ -81,12 +86,31 @@
     </div>
 <?php endif; ?>
 
-<?php if (!empty($actionSuccess)): ?>
+<?php if ($actionSuccessMessage !== '' && !$isUpdateSuccessToast): ?>
     <div class="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-800">
         <div class="flex items-start gap-3">
             <i class="ph ph-check-circle mt-0.5 text-lg"></i>
             <div>
-                <p class="font-semibold"><?= htmlspecialchars($actionSuccess) ?></p>
+                <p class="font-semibold"><?= $actionSuccessHtml ?></p>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
+
+<?php if ($isUpdateSuccessToast): ?>
+    <div
+        id="rh-action-success-toast"
+        class="fixed left-1/2 top-5 z-[80] w-[calc(100%-1.5rem)] max-w-xl -translate-x-1/2 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-800 shadow-2xl transition-all duration-300 sm:top-6"
+        role="alert"
+        aria-live="polite"
+    >
+        <div class="flex items-start gap-3">
+            <span class="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-green-100 text-green-700">
+                <i class="ph ph-check-circle text-xl"></i>
+            </span>
+            <div class="min-w-0">
+                <p class="font-semibold tracking-[0.04em]"><?= $actionSuccessHtml ?></p>
+                <p class="mt-1 text-xs text-green-700">Os dados do colaborador foram atualizados no banco e o alerta sera fechado automaticamente.</p>
             </div>
         </div>
     </div>
@@ -382,6 +406,7 @@
         const collaboratorClosers = document.querySelectorAll('[data-close-collaborator-modal]');
         const collaboratorViewClosers = document.querySelectorAll('[data-close-collaborator-view]');
         const cropModal = document.getElementById('crop-modal');
+        const successToast = document.getElementById('rh-action-success-toast');
 
         if (!collaboratorModal) {
             return;
@@ -505,6 +530,16 @@
                 setCollaboratorViewModalOpen(false);
             }
         });
+
+        if (successToast) {
+            window.setTimeout(() => {
+                successToast.classList.add('pointer-events-none', 'translate-y-[-10px]', 'opacity-0');
+
+                window.setTimeout(() => {
+                    successToast.remove();
+                }, 320);
+            }, 4200);
+        }
 
         syncBodyScroll();
     })();
