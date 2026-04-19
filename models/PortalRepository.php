@@ -86,16 +86,140 @@ class PortalRepository {
 
     public function getCollaborators() {
         return $this->fetchAll(
-            "SELECT u.id,
+            "SELECT c.id AS collaborator_id,
+                    u.id AS user_id,
                     u.nome,
                     COALESCE(c.cargo, CASE WHEN p.nome = 'Vigilante' THEN 'Vigilante' ELSE p.nome END) AS cargo,
                     COALESCE(c.departamento, CASE WHEN p.nome = 'Vigilante' THEN 'Operacional' ELSE 'Administrativo' END) AS departamento,
-                    CASE WHEN u.ativo THEN 'Ativo' ELSE 'Inativo' END AS status
+                    COALESCE(cd.situacao, CASE WHEN u.ativo THEN 'Ativo' ELSE 'Inativo' END) AS status
              FROM usuarios u
              JOIN perfis p ON p.id = u.perfil_id
              LEFT JOIN colaboradores c ON c.usuario_id = u.id
+             LEFT JOIN colaborador_detalhes cd ON cd.colaborador_id = c.id
              ORDER BY u.ativo DESC, u.nome ASC"
         );
+    }
+
+    public function getCollaboratorDetails($collaboratorId) {
+        $row = $this->fetchOne(
+            "SELECT c.id AS collaborator_id,
+                    u.id AS user_id,
+                    u.nome,
+                    u.email,
+                    p.nome AS perfil,
+                    u.ativo,
+                    c.cargo,
+                    c.departamento,
+                    c.data_admissao,
+                    cd.tipo_cadastro,
+                    cd.foto_url,
+                    cd.cpf,
+                    cd.rg,
+                    cd.data_nascimento,
+                    cd.telefone_principal,
+                    cd.telefone_familiar,
+                    cd.cep,
+                    cd.logradouro,
+                    cd.numero,
+                    cd.bairro,
+                    cd.complemento,
+                    cd.cidade,
+                    cd.uf,
+                    cd.endereco_completo,
+                    cd.nome_mae,
+                    cd.tipo_sanguineo,
+                    cd.fator_rh,
+                    cd.tipo_vinculo,
+                    cd.numero_admissao,
+                    cd.situacao,
+                    v.numero_cnv,
+                    v.validade_cnv,
+                    v.curso_formacao_concluido,
+                    v.data_ultima_reciclagem,
+                    v.situacao_reciclagem,
+                    v.curso_escolta_armada,
+                    v.curso_seguranca_eventos,
+                    v.curso_seguranca_vip
+             FROM colaboradores c
+             JOIN usuarios u ON u.id = c.usuario_id
+             JOIN perfis p ON p.id = u.perfil_id
+             LEFT JOIN colaborador_detalhes cd ON cd.colaborador_id = c.id
+             LEFT JOIN vigilantes v ON v.usuario_id = u.id
+             WHERE c.id = :collaborator_id
+             LIMIT 1",
+            [':collaborator_id' => $collaboratorId]
+        );
+
+        if ($row === null) {
+            return null;
+        }
+
+        $row['ativo'] = $this->toBoolean($row['ativo'] ?? false);
+        $row['curso_formacao_concluido'] = $this->toBoolean($row['curso_formacao_concluido'] ?? false);
+        $row['curso_escolta_armada'] = $this->toBoolean($row['curso_escolta_armada'] ?? false);
+        $row['curso_seguranca_eventos'] = $this->toBoolean($row['curso_seguranca_eventos'] ?? false);
+        $row['curso_seguranca_vip'] = $this->toBoolean($row['curso_seguranca_vip'] ?? false);
+        $row['outros_cursos'] = array_values(array_filter([
+            $row['curso_escolta_armada'] ? 'Escolta armada' : null,
+            $row['curso_seguranca_eventos'] ? 'Seguranca de eventos' : null,
+            $row['curso_seguranca_vip'] ? 'Seguranca VIP' : null,
+        ]));
+
+        return $row;
+    }
+
+    public function deleteCollaboratorRegistration($collaboratorId) {
+        $target = $this->fetchOne(
+            "SELECT c.id AS collaborator_id,
+                    c.usuario_id,
+                    cd.foto_url,
+                    EXISTS(
+                        SELECT 1
+                        FROM vigilantes v
+                        JOIN rondas r ON r.vigilante_id = v.id
+                        WHERE v.usuario_id = c.usuario_id
+                    ) AS has_rounds,
+                    EXISTS(
+                        SELECT 1
+                        FROM vigilantes v
+                        JOIN checklist_veiculos cv ON cv.vigilante_id = v.id
+                        WHERE v.usuario_id = c.usuario_id
+                    ) AS has_checklists
+             FROM colaboradores c
+             LEFT JOIN colaborador_detalhes cd ON cd.colaborador_id = c.id
+             WHERE c.id = :collaborator_id
+             LIMIT 1",
+            [':collaborator_id' => $collaboratorId]
+        );
+
+        if ($target === null) {
+            throw new RuntimeException('Cadastro do colaborador nao encontrado.');
+        }
+
+        if ($this->toBoolean($target['has_rounds'] ?? false) || $this->toBoolean($target['has_checklists'] ?? false)) {
+            throw new RuntimeException('Nao e possivel excluir este colaborador porque existem registros operacionais vinculados ao cadastro.');
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            $this->run(
+                "DELETE FROM usuarios WHERE id = :usuario_id",
+                [':usuario_id' => $target['usuario_id']]
+            );
+
+            $this->db->commit();
+
+            return [
+                'photo_url' => $target['foto_url'] ?? null,
+            ];
+        } catch (Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+
+            throw $e;
+        }
     }
 
     public function createCollaboratorRegistration(array $payload, array $media = []) {
@@ -1071,5 +1195,17 @@ class PortalRepository {
     private function humanize($value) {
         $value = str_replace('_', ' ', strtolower((string) $value));
         return ucwords($value);
+    }
+
+    private function toBoolean($value) {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (int) $value !== 0;
+        }
+
+        return in_array(strtolower(trim((string) $value)), ['1', 't', 'true', 'yes', 'on'], true);
     }
 }

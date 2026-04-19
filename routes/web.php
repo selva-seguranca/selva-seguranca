@@ -17,6 +17,7 @@ $router->get('/', 'DashboardController@index');
 $router->get('/rh', 'RhController@index');
 $router->get('/rh/colaboradores/novo', 'RhController@create');
 $router->post('/rh/colaboradores', 'RhController@store');
+$router->post('/rh/colaboradores/excluir', 'RhController@destroy');
 
 // Escalas Routes
 $router->get('/escalas', 'EscalaController@calendario');

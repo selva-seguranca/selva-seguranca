@@ -34,8 +34,10 @@
     $statusClassMap = [
         'Ativo' => 'bg-green-100 text-green-800',
         'Inativo' => 'bg-gray-200 text-gray-800',
+        'Afastado' => 'bg-yellow-100 text-yellow-800',
     ];
     $isCreateModalOpen = !empty($isCreateModalOpen);
+    $isViewModalOpen = !empty($isViewModalOpen);
     $moduleToneMap = [
         'seguranca_privada' => [
             'container' => 'border-red-100',
@@ -51,6 +53,41 @@
         ],
     ];
 ?>
+
+<?php if (!empty($dbWarning)): ?>
+    <div class="mb-6 rounded-2xl border border-yellow-200 bg-yellow-50 px-5 py-4 text-sm text-yellow-800">
+        <div class="flex items-start gap-3">
+            <i class="ph ph-warning-circle mt-0.5 text-lg"></i>
+            <div>
+                <p class="font-semibold">Aviso ao carregar RH</p>
+                <p class="mt-1"><?= htmlspecialchars($dbWarning) ?></p>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($actionError)): ?>
+    <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+        <div class="flex items-start gap-3">
+            <i class="ph ph-warning-circle mt-0.5 text-lg"></i>
+            <div>
+                <p class="font-semibold">Nao foi possivel concluir a acao.</p>
+                <p class="mt-1"><?= htmlspecialchars($actionError) ?></p>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
+
+<?php if (!empty($actionSuccess)): ?>
+    <div class="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-800">
+        <div class="flex items-start gap-3">
+            <i class="ph ph-check-circle mt-0.5 text-lg"></i>
+            <div>
+                <p class="font-semibold"><?= htmlspecialchars($actionSuccess) ?></p>
+            </div>
+        </div>
+    </div>
+<?php endif; ?>
 
 <div class="flex justify-between items-center mb-6">
     <h3 class="text-xl font-semibold text-gray-800">Modulos de Colaboradores</h3>
@@ -131,8 +168,31 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <button class="text-gray-400 hover:text-blue-600 transition-colors mr-2" title="Editar"><i class="ph ph-pencil-simple text-lg"></i></button>
-                                    <button class="text-gray-400 hover:text-brand-red transition-colors" title="Advertir"><i class="ph ph-warning text-lg"></i></button>
+                                    <?php if (!empty($c['collaborator_id'])): ?>
+                                        <div class="inline-flex items-center gap-2">
+                                            <a
+                                                href="/rh?view=<?= urlencode((string) $c['collaborator_id']) ?>"
+                                                class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:border-blue-200 hover:text-blue-600"
+                                                title="Visualizar cadastro"
+                                            >
+                                                <i class="ph ph-eye text-lg"></i>
+                                            </a>
+                                            <form method="POST" action="/rh/colaboradores/excluir" onsubmit="return confirm('Deseja excluir este colaborador? Esta acao nao pode ser desfeita.')" class="inline-flex">
+                                                <input type="hidden" name="colaborador_id" value="<?= htmlspecialchars((string) $c['collaborator_id']) ?>">
+                                                <button
+                                                    type="submit"
+                                                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:border-red-200 hover:text-brand-red"
+                                                    title="Excluir colaborador"
+                                                >
+                                                    <i class="ph ph-trash text-lg"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-300" title="Cadastro indisponivel">
+                                            <i class="ph ph-eye-slash text-lg"></i>
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -172,12 +232,25 @@
                             </div>
 
                             <div class="mt-4 flex justify-end gap-2">
-                                <button class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:border-blue-200 hover:text-blue-600">
-                                    <i class="ph ph-pencil-simple text-lg"></i>
-                                </button>
-                                <button class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:border-red-200 hover:text-brand-red">
-                                    <i class="ph ph-warning text-lg"></i>
-                                </button>
+                                <?php if (!empty($c['collaborator_id'])): ?>
+                                    <a
+                                        href="/rh?view=<?= urlencode((string) $c['collaborator_id']) ?>"
+                                        class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:border-blue-200 hover:text-blue-600"
+                                        title="Visualizar cadastro"
+                                    >
+                                        <i class="ph ph-eye text-lg"></i>
+                                    </a>
+                                    <form method="POST" action="/rh/colaboradores/excluir" onsubmit="return confirm('Deseja excluir este colaborador? Esta acao nao pode ser desfeita.')" class="inline-flex">
+                                        <input type="hidden" name="colaborador_id" value="<?= htmlspecialchars((string) $c['collaborator_id']) ?>">
+                                        <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:border-red-200 hover:text-brand-red" title="Excluir colaborador">
+                                            <i class="ph ph-trash text-lg"></i>
+                                        </button>
+                                    </form>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-300">
+                                        <i class="ph ph-eye-slash text-lg"></i>
+                                    </span>
+                                <?php endif; ?>
                             </div>
                         </article>
                     <?php endforeach; ?>
@@ -185,6 +258,41 @@
             <?php endif; ?>
         </section>
     <?php endforeach; ?>
+</div>
+
+<div
+    id="collaborator-view-modal"
+    class="fixed inset-0 z-40 <?= $isViewModalOpen ? 'flex' : 'hidden' ?> items-start justify-center overflow-y-auto bg-black/60 p-3 sm:items-center sm:p-5"
+    aria-hidden="<?= $isViewModalOpen ? 'false' : 'true' ?>"
+>
+    <button
+        type="button"
+        data-close-collaborator-view
+        class="absolute inset-0 h-full w-full cursor-default"
+        aria-label="Fechar visualizacao"
+    ></button>
+
+    <section class="relative z-10 my-1 flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-[24px] bg-gray-50 shadow-2xl sm:max-h-[calc(100vh-4rem)] sm:rounded-[30px]">
+        <header class="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-brand-red">RH / Colaborador</p>
+                <h2 class="mt-1 text-xl font-bold text-gray-900 sm:text-2xl">Visualizar cadastro</h2>
+            </div>
+
+            <button
+                type="button"
+                data-close-collaborator-view
+                class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-800 sm:h-12 sm:w-12"
+                aria-label="Fechar popup"
+            >
+                <i class="ph ph-x text-2xl"></i>
+            </button>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-2.5 sm:p-5">
+            <?php include __DIR__ . '/show.php'; ?>
+        </div>
+    </section>
 </div>
 
 <div
@@ -226,8 +334,10 @@
     (() => {
         const body = document.body;
         const collaboratorModal = document.getElementById('collaborator-modal');
+        const collaboratorViewModal = document.getElementById('collaborator-view-modal');
         const collaboratorOpeners = document.querySelectorAll('[data-open-collaborator-modal]');
         const collaboratorClosers = document.querySelectorAll('[data-close-collaborator-modal]');
+        const collaboratorViewClosers = document.querySelectorAll('[data-close-collaborator-view]');
         const cropModal = document.getElementById('crop-modal');
 
         if (!collaboratorModal) {
@@ -238,8 +348,15 @@
             return cropModal && !cropModal.classList.contains('hidden');
         }
 
+        function isViewModalOpen() {
+            return collaboratorViewModal && !collaboratorViewModal.classList.contains('hidden');
+        }
+
         function syncBodyScroll() {
-            body.classList.toggle('overflow-hidden', !collaboratorModal.classList.contains('hidden') || isCropModalOpen());
+            body.classList.toggle(
+                'overflow-hidden',
+                !collaboratorModal.classList.contains('hidden') || isViewModalOpen() || isCropModalOpen()
+            );
         }
 
         function syncModalUrl(isOpen) {
@@ -249,6 +366,16 @@
                 url.searchParams.set('modal', 'novo-colaborador');
             } else {
                 url.searchParams.delete('modal');
+            }
+
+            window.history.replaceState({}, '', url.toString());
+        }
+
+        function syncViewUrl(isOpen) {
+            const url = new URL(window.location.href);
+
+            if (!isOpen) {
+                url.searchParams.delete('view');
             }
 
             window.history.replaceState({}, '', url.toString());
@@ -266,9 +393,26 @@
             syncBodyScroll();
         }
 
+        function setCollaboratorViewModalOpen(isOpen, syncUrl = true) {
+            if (!collaboratorViewModal) {
+                return;
+            }
+
+            collaboratorViewModal.classList.toggle('hidden', !isOpen);
+            collaboratorViewModal.classList.toggle('flex', isOpen);
+            collaboratorViewModal.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+
+            if (syncUrl) {
+                syncViewUrl(isOpen);
+            }
+
+            syncBodyScroll();
+        }
+
         collaboratorOpeners.forEach((trigger) => {
             trigger.addEventListener('click', (event) => {
                 event.preventDefault();
+                setCollaboratorViewModalOpen(false);
                 setCollaboratorModalOpen(true);
             });
         });
@@ -276,6 +420,12 @@
         collaboratorClosers.forEach((trigger) => {
             trigger.addEventListener('click', () => {
                 setCollaboratorModalOpen(false);
+            });
+        });
+
+        collaboratorViewClosers.forEach((trigger) => {
+            trigger.addEventListener('click', () => {
+                setCollaboratorViewModalOpen(false);
             });
         });
 
@@ -290,6 +440,11 @@
 
             if (!collaboratorModal.classList.contains('hidden')) {
                 setCollaboratorModalOpen(false);
+                return;
+            }
+
+            if (isViewModalOpen()) {
+                setCollaboratorViewModalOpen(false);
             }
         });
 

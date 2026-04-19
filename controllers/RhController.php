@@ -16,18 +16,29 @@ class RhController {
         $colaboradores = [];
         $modulosRh = $this->buildRhModules([]);
         $createModalState = $this->consumeCreateModalState();
+        $actionFlash = $this->consumeActionFlash();
         $kpis = [
             'total_ativos' => 0,
             'em_ferias' => 0,
             'advertencias_recentes' => 0,
         ];
         $dbWarning = null;
+        $viewCollaborator = null;
+        $viewCollaboratorId = trim((string) ($_GET['view'] ?? ''));
 
         try {
             $repository = new PortalRepository();
             $colaboradores = $repository->getCollaborators();
             $modulosRh = $this->buildRhModules($colaboradores);
             $kpis = $repository->getRhKpis();
+
+            if ($viewCollaboratorId !== '') {
+                $viewCollaborator = $repository->getCollaboratorDetails($viewCollaboratorId);
+
+                if ($viewCollaborator === null && $actionFlash['error'] === null) {
+                    $actionFlash['error'] = 'Cadastro do colaborador nao encontrado.';
+                }
+            }
         } catch (Throwable $e) {
             $dbWarning = 'Nao foi possivel carregar os dados de RH direto do banco.';
         }
@@ -41,6 +52,10 @@ class RhController {
             'accessInfo' => $createModalState['accessInfo'],
             'old' => $createModalState['old'],
             'isCreateModalOpen' => $createModalState['isOpen'],
+            'actionSuccess' => $actionFlash['success'],
+            'actionError' => $actionFlash['error'],
+            'viewCollaborator' => $viewCollaborator,
+            'isViewModalOpen' => $viewCollaborator !== null,
             'kpis' => $kpis,
             'dbWarning' => $dbWarning,
         ]);
@@ -99,6 +114,46 @@ class RhController {
         }
     }
 
+    public function destroy() {
+        Auth::requireAnyProfile(['Coordenador Geral', 'Administrador']);
+
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            header('Location: /rh');
+            exit;
+        }
+
+        $collaboratorId = trim((string) ($_POST['colaborador_id'] ?? ''));
+
+        if ($collaboratorId === '') {
+            $_SESSION['rh_action_error'] = 'Selecione um colaborador valido para excluir.';
+            header('Location: /rh');
+            exit;
+        }
+
+        try {
+            $repository = new PortalRepository();
+            $collaborator = $repository->getCollaboratorDetails($collaboratorId);
+
+            if ($collaborator === null) {
+                throw new \RuntimeException('Cadastro do colaborador nao encontrado.');
+            }
+
+            if (($collaborator['user_id'] ?? null) === ($_SESSION['user_id'] ?? null)) {
+                throw new \RuntimeException('Nao e possivel excluir o usuario atualmente logado.');
+            }
+
+            $result = $repository->deleteCollaboratorRegistration($collaboratorId);
+            $this->deleteCollaboratorPhoto($result['photo_url'] ?? null);
+
+            $_SESSION['rh_action_success'] = 'Colaborador excluido com sucesso.';
+        } catch (Throwable $e) {
+            $_SESSION['rh_action_error'] = $e->getMessage();
+        }
+
+        header('Location: /rh');
+        exit;
+    }
+
     private function consumeCreateModalState() {
         $modalParam = trim((string) ($_GET['modal'] ?? ''));
         $formError = $_SESSION['rh_form_error'] ?? null;
@@ -114,6 +169,18 @@ class RhController {
             'accessInfo' => $accessInfo,
             'old' => $old,
             'isOpen' => $modalParam === 'novo-colaborador' || $formError !== null || $successMessage !== null,
+        ];
+    }
+
+    private function consumeActionFlash() {
+        $success = $_SESSION['rh_action_success'] ?? null;
+        $error = $_SESSION['rh_action_error'] ?? null;
+
+        unset($_SESSION['rh_action_success'], $_SESSION['rh_action_error']);
+
+        return [
+            'success' => $success,
+            'error' => $error,
         ];
     }
 
@@ -155,6 +222,61 @@ class RhController {
         }
 
         return MediaStorage::store($file, $folder, $bucket);
+    }
+
+    private function deleteCollaboratorPhoto($photoUrl) {
+        $photoUrl = trim((string) $photoUrl);
+        if ($photoUrl === '') {
+            return;
+        }
+
+        $bucket = trim((string) Env::get(
+            'SUPABASE_COLLABORATORS_BUCKET',
+            Env::get('SUPABASE_COLABORADORES_BUCKET', 'colaboradores')
+        ));
+
+        if (strpos($photoUrl, '/uploads/') === 0) {
+            MediaStorage::delete([
+                'driver' => 'local',
+                'path' => dirname(__DIR__) . '/public' . str_replace('/', DIRECTORY_SEPARATOR, $photoUrl),
+            ]);
+            return;
+        }
+
+        $urlPath = parse_url($photoUrl, PHP_URL_PATH);
+        if (!is_string($urlPath) || $urlPath === '') {
+            return;
+        }
+
+        $customPublicPath = parse_url((string) Env::get('SUPABASE_STORAGE_PUBLIC_URL', ''), PHP_URL_PATH);
+        if (is_string($customPublicPath) && $customPublicPath !== '') {
+            $customPublicPath = rtrim($customPublicPath, '/');
+            if (strpos($urlPath, $customPublicPath . '/') === 0) {
+                $objectPath = rawurldecode(substr($urlPath, strlen($customPublicPath . '/')));
+                MediaStorage::delete([
+                    'driver' => 'supabase',
+                    'object_path' => $objectPath,
+                    'bucket' => $bucket,
+                ]);
+                return;
+            }
+        }
+
+        $bucketPrefix = '/storage/v1/object/public/' . rawurlencode($bucket) . '/';
+        if (strpos($urlPath, $bucketPrefix) === false) {
+            return;
+        }
+
+        $objectPath = rawurldecode(substr($urlPath, strpos($urlPath, $bucketPrefix) + strlen($bucketPrefix)));
+        if ($objectPath === '') {
+            return;
+        }
+
+        MediaStorage::delete([
+            'driver' => 'supabase',
+            'object_path' => $objectPath,
+            'bucket' => $bucket,
+        ]);
     }
 
     private function buildRhModules(array $colaboradores) {
