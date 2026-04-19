@@ -162,8 +162,8 @@ class MediaStorage {
 
     private static function storeInSupabase($file, $extension, $folder) {
         $supabaseUrl = self::resolveSupabaseUrl();
-        $bucket = trim((string) Env::get('SUPABASE_STORAGE_BUCKET', 'checklists'));
-        $storageKey = trim((string) Env::get('SUPABASE_SERVICE_ROLE_KEY', Env::get('SUPABASE_ANON_KEY', '')));
+        $bucket = self::resolveSupabaseBucket();
+        $storageKey = self::resolveSupabaseStorageKey();
 
         if ($supabaseUrl === '' || $storageKey === '') {
             throw new RuntimeException('Configuracao do Supabase ausente.');
@@ -200,7 +200,7 @@ class MediaStorage {
 
     private static function deleteFromSupabase($objectPath, $bucket) {
         $supabaseUrl = self::resolveSupabaseUrl();
-        $storageKey = trim((string) Env::get('SUPABASE_SERVICE_ROLE_KEY', ''));
+        $storageKey = self::resolveSupabaseStorageKey();
 
         if ($supabaseUrl === '' || $storageKey === '') {
             return;
@@ -286,7 +286,10 @@ class MediaStorage {
     }
 
     private static function resolveSupabaseUrl() {
-        $configuredUrl = trim((string) Env::get('SUPABASE_URL', Env::get('NEXT_PUBLIC_SUPABASE_URL', '')));
+        $configuredUrl = trim((string) Env::get(
+            'SUPABASE_URL',
+            Env::get('SUPABASE_PROJECT_URL', Env::get('NEXT_PUBLIC_SUPABASE_URL', ''))
+        ));
         if ($configuredUrl !== '') {
             return rtrim($configuredUrl, '/');
         }
@@ -297,6 +300,17 @@ class MediaStorage {
         }
 
         return '';
+    }
+
+    private static function resolveSupabaseBucket() {
+        return trim((string) Env::get('SUPABASE_STORAGE_BUCKET', 'checklists'));
+    }
+
+    private static function resolveSupabaseStorageKey() {
+        return trim((string) Env::get(
+            'SUPABASE_STORAGE_KEY',
+            Env::get('SUPABASE_SERVICE_ROLE_KEY', Env::get('SUPABASE_ANON_KEY', ''))
+        ));
     }
 
     private static function buildSupabasePublicUrl($supabaseUrl, $bucket, $objectPath) {
