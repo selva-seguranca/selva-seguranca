@@ -165,41 +165,41 @@
                     Nenhum colaborador enquadrado neste modulo com base nos cargos e departamentos atuais.
                 </div>
             <?php else: ?>
-                <div class="hidden lg:block overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                <div class="hidden 2xl:block">
+                    <table class="w-full table-fixed text-left border-collapse">
                         <thead>
                             <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                                <th class="px-6 py-4 font-medium">Nome</th>
-                                <th class="px-6 py-4 font-medium">Cargo</th>
-                                <th class="px-6 py-4 font-medium">Departamento</th>
-                                <th class="px-6 py-4 font-medium">Status</th>
-                                <th class="px-6 py-4 font-medium text-right">Acoes</th>
+                                <th class="w-[32%] px-6 py-4 font-medium">Nome</th>
+                                <th class="w-[22%] px-6 py-4 font-medium">Cargo</th>
+                                <th class="w-[20%] px-6 py-4 font-medium">Departamento</th>
+                                <th class="w-[12%] px-6 py-4 font-medium">Status</th>
+                                <th class="w-[14%] px-6 py-4 font-medium text-right">Acoes</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 text-sm">
                             <?php foreach ($modulo['colaboradores'] as $c): ?>
                             <?php $photoUrl = trim((string) ($c['foto_url'] ?? '')); ?>
                             <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4 font-medium text-gray-800">
-                                    <div class="flex items-center">
-                                        <div class="mr-3 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-white/80 text-xs font-bold shadow-sm <?= $photoUrl !== '' ? 'bg-white' : $tone['avatar'] ?>">
+                                <td class="px-6 py-4 align-top font-medium text-gray-800">
+                                    <div class="flex min-w-0 items-start gap-3">
+                                        <div class="flex h-11 w-11 min-h-11 min-w-11 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full border border-white/80 text-xs font-bold shadow-sm <?= $photoUrl !== '' ? 'bg-white' : $tone['avatar'] ?>">
                                             <?php if ($photoUrl !== ''): ?>
-                                                <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Foto de <?= htmlspecialchars($c['nome']) ?>" class="h-full w-full object-cover" loading="lazy">
+                                                <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Foto de <?= htmlspecialchars($c['nome']) ?>" class="block h-full w-full rounded-full object-cover" loading="lazy">
                                             <?php else: ?>
                                                 <?= htmlspecialchars(substr($c['nome'], 0, 1)) ?>
                                             <?php endif; ?>
                                         </div>
-                                        <span><?= htmlspecialchars($c['nome']) ?></span>
+                                        <span class="block min-w-0 whitespace-normal break-words leading-6"><?= htmlspecialchars($c['nome']) ?></span>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-gray-600"><?= htmlspecialchars($c['cargo']) ?></td>
-                                <td class="px-6 py-4 text-gray-600"><?= htmlspecialchars($c['departamento']) ?></td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 align-top whitespace-normal break-words leading-6 text-gray-600"><?= htmlspecialchars($c['cargo']) ?></td>
+                                <td class="px-6 py-4 align-top whitespace-normal break-words leading-6 text-gray-600"><?= htmlspecialchars($c['departamento']) ?></td>
+                                <td class="px-6 py-4 align-top">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?= $statusClassMap[$c['status']] ?? 'bg-gray-200 text-gray-800' ?>">
                                         <?= htmlspecialchars($c['status']) ?>
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-right">
+                                <td class="px-6 py-4 text-right align-top whitespace-nowrap">
                                     <?php if (!empty($c['collaborator_id'])): ?>
                                         <div class="inline-flex items-center gap-2">
                                             <a
@@ -247,23 +247,23 @@
                     </table>
                 </div>
 
-                <div class="space-y-4 p-4 lg:hidden">
+                <div class="space-y-4 p-4 2xl:hidden">
                     <?php foreach ($modulo['colaboradores'] as $c): ?>
                         <?php $photoUrl = trim((string) ($c['foto_url'] ?? '')); ?>
                         <article class="rounded-2xl border border-gray-200 p-4 shadow-sm">
                             <div class="flex items-start justify-between gap-4">
                                 <div class="min-w-0">
-                                    <div class="flex items-center">
-                                        <div class="mr-3 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/80 text-xs font-bold shadow-sm <?= $photoUrl !== '' ? 'bg-white' : $tone['avatar'] ?>">
+                                    <div class="flex items-start">
+                                        <div class="mr-3 flex h-11 w-11 min-h-11 min-w-11 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full border border-white/80 text-xs font-bold shadow-sm <?= $photoUrl !== '' ? 'bg-white' : $tone['avatar'] ?>">
                                             <?php if ($photoUrl !== ''): ?>
-                                                <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Foto de <?= htmlspecialchars($c['nome']) ?>" class="h-full w-full object-cover" loading="lazy">
+                                                <img src="<?= htmlspecialchars($photoUrl) ?>" alt="Foto de <?= htmlspecialchars($c['nome']) ?>" class="block h-full w-full rounded-full object-cover" loading="lazy">
                                             <?php else: ?>
                                                 <?= htmlspecialchars(substr($c['nome'], 0, 1)) ?>
                                             <?php endif; ?>
                                         </div>
                                         <div class="min-w-0">
-                                            <h5 class="truncate text-sm font-semibold text-gray-900"><?= htmlspecialchars($c['nome']) ?></h5>
-                                            <p class="truncate text-xs text-gray-500"><?= htmlspecialchars($c['cargo']) ?></p>
+                                            <h5 class="text-sm font-semibold leading-6 text-gray-900 break-words"><?= htmlspecialchars($c['nome']) ?></h5>
+                                            <p class="mt-1 text-xs leading-5 text-gray-500 break-words"><?= htmlspecialchars($c['cargo']) ?></p>
                                         </div>
                                     </div>
                                 </div>
