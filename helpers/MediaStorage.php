@@ -166,6 +166,16 @@ class MediaStorage {
         $storageKey = self::resolveSupabaseStorageKey();
 
         if ($supabaseUrl === '' || $storageKey === '') {
+            error_log(sprintf(
+                '[MediaStorage] missing supabase config url_present=%s key_present=%s bucket_present=%s driver=%s',
+                $supabaseUrl !== '' ? '1' : '0',
+                $storageKey !== '' ? '1' : '0',
+                $bucket !== '' ? '1' : '0',
+                strtolower((string) Env::get(
+                    'MEDIA_STORAGE_DRIVER',
+                    Env::get('CHECKLIST_STORAGE_DRIVER', Env::isTruthy('VERCEL') ? 'supabase' : 'local')
+                ))
+            ));
             throw new RuntimeException('Configuracao do Supabase ausente.');
         }
 
@@ -286,31 +296,113 @@ class MediaStorage {
     }
 
     private static function resolveSupabaseUrl() {
-        $configuredUrl = trim((string) Env::get(
+        $configuredUrl = self::getFirstNonEmptyEnv([
             'SUPABASE_URL',
-            Env::get('SUPABASE_PROJECT_URL', Env::get('NEXT_PUBLIC_SUPABASE_URL', ''))
-        ));
-        if ($configuredUrl !== '') {
+            'SUPABASE_PROJECT_URL',
+            'NEXT_PUBLIC_SUPABASE_URL',
+        ]);
+
+        if ($configuredUrl !== null) {
             return rtrim($configuredUrl, '/');
         }
 
-        $host = trim((string) Env::get('DB_HOST', ''));
-        if (preg_match('/^db\.([a-z0-9-]+)\.supabase\.co$/i', $host, $matches)) {
-            return 'https://' . $matches[1] . '.supabase.co';
+        $projectRef = self::resolveSupabaseProjectRef();
+        if ($projectRef !== null) {
+            return 'https://' . $projectRef . '.supabase.co';
         }
 
         return '';
     }
 
     private static function resolveSupabaseBucket() {
-        return trim((string) Env::get('SUPABASE_STORAGE_BUCKET', 'checklists'));
+        $bucket = self::getFirstNonEmptyEnv([
+            'SUPABASE_STORAGE_BUCKET',
+            'SUPABASE_BUCKET',
+        ]);
+
+        return $bucket !== null ? $bucket : 'checklists';
     }
 
     private static function resolveSupabaseStorageKey() {
-        return trim((string) Env::get(
+        $key = self::getFirstNonEmptyEnv([
             'SUPABASE_STORAGE_KEY',
-            Env::get('SUPABASE_SERVICE_ROLE_KEY', Env::get('SUPABASE_ANON_KEY', ''))
-        ));
+            'SUPABASE_SECRET_KEY',
+            'SUPABASE_SERVICE_ROLE_KEY',
+            'SUPABASE_PUBLISHABLE_KEY',
+            'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+            'SUPABASE_ANON_KEY',
+            'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+            'SERVICE_ROLE_KEY',
+            'ANON_KEY',
+        ]);
+
+        return $key !== null ? $key : '';
+    }
+
+    private static function resolveSupabaseProjectRef() {
+        $host = self::getFirstNonEmptyEnv([
+            'DB_HOST',
+            'POSTGRES_HOST',
+        ]);
+        $projectRef = self::extractSupabaseProjectRefFromHost($host);
+        if ($projectRef !== null) {
+            return $projectRef;
+        }
+
+        $databaseUrl = self::getFirstNonEmptyEnv([
+            'DATABASE_URL',
+            'POSTGRES_URL',
+            'SUPABASE_DB_URL',
+        ]);
+
+        if ($databaseUrl === null) {
+            return null;
+        }
+
+        $parts = parse_url($databaseUrl);
+        if ($parts === false) {
+            return null;
+        }
+
+        $projectRef = self::extractSupabaseProjectRefFromHost($parts['host'] ?? null);
+        if ($projectRef !== null) {
+            return $projectRef;
+        }
+
+        $databaseUser = urldecode((string) ($parts['user'] ?? ''));
+        if (preg_match('/^[^.]+\.([a-z0-9-]+)$/i', $databaseUser, $matches)) {
+            return strtolower($matches[1]);
+        }
+
+        return null;
+    }
+
+    private static function extractSupabaseProjectRefFromHost($host) {
+        $host = strtolower(trim((string) $host));
+        if ($host === '') {
+            return null;
+        }
+
+        if (preg_match('/^db\.([a-z0-9-]+)\.supabase\.co$/i', $host, $matches)) {
+            return strtolower($matches[1]);
+        }
+
+        if (preg_match('/^([a-z0-9-]+)\.supabase\.co$/i', $host, $matches)) {
+            return strtolower($matches[1]);
+        }
+
+        return null;
+    }
+
+    private static function getFirstNonEmptyEnv(array $names) {
+        foreach ($names as $name) {
+            $value = trim((string) Env::get($name, ''));
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return null;
     }
 
     private static function buildSupabasePublicUrl($supabaseUrl, $bucket, $objectPath) {
