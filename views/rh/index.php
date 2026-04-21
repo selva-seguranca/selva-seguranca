@@ -170,9 +170,9 @@
                     Nenhum colaborador enquadrado neste módulo com base nos cargos e departamentos atuais.
                 </div>
             <?php else: ?>
-                <div class="hidden 2xl:block">
+                <div class="hidden max-h-[430px] overflow-y-auto 2xl:block">
                     <table class="w-full text-left border-collapse">
-                        <thead>
+                        <thead class="sticky top-0 z-10">
                             <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
                                 <th class="px-6 py-4 font-medium">Nome</th>
                                 <th class="px-6 py-4 font-medium">Cargo</th>
@@ -250,7 +250,7 @@
                     </table>
                 </div>
 
-                <div class="space-y-4 p-4 2xl:hidden">
+                <div class="max-h-[760px] space-y-4 overflow-y-auto p-4 2xl:hidden">
                     <?php foreach ($modulo['colaboradores'] as $c): ?>
                         <?php $photoUrl = trim((string) ($c['foto_url'] ?? '')); ?>
                         <article class="rounded-2xl border border-gray-200 p-4 shadow-sm" data-rh-area-row="<?= htmlspecialchars((string) ($c['rh_area'] ?? 'Administrativo'), ENT_QUOTES, 'UTF-8') ?>">
