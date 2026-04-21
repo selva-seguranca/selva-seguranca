@@ -145,7 +145,7 @@ class RhController {
 
             $documents = $this->storeOptionalPdfFiles(
                 $_FILES['documentos_pdf'] ?? null,
-                'colaboradores/documentos',
+                'documentos',
                 $collaboratorBucket
             );
             foreach ($documents as $document) {
@@ -217,7 +217,7 @@ class RhController {
 
             $documents = $this->storeOptionalPdfFiles(
                 $_FILES['documentos_pdf'] ?? null,
-                'colaboradores/documentos',
+                'documentos',
                 $collaboratorBucket
             );
             foreach ($documents as $document) {

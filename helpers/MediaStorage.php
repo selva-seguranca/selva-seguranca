@@ -268,8 +268,17 @@ class MediaStorage {
         }
 
         $context = stream_context_create($options);
-        $responseBody = @file_get_contents($url, false, $context);
-        $responseHeaders = self::getLastHttpResponseHeaders();
+        $responseBody = false;
+        $responseHeaders = [];
+        $stream = @fopen($url, 'rb', false, $context);
+
+        if (is_resource($stream)) {
+            $responseBody = stream_get_contents($stream);
+            $metadata = stream_get_meta_data($stream);
+            $responseHeaders = is_array($metadata['wrapper_data'] ?? null) ? $metadata['wrapper_data'] : [];
+            fclose($stream);
+        }
+
         $statusCode = self::extractHttpStatusCode($responseHeaders);
 
         if ($statusCode >= 200 && $statusCode < 300) {
@@ -379,9 +388,7 @@ class MediaStorage {
             return is_array($headers) ? $headers : [];
         }
 
-        global $http_response_header;
-
-        return is_array($http_response_header ?? null) ? $http_response_header : [];
+        return [];
     }
 
     private static function isMissingBucketError(RuntimeException $e) {
