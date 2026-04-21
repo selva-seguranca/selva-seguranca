@@ -401,7 +401,7 @@
                         <i class="ph ph-file-pdf text-2xl"></i>
                     </span>
                     <span class="mt-4 text-sm font-semibold text-gray-900">Selecionar documentos em PDF</span>
-                    <span class="mt-1 text-xs text-gray-500">Anexe at&eacute; 4 arquivos PDF neste cadastro, respeitando o limite de <?= \Helpers\MediaStorage::getMaxAllowedFileSizeLabel() ?> por arquivo.</span>
+                    <span class="mt-1 text-xs text-gray-500">Anexe at&eacute; 10 arquivos PDF neste cadastro, respeitando o limite de <?= \Helpers\MediaStorage::getMaxAllowedFileSizeLabel() ?> por arquivo.</span>
                 </label>
 
                 <div id="document-selected-list" class="hidden rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-700"></div>
@@ -625,7 +625,7 @@
         let cropper = null;
         let sourceImageUrl = null;
         let selectedDocumentFiles = [];
-        const maxDocumentUploadCount = 4;
+        const maxDocumentUploadCount = 10;
 
         function setPhotoError(message) {
             if (!photoStatus) {
