@@ -20,6 +20,9 @@ $router->post('/rh/colaboradores', 'RhController@store');
 $router->post('/rh/colaboradores/atualizar', 'RhController@update');
 $router->post('/rh/colaboradores/excluir', 'RhController@destroy');
 
+// Reciclagem Routes
+$router->get('/reciclagem', 'ReciclagemController@index');
+
 // Escalas Routes
 $router->get('/escalas', 'EscalaController@calendario');
 

@@ -39,6 +39,7 @@
 
     $isDashboardActive = $currentPath === '/';
     $isRhActive = strpos($currentPath, '/rh') === 0;
+    $isReciclagemActive = strpos($currentPath, '/reciclagem') === 0;
     $isEscalasActive = strpos($currentPath, '/escalas') === 0;
     $isFrotaActive = strpos($currentPath, '/frota') === 0;
     $isContratosActive = strpos($currentPath, '/contratos') === 0;
@@ -84,7 +85,16 @@
                 <i class="ph ph-users text-xl"></i>
                 <span class="font-medium">RH</span>
             </a>
-            
+
+            <a
+                href="/reciclagem"
+                class="<?= $linkBaseClasses . ' ' . ($isReciclagemActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
+                <?= $isReciclagemActive ? 'aria-current="page"' : '' ?>
+            >
+                <i class="ph ph-recycle text-xl"></i>
+                <span class="font-medium">Reciclagem</span>
+            </a>
+
             <a
                 href="/escalas"
                 class="<?= $linkBaseClasses . ' ' . ($isEscalasActive ? $linkActiveClasses : $linkInactiveClasses) ?>"

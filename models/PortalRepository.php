@@ -90,6 +90,37 @@ class PortalRepository {
         ];
     }
 
+    public function getVigilanteRecyclingCards() {
+        $this->ensureCollaboratorRegistrationSchema();
+
+        $rows = $this->fetchAll(
+            "SELECT v.id AS vigilante_id,
+                    u.id AS user_id,
+                    u.nome,
+                    u.ativo,
+                    c.id AS collaborator_id,
+                    cd.foto_url,
+                    cd.situacao,
+                    v.numero_cnv,
+                    v.data_ultima_reciclagem,
+                    v.validade_reciclagem
+             FROM vigilantes v
+             JOIN usuarios u ON u.id = v.usuario_id
+             LEFT JOIN colaboradores c ON c.usuario_id = u.id
+             LEFT JOIN colaborador_detalhes cd ON cd.colaborador_id = c.id
+             ORDER BY
+                CASE WHEN v.validade_reciclagem IS NULL THEN 1 ELSE 0 END,
+                v.validade_reciclagem ASC,
+                u.nome ASC"
+        );
+
+        $today = new DateTimeImmutable(date('Y-m-d'));
+
+        return array_map(function ($row) use ($today) {
+            return $this->mapVigilanteRecyclingCard($row, $today);
+        }, $rows);
+    }
+
     public function getCollaborators() {
         return $this->fetchAll(
             "SELECT c.id AS collaborator_id,
@@ -1756,6 +1787,46 @@ class PortalRepository {
 
     private function formatShift(DateTimeImmutable $date) {
         return ((int) $date->format('H') >= 18 || (int) $date->format('H') < 6) ? 'Noite' : 'Dia';
+    }
+
+    private function mapVigilanteRecyclingCard(array $row, DateTimeImmutable $today) {
+        $validadeReciclagem = trim((string) ($row['validade_reciclagem'] ?? ''));
+        $diasParaVencimento = null;
+        $status = 'sem_data';
+        $statusLabel = 'Sem vencimento';
+
+        if ($validadeReciclagem !== '') {
+            $vencimento = new DateTimeImmutable($validadeReciclagem);
+            $diasParaVencimento = (int) $today->diff($vencimento)->format('%r%a');
+
+            if ($diasParaVencimento < 0) {
+                $status = 'vencida';
+                $statusLabel = 'Vencida';
+            } elseif ($diasParaVencimento <= 60) {
+                $status = 'alerta';
+                $statusLabel = 'Alerta 60 dias';
+            } else {
+                $status = 'em_dia';
+                $statusLabel = 'Em dia';
+            }
+        }
+
+        return [
+            'vigilante_id' => $row['vigilante_id'] ?? null,
+            'user_id' => $row['user_id'] ?? null,
+            'collaborator_id' => $row['collaborator_id'] ?? null,
+            'nome' => (string) ($row['nome'] ?? ''),
+            'ativo' => $this->toBoolean($row['ativo'] ?? false),
+            'situacao' => (string) ($row['situacao'] ?? ''),
+            'foto_url' => (string) ($row['foto_url'] ?? ''),
+            'numero_cnv' => (string) ($row['numero_cnv'] ?? ''),
+            'data_reciclagem' => (string) ($row['data_ultima_reciclagem'] ?? ''),
+            'validade_reciclagem' => $validadeReciclagem,
+            'dias_para_vencimento' => $diasParaVencimento,
+            'status_reciclagem' => $status,
+            'status_label' => $statusLabel,
+            'acionar_alerta' => $status === 'alerta',
+        ];
     }
 
     private function humanize($value) {
