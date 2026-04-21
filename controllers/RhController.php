@@ -478,35 +478,33 @@ class RhController {
                 'slug' => 'seguranca_privada',
                 'title' => 'SELVA SEGURANÇA PRIVADA',
                 'subtitle' => 'Base administrativa, operacional e técnica da operação principal.',
-                'roles' => ['Administrativo', 'Vigilante', 'Técnico'],
+                'areas' => ['Operacional', 'Administrativo'],
                 'colaboradores' => [],
-                'role_counts' => [
+                'area_counts' => [
+                    'Operacional' => 0,
                     'Administrativo' => 0,
-                    'Vigilante' => 0,
-                    'Técnico' => 0,
                 ],
             ],
             'servicos_terceirizacoes' => [
                 'slug' => 'servicos_terceirizacoes',
                 'title' => 'SELVA SERVIÇOS E TERCEIRIZAÇÕES',
                 'subtitle' => 'Equipe dedicada a postos de apoio, portaria e serviços terceirizados.',
-                'roles' => ['Porteiro', 'Vigitante'],
+                'areas' => ['Operacional', 'Administrativo'],
                 'colaboradores' => [],
-                'role_counts' => [
-                    'Porteiro' => 0,
-                    'Vigitante' => 0,
+                'area_counts' => [
+                    'Operacional' => 0,
+                    'Administrativo' => 0,
                 ],
             ],
         ];
 
         foreach ($colaboradores as $colaborador) {
             $moduleKey = $this->resolveRhModuleKey($colaborador);
+            $colaborador['rh_area'] = $this->resolveRhArea($colaborador);
             $modulos[$moduleKey]['colaboradores'][] = $colaborador;
 
-            foreach ($modulos[$moduleKey]['roles'] as $role) {
-                if ($this->matchesRhRole($colaborador, $role)) {
-                    $modulos[$moduleKey]['role_counts'][$role]++;
-                }
+            if (isset($modulos[$moduleKey]['area_counts'][$colaborador['rh_area']])) {
+                $modulos[$moduleKey]['area_counts'][$colaborador['rh_area']]++;
             }
         }
 
@@ -534,6 +532,23 @@ class RhController {
         }
 
         return 'seguranca_privada';
+    }
+
+    private function resolveRhArea(array $colaborador) {
+        $haystack = $this->normalizeRhText(
+            ($colaborador['cargo'] ?? '') . ' ' . ($colaborador['departamento'] ?? '')
+        );
+
+        if (
+            strpos($haystack, 'operacional') !== false
+            || strpos($haystack, 'vigilante') !== false
+            || strpos($haystack, 'vigitante') !== false
+            || strpos($haystack, 'porteiro') !== false
+        ) {
+            return 'Operacional';
+        }
+
+        return 'Administrativo';
     }
 
     private function matchesRhRole(array $colaborador, $role) {

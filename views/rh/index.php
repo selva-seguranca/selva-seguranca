@@ -46,9 +46,6 @@
     $actionSuccessHtml = $isUpdateSuccessToast
         ? 'ALTERAÇÕES SALVAS COM SUCESSO!'
         : htmlspecialchars($actionSuccessMessage);
-    $roleLabelMap = [
-        'Vigitante' => 'Vigilante',
-    ];
     $moduleToneMap = [
         'seguranca_privada' => [
             'container' => 'border-red-100',
@@ -134,7 +131,7 @@
 <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
     <?php foreach ($modulosRh as $modulo): ?>
         <?php $tone = $moduleToneMap[$modulo['slug']] ?? $moduleToneMap['seguranca_privada']; ?>
-        <section class="bg-white rounded-2xl shadow-sm border overflow-hidden <?= $tone['container'] ?>">
+        <section class="bg-white rounded-2xl shadow-sm border overflow-hidden <?= $tone['container'] ?>" data-rh-module="<?= htmlspecialchars($modulo['slug'], ENT_QUOTES, 'UTF-8') ?>">
             <div class="border-b border-gray-100 px-6 py-5">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
@@ -152,13 +149,18 @@
                 </div>
 
                 <div class="mt-4 flex flex-wrap gap-2">
-                    <?php foreach ($modulo['roles'] as $role): ?>
-                        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold <?= $tone['role'] ?>">
-                            <?= htmlspecialchars($roleLabelMap[$role] ?? $role) ?>
+                    <?php foreach ($modulo['areas'] as $area): ?>
+                        <button
+                            type="button"
+                            data-rh-area-filter="<?= htmlspecialchars($area, ENT_QUOTES, 'UTF-8') ?>"
+                            aria-pressed="false"
+                            class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition-all <?= $tone['role'] ?>"
+                        >
+                            <?= htmlspecialchars($area) ?>
                             <span class="ml-2 rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-bold text-gray-700">
-                                <?= (int) ($modulo['role_counts'][$role] ?? 0) ?>
+                                <?= (int) ($modulo['area_counts'][$area] ?? 0) ?>
                             </span>
-                        </span>
+                        </button>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -181,7 +183,7 @@
                         <tbody class="divide-y divide-gray-100 text-sm">
                             <?php foreach ($modulo['colaboradores'] as $c): ?>
                             <?php $photoUrl = trim((string) ($c['foto_url'] ?? '')); ?>
-                            <tr class="hover:bg-gray-50 transition-colors">
+                            <tr class="hover:bg-gray-50 transition-colors" data-rh-area-row="<?= htmlspecialchars((string) ($c['rh_area'] ?? 'Administrativo'), ENT_QUOTES, 'UTF-8') ?>">
                                 <td class="px-6 py-4 align-top font-medium text-gray-800">
                                     <div class="flex min-w-0 items-start gap-3">
                                         <div class="flex h-11 w-11 min-h-11 min-w-11 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full border border-white/80 text-xs font-bold shadow-sm <?= $photoUrl !== '' ? 'bg-white' : $tone['avatar'] ?>">
@@ -251,7 +253,7 @@
                 <div class="space-y-4 p-4 2xl:hidden">
                     <?php foreach ($modulo['colaboradores'] as $c): ?>
                         <?php $photoUrl = trim((string) ($c['foto_url'] ?? '')); ?>
-                        <article class="rounded-2xl border border-gray-200 p-4 shadow-sm">
+                        <article class="rounded-2xl border border-gray-200 p-4 shadow-sm" data-rh-area-row="<?= htmlspecialchars((string) ($c['rh_area'] ?? 'Administrativo'), ENT_QUOTES, 'UTF-8') ?>">
                             <div class="flex items-start justify-between gap-4">
                                 <div class="min-w-0">
                                     <div class="flex items-start">
@@ -316,6 +318,9 @@
                             </div>
                         </article>
                     <?php endforeach; ?>
+                </div>
+                <div data-rh-area-empty class="hidden p-6 text-sm text-gray-500">
+                    Nenhum colaborador encontrado nesta área.
                 </div>
             <?php endif; ?>
         </section>
@@ -447,6 +452,7 @@
         const collaboratorDeleteClosers = document.querySelectorAll('[data-close-collaborator-delete]');
         const collaboratorDeleteForms = document.querySelectorAll('[data-delete-collaborator-form]');
         const collaboratorDeleteConfirmButton = document.getElementById('collaborator-delete-confirm-button');
+        const areaFilterButtons = document.querySelectorAll('[data-rh-area-filter]');
         const cropModal = document.getElementById('crop-modal');
         const successToast = document.getElementById('rh-action-success-toast');
         let pendingDeleteForm = null;
@@ -603,6 +609,50 @@
                 pendingDeleteForm.submit();
             });
         }
+
+        function syncAreaFilter(moduleElement, activeArea) {
+            const rows = moduleElement.querySelectorAll('[data-rh-area-row]');
+            const emptyState = moduleElement.querySelector('[data-rh-area-empty]');
+            let hasVisibleRows = false;
+
+            rows.forEach((row) => {
+                const isVisible = activeArea === '' || row.dataset.rhAreaRow === activeArea;
+                row.classList.toggle('hidden', !isVisible);
+
+                if (isVisible) {
+                    hasVisibleRows = true;
+                }
+            });
+
+            moduleElement.querySelectorAll('[data-rh-area-filter]').forEach((button) => {
+                const isActive = activeArea !== '' && button.dataset.rhAreaFilter === activeArea;
+                button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                button.classList.toggle('ring-2', isActive);
+                button.classList.toggle('ring-brand-red', isActive);
+                button.classList.toggle('ring-offset-2', isActive);
+            });
+
+            if (emptyState) {
+                emptyState.classList.toggle('hidden', hasVisibleRows);
+            }
+        }
+
+        areaFilterButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const moduleElement = button.closest('[data-rh-module]');
+
+                if (!moduleElement) {
+                    return;
+                }
+
+                const selectedArea = button.dataset.rhAreaFilter || '';
+                const currentArea = moduleElement.dataset.rhActiveArea || '';
+                const nextArea = currentArea === selectedArea ? '' : selectedArea;
+
+                moduleElement.dataset.rhActiveArea = nextArea;
+                syncAreaFilter(moduleElement, nextArea);
+            });
+        });
 
         document.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape') {
