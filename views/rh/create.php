@@ -401,7 +401,7 @@
                         <i class="ph ph-file-pdf text-2xl"></i>
                     </span>
                     <span class="mt-4 text-sm font-semibold text-gray-900">Selecionar documentos em PDF</span>
-                    <span class="mt-1 text-xs text-gray-500">Envie at&eacute; 4 arquivos PDF por vez, respeitando o limite de <?= \Helpers\MediaStorage::getMaxAllowedFileSizeLabel() ?> por arquivo.</span>
+                    <span class="mt-1 text-xs text-gray-500">Anexe at&eacute; 4 arquivos PDF neste cadastro, respeitando o limite de <?= \Helpers\MediaStorage::getMaxAllowedFileSizeLabel() ?> por arquivo.</span>
                 </label>
 
                 <div id="document-selected-list" class="hidden rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-700"></div>
@@ -624,6 +624,7 @@
 
         let cropper = null;
         let sourceImageUrl = null;
+        let selectedDocumentFiles = [];
         const maxDocumentUploadCount = 4;
 
         function setPhotoError(message) {
@@ -760,13 +761,52 @@
             documentStatus.classList.remove('text-sm', 'font-semibold', 'text-brand-red', 'text-gray-500');
         }
 
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[char]));
+        }
+
+        function getDocumentFileKey(file) {
+            return [file.name, file.size, file.lastModified].join('|');
+        }
+
+        function syncDocumentUploadInput() {
+            if (!documentUploadInput || typeof DataTransfer !== 'function') {
+                return;
+            }
+
+            const fileTransfer = new DataTransfer();
+            selectedDocumentFiles.forEach((file) => fileTransfer.items.add(file));
+            documentUploadInput.files = fileTransfer.files;
+        }
+
+        function validateDocumentFile(file) {
+            const isPdfByType = file.type === 'application/pdf';
+            const isPdfByName = file.name.toLowerCase().endsWith('.pdf');
+
+            if (!isPdfByType && !isPdfByName) {
+                return 'Anexe somente documentos em PDF.';
+            }
+
+            if (file.size > maxPhotoUploadBytes) {
+                return 'Cada PDF deve ter at\u00e9 ' + maxPhotoUploadLabel + '.';
+            }
+
+            return '';
+        }
+
         function renderSelectedDocuments() {
             if (!documentUploadInput || !documentSelectedList) {
                 return;
             }
 
             clearDocumentStatus();
-            const files = Array.from(documentUploadInput.files || []);
+            const files = selectedDocumentFiles;
 
             if (files.length === 0) {
                 documentSelectedList.classList.add('hidden');
@@ -774,49 +814,66 @@
                 return;
             }
 
-            if (files.length > maxDocumentUploadCount) {
-                documentUploadInput.value = '';
-                documentSelectedList.classList.add('hidden');
-                documentSelectedList.innerHTML = '';
-                setDocumentError('Selecione no m\u00e1ximo ' + maxDocumentUploadCount + ' documentos PDF por vez.');
-                return;
-            }
-
-            const invalidFile = files.find((file) => {
-                const isPdfByType = file.type === 'application/pdf';
-                const isPdfByName = file.name.toLowerCase().endsWith('.pdf');
-                return !isPdfByType && !isPdfByName;
-            });
-
-            if (invalidFile) {
-                documentUploadInput.value = '';
-                documentSelectedList.classList.add('hidden');
-                documentSelectedList.innerHTML = '';
-                setDocumentError('Anexe somente documentos em PDF.');
-                return;
-            }
-
-            const oversizedFile = files.find((file) => file.size > maxPhotoUploadBytes);
-            if (oversizedFile) {
-                documentUploadInput.value = '';
-                documentSelectedList.classList.add('hidden');
-                documentSelectedList.innerHTML = '';
-                setDocumentError('Cada PDF deve ter at\u00e9 ' + maxPhotoUploadLabel + '.');
-                return;
-            }
-
             documentSelectedList.classList.remove('hidden');
             documentSelectedList.innerHTML = [
                 '<p class="mb-3 text-sm font-semibold text-gray-700">Documentos selecionados</p>',
-                ...files.map((file) => {
+                ...files.map((file, index) => {
                     const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
                     return '<div class="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2">' +
                         '<span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-50 text-brand-red"><i class="ph ph-file-pdf text-base"></i></span>' +
-                        '<span class="min-w-0 flex-1 truncate">' + file.name.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char])) + '</span>' +
+                        '<span class="min-w-0 flex-1 truncate">' + escapeHtml(file.name) + '</span>' +
                         '<span class="text-xs text-gray-400">' + sizeMb + ' MB</span>' +
+                        '<button type="button" data-remove-document-index="' + index + '" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-brand-red" title="Remover documento"><i class="ph ph-x text-base"></i></button>' +
                     '</div>';
                 })
             ].join('');
+
+            documentSelectedList.querySelectorAll('[data-remove-document-index]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const index = Number(button.dataset.removeDocumentIndex);
+                    selectedDocumentFiles = selectedDocumentFiles.filter((_, fileIndex) => fileIndex !== index);
+                    syncDocumentUploadInput();
+                    renderSelectedDocuments();
+                });
+            });
+        }
+
+        function mergeSelectedDocuments(newFiles) {
+            if (!documentUploadInput || newFiles.length === 0) {
+                return;
+            }
+
+            const validationError = newFiles.map(validateDocumentFile).find((message) => message !== '');
+            if (validationError) {
+                documentUploadInput.value = '';
+                syncDocumentUploadInput();
+                renderSelectedDocuments();
+                setDocumentError(validationError);
+                return;
+            }
+
+            const selectedKeys = new Set(selectedDocumentFiles.map(getDocumentFileKey));
+            const mergedFiles = [...selectedDocumentFiles];
+
+            newFiles.forEach((file) => {
+                const fileKey = getDocumentFileKey(file);
+                if (!selectedKeys.has(fileKey)) {
+                    selectedKeys.add(fileKey);
+                    mergedFiles.push(file);
+                }
+            });
+
+            if (mergedFiles.length > maxDocumentUploadCount) {
+                documentUploadInput.value = '';
+                syncDocumentUploadInput();
+                renderSelectedDocuments();
+                setDocumentError('Selecione no m\u00e1ximo ' + maxDocumentUploadCount + ' documentos PDF neste cadastro.');
+                return;
+            }
+
+            selectedDocumentFiles = mergedFiles;
+            syncDocumentUploadInput();
+            renderSelectedDocuments();
         }
 
         function updatePhotoPreview(file) {
@@ -949,7 +1006,9 @@
         });
 
         if (documentUploadInput) {
-            documentUploadInput.addEventListener('change', renderSelectedDocuments);
+            documentUploadInput.addEventListener('change', () => {
+                mergeSelectedDocuments(Array.from(documentUploadInput.files || []));
+            });
         }
 
         if (photoEditButton) {

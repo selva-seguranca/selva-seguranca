@@ -459,7 +459,7 @@ class RhController {
         ));
 
         if (count($normalizedFiles) > 4) {
-            throw new \RuntimeException("Envie no m\u{00E1}ximo 4 documentos em PDF por vez.");
+            throw new \RuntimeException("Envie no m\u{00E1}ximo 4 documentos em PDF neste cadastro.");
         }
 
         $storedDocuments = [];
