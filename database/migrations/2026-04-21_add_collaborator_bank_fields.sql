@@ -1,0 +1,7 @@
+ALTER TABLE colaborador_detalhes
+    ADD COLUMN IF NOT EXISTS banco_nome VARCHAR(100),
+    ADD COLUMN IF NOT EXISTS agencia_bancaria VARCHAR(20),
+    ADD COLUMN IF NOT EXISTS conta_bancaria VARCHAR(30),
+    ADD COLUMN IF NOT EXISTS tipo_conta VARCHAR(30),
+    ADD COLUMN IF NOT EXISTS chave_pix VARCHAR(150),
+    ADD COLUMN IF NOT EXISTS titular_conta VARCHAR(150);

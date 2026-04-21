@@ -108,6 +108,8 @@ class PortalRepository {
     }
 
     public function getCollaboratorDetails($collaboratorId) {
+        $this->ensureCollaboratorRegistrationSchema();
+
         $row = $this->fetchOne(
             "SELECT c.id AS collaborator_id,
                     u.id AS user_id,
@@ -139,6 +141,12 @@ class PortalRepository {
                     cd.tipo_vinculo,
                     cd.numero_admissao,
                     cd.situacao,
+                    cd.banco_nome,
+                    cd.agencia_bancaria,
+                    cd.conta_bancaria,
+                    cd.tipo_conta,
+                    cd.chave_pix,
+                    cd.titular_conta,
                     v.numero_cnv,
                     v.validade_cnv,
                     v.curso_formacao_concluido,
@@ -387,7 +395,13 @@ class PortalRepository {
                     fator_rh,
                     tipo_vinculo,
                     numero_admissao,
-                    situacao
+                    situacao,
+                    banco_nome,
+                    agencia_bancaria,
+                    conta_bancaria,
+                    tipo_conta,
+                    chave_pix,
+                    titular_conta
                  ) VALUES (
                     :colaborador_id,
                     :tipo_cadastro,
@@ -410,7 +424,13 @@ class PortalRepository {
                     :fator_rh,
                     :tipo_vinculo,
                     :numero_admissao,
-                    :situacao
+                    :situacao,
+                    :banco_nome,
+                    :agencia_bancaria,
+                    :conta_bancaria,
+                    :tipo_conta,
+                    :chave_pix,
+                    :titular_conta
                  )",
                 [
                     ':colaborador_id' => $colaborador['id'],
@@ -435,6 +455,12 @@ class PortalRepository {
                     ':tipo_vinculo' => $this->nullIfBlank($payload['tipo_vinculo'] ?? null),
                     ':numero_admissao' => $this->nullIfBlank($payload['numero_admissao'] ?? null),
                     ':situacao' => $situacao,
+                    ':banco_nome' => $this->nullIfBlank($payload['banco_nome'] ?? null),
+                    ':agencia_bancaria' => $this->nullIfBlank($payload['agencia_bancaria'] ?? null),
+                    ':conta_bancaria' => $this->nullIfBlank($payload['conta_bancaria'] ?? null),
+                    ':tipo_conta' => $this->nullIfBlank($payload['tipo_conta'] ?? null),
+                    ':chave_pix' => $this->nullIfBlank($payload['chave_pix'] ?? null),
+                    ':titular_conta' => $this->nullIfBlank($payload['titular_conta'] ?? null),
                 ]
             );
 
@@ -724,7 +750,13 @@ class PortalRepository {
                     fator_rh,
                     tipo_vinculo,
                     numero_admissao,
-                    situacao
+                    situacao,
+                    banco_nome,
+                    agencia_bancaria,
+                    conta_bancaria,
+                    tipo_conta,
+                    chave_pix,
+                    titular_conta
                  ) VALUES (
                     :colaborador_id,
                     :tipo_cadastro,
@@ -747,7 +779,13 @@ class PortalRepository {
                     :fator_rh,
                     :tipo_vinculo,
                     :numero_admissao,
-                    :situacao
+                    :situacao,
+                    :banco_nome,
+                    :agencia_bancaria,
+                    :conta_bancaria,
+                    :tipo_conta,
+                    :chave_pix,
+                    :titular_conta
                  )
                  ON CONFLICT (colaborador_id) DO UPDATE SET
                     tipo_cadastro = EXCLUDED.tipo_cadastro,
@@ -771,6 +809,12 @@ class PortalRepository {
                     tipo_vinculo = EXCLUDED.tipo_vinculo,
                     numero_admissao = EXCLUDED.numero_admissao,
                     situacao = EXCLUDED.situacao,
+                    banco_nome = EXCLUDED.banco_nome,
+                    agencia_bancaria = EXCLUDED.agencia_bancaria,
+                    conta_bancaria = EXCLUDED.conta_bancaria,
+                    tipo_conta = EXCLUDED.tipo_conta,
+                    chave_pix = EXCLUDED.chave_pix,
+                    titular_conta = EXCLUDED.titular_conta,
                     atualizado_em = CURRENT_TIMESTAMP",
                 [
                     ':colaborador_id' => $collaboratorId,
@@ -795,6 +839,12 @@ class PortalRepository {
                     ':tipo_vinculo' => $this->nullIfBlank($payload['tipo_vinculo'] ?? null),
                     ':numero_admissao' => $this->nullIfBlank($payload['numero_admissao'] ?? null),
                     ':situacao' => $situacao,
+                    ':banco_nome' => $this->nullIfBlank($payload['banco_nome'] ?? null),
+                    ':agencia_bancaria' => $this->nullIfBlank($payload['agencia_bancaria'] ?? null),
+                    ':conta_bancaria' => $this->nullIfBlank($payload['conta_bancaria'] ?? null),
+                    ':tipo_conta' => $this->nullIfBlank($payload['tipo_conta'] ?? null),
+                    ':chave_pix' => $this->nullIfBlank($payload['chave_pix'] ?? null),
+                    ':titular_conta' => $this->nullIfBlank($payload['titular_conta'] ?? null),
                 ]
             );
 
@@ -1336,6 +1386,12 @@ class PortalRepository {
                 tipo_vinculo VARCHAR(30),
                 numero_admissao VARCHAR(30),
                 situacao VARCHAR(30) DEFAULT 'Ativo',
+                banco_nome VARCHAR(100),
+                agencia_bancaria VARCHAR(20),
+                conta_bancaria VARCHAR(30),
+                tipo_conta VARCHAR(30),
+                chave_pix VARCHAR(150),
+                titular_conta VARCHAR(150),
                 criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )"
@@ -1349,6 +1405,12 @@ class PortalRepository {
         $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS curso_escolta_armada BOOLEAN DEFAULT false");
         $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS curso_seguranca_eventos BOOLEAN DEFAULT false");
         $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS curso_seguranca_vip BOOLEAN DEFAULT false");
+        $this->db->exec("ALTER TABLE colaborador_detalhes ADD COLUMN IF NOT EXISTS banco_nome VARCHAR(100)");
+        $this->db->exec("ALTER TABLE colaborador_detalhes ADD COLUMN IF NOT EXISTS agencia_bancaria VARCHAR(20)");
+        $this->db->exec("ALTER TABLE colaborador_detalhes ADD COLUMN IF NOT EXISTS conta_bancaria VARCHAR(30)");
+        $this->db->exec("ALTER TABLE colaborador_detalhes ADD COLUMN IF NOT EXISTS tipo_conta VARCHAR(30)");
+        $this->db->exec("ALTER TABLE colaborador_detalhes ADD COLUMN IF NOT EXISTS chave_pix VARCHAR(150)");
+        $this->db->exec("ALTER TABLE colaborador_detalhes ADD COLUMN IF NOT EXISTS titular_conta VARCHAR(150)");
     }
 
     private function findProfileIdByName($profileName) {

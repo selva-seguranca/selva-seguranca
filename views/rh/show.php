@@ -182,6 +182,36 @@
         </div>
     </section>
 
+    <section class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h4 class="text-lg font-bold text-gray-900">Dados bancários</h4>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div>
+                <p class="text-xs uppercase tracking-wide text-gray-400">Banco</p>
+                <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['banco_nome'] ?? null) ?></p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wide text-gray-400">Agência</p>
+                <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['agencia_bancaria'] ?? null) ?></p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wide text-gray-400">Conta</p>
+                <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['conta_bancaria'] ?? null) ?></p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wide text-gray-400">Tipo de conta</p>
+                <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['tipo_conta'] ?? null) ?></p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wide text-gray-400">Chave PIX</p>
+                <p class="mt-1 break-all font-medium text-gray-800"><?= $detailValue($viewCollaborator['chave_pix'] ?? null) ?></p>
+            </div>
+            <div>
+                <p class="text-xs uppercase tracking-wide text-gray-400">Titular da conta</p>
+                <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['titular_conta'] ?? null) ?></p>
+            </div>
+        </div>
+    </section>
+
     <?php if (($viewCollaborator['tipo_cadastro'] ?? '') === 'vigilante'): ?>
         <section class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
             <h4 class="text-lg font-bold text-gray-900">Dados de vigilante</h4>

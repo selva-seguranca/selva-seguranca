@@ -172,6 +172,12 @@ CREATE TABLE IF NOT EXISTS colaborador_detalhes (
     tipo_vinculo VARCHAR(30),
     numero_admissao VARCHAR(30),
     situacao VARCHAR(30) DEFAULT 'Ativo',
+    banco_nome VARCHAR(100),
+    agencia_bancaria VARCHAR(20),
+    conta_bancaria VARCHAR(30),
+    tipo_conta VARCHAR(30),
+    chave_pix VARCHAR(150),
+    titular_conta VARCHAR(150),
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

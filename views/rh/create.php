@@ -7,6 +7,7 @@
     $selectedCourses = is_array($old['outros_cursos'] ?? null) ? $old['outros_cursos'] : [];
     $selectedBloodType = $old['tipo_sanguineo'] ?? '';
     $selectedRhFactor = $old['fator_rh'] ?? '+';
+    $selectedAccountType = $old['tipo_conta'] ?? '';
     $editCollaboratorId = trim((string) ($editCollaboratorId ?? ($old['colaborador_id'] ?? '')));
     $existingPhotoUrl = trim((string) ($existingPhotoUrl ?? ($old['foto_url_atual'] ?? '')));
     $formAction = $isEditMode ? '/rh/colaboradores/atualizar' : '/rh/colaboradores';
@@ -276,6 +277,50 @@
                 <label class="space-y-2 lg:col-span-3">
                     <span class="text-sm font-semibold text-gray-700">Cidade</span>
                     <input type="text" name="cidade" value="<?= $oldValue('cidade') ?>" required id="cidade-input" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
+                </label>
+            </div>
+        </section>
+
+        <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-100 px-6 py-5">
+                <h3 class="text-lg font-bold text-gray-900">Dados bancários</h3>
+                <p class="mt-1 text-sm text-gray-500">Informações opcionais para pagamentos e conferência financeira do colaborador.</p>
+            </div>
+
+            <div class="grid gap-5 px-6 py-6 md:grid-cols-2 lg:grid-cols-12">
+                <label class="space-y-2 lg:col-span-4">
+                    <span class="text-sm font-semibold text-gray-700">Banco</span>
+                    <input type="text" name="banco_nome" value="<?= $oldValue('banco_nome') ?>" maxlength="100" placeholder="Nome do banco" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
+                </label>
+
+                <label class="space-y-2 lg:col-span-3">
+                    <span class="text-sm font-semibold text-gray-700">Agência</span>
+                    <input type="text" name="agencia_bancaria" value="<?= $oldValue('agencia_bancaria') ?>" maxlength="20" placeholder="0000" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
+                </label>
+
+                <label class="space-y-2 lg:col-span-3">
+                    <span class="text-sm font-semibold text-gray-700">Conta</span>
+                    <input type="text" name="conta_bancaria" value="<?= $oldValue('conta_bancaria') ?>" maxlength="30" placeholder="00000-0" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
+                </label>
+
+                <label class="space-y-2 lg:col-span-2">
+                    <span class="text-sm font-semibold text-gray-700">Tipo de conta</span>
+                    <select name="tipo_conta" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
+                        <option value="" <?= $selectedAccountType === '' ? 'selected' : '' ?>>Selecione</option>
+                        <?php foreach (['Corrente', 'Poupança', 'Salário', 'Pagamento'] as $accountType): ?>
+                            <option value="<?= $accountType ?>" <?= $selectedAccountType === $accountType ? 'selected' : '' ?>><?= $accountType ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+
+                <label class="space-y-2 lg:col-span-6">
+                    <span class="text-sm font-semibold text-gray-700">Chave PIX</span>
+                    <input type="text" name="chave_pix" value="<?= $oldValue('chave_pix') ?>" maxlength="150" placeholder="CPF, e-mail, telefone ou chave aleatória" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
+                </label>
+
+                <label class="space-y-2 lg:col-span-6">
+                    <span class="text-sm font-semibold text-gray-700">Titular da conta</span>
+                    <input type="text" name="titular_conta" value="<?= $oldValue('titular_conta') ?>" maxlength="150" placeholder="Nome do titular" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
             </div>
         </section>
