@@ -76,7 +76,9 @@
 
     $summaryCards = [
         ['label' => 'Vigilantes', 'value' => $resumo['total'] ?? 0, 'icon' => 'ph-shield-check', 'classes' => 'bg-blue-100 text-blue-700'],
-        ['label' => 'Alertas 60 dias', 'value' => $resumo['em_alerta'] ?? 0, 'icon' => 'ph-bell-ringing', 'classes' => 'bg-amber-100 text-amber-700'],
+        ['label' => 'Alertas 90 dias', 'value' => $resumo['alerta_90'] ?? 0, 'icon' => 'ph-bell-ringing', 'classes' => 'bg-blue-100 text-blue-700'],
+        ['label' => 'Alertas 60 dias', 'value' => $resumo['alerta_60'] ?? 0, 'icon' => 'ph-bell-ringing', 'classes' => 'bg-amber-100 text-amber-700'],
+        ['label' => 'Alertas 30 dias', 'value' => $resumo['alerta_30'] ?? 0, 'icon' => 'ph-warning-circle', 'classes' => 'bg-orange-100 text-orange-700'],
         ['label' => 'Vencidas', 'value' => $resumo['vencidas'] ?? 0, 'icon' => 'ph-warning-octagon', 'classes' => 'bg-red-100 text-brand-red'],
         ['label' => 'Em dia', 'value' => $resumo['em_dia'] ?? 0, 'icon' => 'ph-check-circle', 'classes' => 'bg-green-100 text-green-700'],
     ];
@@ -91,7 +93,7 @@
                     <p class="text-xs font-semibold uppercase tracking-[0.28em] text-brand-red">Controle de reciclagem</p>
                     <h2 class="mt-3 text-3xl font-bold tracking-tight text-gray-950">Reciclagem dos cursos dos vigilantes</h2>
                     <p class="mt-3 text-sm leading-6 text-gray-500">
-                        Acompanhe a data da reciclagem, o vencimento e os alertas automáticos que entram em atenção 60 dias antes do prazo de validade.
+                        Acompanhe a data da reciclagem, o vencimento e os alertas automáticos que entram em atenção 90, 60 e 30 dias antes do prazo de validade.
                     </p>
                 </div>
                 <div class="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-950 text-white shadow-xl shadow-red-500/10">
@@ -101,7 +103,7 @@
         </div>
     </section>
 
-    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
         <?php foreach ($summaryCards as $card): ?>
             <article class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                 <div class="flex items-center justify-between gap-4">
@@ -124,8 +126,13 @@
                     <i class="ph ph-bell-ringing text-2xl"></i>
                 </span>
                 <div>
-                    <p class="font-semibold">Alerta de 60 dias acionado.</p>
-                    <p class="mt-1 text-sm">Há <?= (int) $resumo['em_alerta'] ?> vigilante(s) com reciclagem vencendo em até 60 dias. Oriente a preparação para a nova reciclagem.</p>
+                    <p class="font-semibold">Alertas de reciclagem acionados.</p>
+                    <p class="mt-1 text-sm">
+                        Há <?= (int) $resumo['em_alerta'] ?> vigilante(s) em janela de alerta:
+                        <?= (int) ($resumo['alerta_90'] ?? 0) ?> em 90 dias,
+                        <?= (int) ($resumo['alerta_60'] ?? 0) ?> em 60 dias e
+                        <?= (int) ($resumo['alerta_30'] ?? 0) ?> em 30 dias.
+                    </p>
                 </div>
             </div>
         </section>
@@ -157,6 +164,7 @@
                         $nome = (string) ($vigilante['nome'] ?? '');
                         $situacao = trim((string) ($vigilante['situacao'] ?? ''));
                         $situacao = $situacao !== '' ? $situacao : (!empty($vigilante['ativo']) ? 'Ativo' : 'Inativo');
+                        $alertLevel = $vigilante['alerta_reciclagem_nivel'] ?? null;
                         $editUrl = !empty($vigilante['collaborator_id'])
                             ? '/rh?modal=editar-colaborador&edit=' . urlencode((string) $vigilante['collaborator_id'])
                             : null;
@@ -209,13 +217,13 @@
                         <div class="mt-5 rounded-2xl border px-4 py-3 text-sm <?= $style['notice'] ?>">
                             <?php if ($status === 'alerta'): ?>
                                 <p class="font-semibold">Preparar nova reciclagem.</p>
-                                <p class="mt-1">O prazo entrou na janela de alerta de 60 dias.</p>
+                                <p class="mt-1">O prazo entrou na janela de alerta de <?= htmlspecialchars((string) $alertLevel, ENT_QUOTES, 'UTF-8') ?> dias.</p>
                             <?php elseif ($status === 'vencida'): ?>
                                 <p class="font-semibold">Reciclagem vencida.</p>
                                 <p class="mt-1">Regularize a situação do vigilante antes da próxima escala operacional.</p>
                             <?php elseif ($status === 'em_dia'): ?>
                                 <p class="font-semibold">Reciclagem em dia.</p>
-                                <p class="mt-1">O alerta será acionado automaticamente quando faltarem 60 dias.</p>
+                                <p class="mt-1">O primeiro alerta será acionado automaticamente quando faltarem 90 dias.</p>
                             <?php else: ?>
                                 <p class="font-semibold">Datas incompletas.</p>
                                 <p class="mt-1">Preencha a data da reciclagem e o vencimento no cadastro do vigilante.</p>

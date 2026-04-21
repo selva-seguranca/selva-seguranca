@@ -174,6 +174,8 @@
         </form>
     </div>
 
+    <?php include __DIR__ . '/../partials/recycling-alert-modal.php'; ?>
+
     <script>
         let lastLat = null;
         let lastLng = null;

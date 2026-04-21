@@ -15,6 +15,9 @@ class ReciclagemController {
         $resumo = [
             'total' => 0,
             'em_alerta' => 0,
+            'alerta_90' => 0,
+            'alerta_60' => 0,
+            'alerta_30' => 0,
             'vencidas' => 0,
             'em_dia' => 0,
             'sem_data' => 0,
@@ -41,6 +44,9 @@ class ReciclagemController {
         $summary = [
             'total' => count($vigilantes),
             'em_alerta' => 0,
+            'alerta_90' => 0,
+            'alerta_60' => 0,
+            'alerta_30' => 0,
             'vencidas' => 0,
             'em_dia' => 0,
             'sem_data' => 0,
@@ -51,6 +57,14 @@ class ReciclagemController {
 
             if ($status === 'alerta') {
                 $summary['em_alerta']++;
+                $alertLevel = (int) ($vigilante['alerta_reciclagem_nivel'] ?? 0);
+                if ($alertLevel === 90) {
+                    $summary['alerta_90']++;
+                } elseif ($alertLevel === 60) {
+                    $summary['alerta_60']++;
+                } elseif ($alertLevel === 30) {
+                    $summary['alerta_30']++;
+                }
             } elseif ($status === 'vencida') {
                 $summary['vencidas']++;
             } elseif ($status === 'em_dia') {

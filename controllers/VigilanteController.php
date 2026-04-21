@@ -41,7 +41,21 @@ class VigilanteController {
             'dbWarning' => $dbWarning,
             'formError' => $formError,
             'successMessage' => $successMessage,
+            'recyclingAlerts' => $this->loadRecyclingAlertsForCurrentUser(),
         ], null);
+    }
+
+    private function loadRecyclingAlertsForCurrentUser() {
+        try {
+            $repository = new PortalRepository();
+
+            return $repository->getPendingRecyclingAlerts(
+                $_SESSION['user_id'] ?? '',
+                $_SESSION['user_perfil'] ?? ''
+            );
+        } catch (Throwable $e) {
+            return [];
+        }
     }
 
     public function submitChecklist() {
@@ -105,6 +119,7 @@ class VigilanteController {
 
             View::render('vigilante/painel', [
                 'ronda' => $ronda,
+                'recyclingAlerts' => $this->loadRecyclingAlertsForCurrentUser(),
             ], null);
         } catch (Throwable $e) {
             $_SESSION['ronda_error'] = 'Não foi possível carregar a ronda ativa.';

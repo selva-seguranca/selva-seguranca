@@ -45,6 +45,20 @@
     $isContratosActive = strpos($currentPath, '/contratos') === 0;
     $isFinanceiroActive = strpos($currentPath, '/financeiro') === 0;
     $isVigilanteActive = strpos($currentPath, '/vigilante') === 0;
+
+    $recyclingAlerts = is_array($recyclingAlerts ?? null) ? $recyclingAlerts : [];
+    $userProfile = (string) ($_SESSION['user_perfil'] ?? '');
+
+    if (empty($recyclingAlerts) && in_array($userProfile, ['Coordenador Geral', 'Administrador'], true)) {
+        try {
+            $recyclingAlerts = (new \Models\PortalRepository())->getPendingRecyclingAlerts(
+                $_SESSION['user_id'] ?? '',
+                $userProfile
+            );
+        } catch (\Throwable $e) {
+            $recyclingAlerts = [];
+        }
+    }
 ?>
 <body class="bg-brand-light text-gray-800 min-h-screen flex">
 
@@ -204,6 +218,8 @@
             <?php include __DIR__ . '/../' . $contentView . '.php'; ?>
         </main>
     </div>
+
+    <?php include __DIR__ . '/../partials/recycling-alert-modal.php'; ?>
 
     <script>
         const body = document.body;

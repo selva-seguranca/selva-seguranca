@@ -136,6 +136,8 @@
         </form>
     </div>
 
+    <?php include __DIR__ . '/../partials/recycling-alert-modal.php'; ?>
+
     <div id="maintenanceAlert" class="fixed inset-0 bg-black/90 z-[60] hidden flex-col items-center justify-center p-6 px-4">
         <div class="bg-brand-gray border border-red-500 w-full max-w-sm rounded-2xl p-6 text-center shadow-[0_0_40px_rgba(229,9,20,0.4)]">
             <div class="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">

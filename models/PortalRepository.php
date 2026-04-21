@@ -90,8 +90,16 @@ class PortalRepository {
         ];
     }
 
-    public function getVigilanteRecyclingCards() {
+    public function getVigilanteRecyclingCards($userId = null) {
         $this->ensureCollaboratorRegistrationSchema();
+
+        $params = [];
+        $where = '';
+        $userId = trim((string) $userId);
+        if ($userId !== '') {
+            $where = 'WHERE u.id = :user_id';
+            $params[':user_id'] = $userId;
+        }
 
         $rows = $this->fetchAll(
             "SELECT v.id AS vigilante_id,
@@ -108,10 +116,12 @@ class PortalRepository {
              JOIN usuarios u ON u.id = v.usuario_id
              LEFT JOIN colaboradores c ON c.usuario_id = u.id
              LEFT JOIN colaborador_detalhes cd ON cd.colaborador_id = c.id
+             $where
              ORDER BY
                 CASE WHEN v.validade_reciclagem IS NULL THEN 1 ELSE 0 END,
                 v.validade_reciclagem ASC,
-                u.nome ASC"
+                u.nome ASC",
+            $params
         );
 
         $today = new DateTimeImmutable(date('Y-m-d'));
@@ -119,6 +129,23 @@ class PortalRepository {
         return array_map(function ($row) use ($today) {
             return $this->mapVigilanteRecyclingCard($row, $today);
         }, $rows);
+    }
+
+    public function getPendingRecyclingAlerts($userId, $profile) {
+        $profile = trim((string) $profile);
+        $userId = trim((string) $userId);
+
+        if (in_array($profile, ['Coordenador Geral', 'Administrador'], true)) {
+            $cards = $this->getVigilanteRecyclingCards();
+        } elseif ($profile === 'Vigilante' && $userId !== '') {
+            $cards = $this->getVigilanteRecyclingCards($userId);
+        } else {
+            return [];
+        }
+
+        return array_values(array_filter($cards, function ($card) {
+            return !empty($card['acionar_alerta']);
+        }));
     }
 
     public function getCollaborators() {
@@ -1922,6 +1949,7 @@ class PortalRepository {
         $diasParaVencimento = null;
         $status = 'sem_data';
         $statusLabel = 'Sem vencimento';
+        $alertLevel = null;
 
         if ($validadeReciclagem !== '') {
             $vencimento = new DateTimeImmutable($validadeReciclagem);
@@ -1930,9 +1958,19 @@ class PortalRepository {
             if ($diasParaVencimento < 0) {
                 $status = 'vencida';
                 $statusLabel = 'Vencida';
+                $alertLevel = 'vencida';
+            } elseif ($diasParaVencimento <= 30) {
+                $status = 'alerta';
+                $statusLabel = 'Alerta 30 dias';
+                $alertLevel = 30;
             } elseif ($diasParaVencimento <= 60) {
                 $status = 'alerta';
                 $statusLabel = 'Alerta 60 dias';
+                $alertLevel = 60;
+            } elseif ($diasParaVencimento <= 90) {
+                $status = 'alerta';
+                $statusLabel = 'Alerta 90 dias';
+                $alertLevel = 90;
             } else {
                 $status = 'em_dia';
                 $statusLabel = 'Em dia';
@@ -1953,7 +1991,8 @@ class PortalRepository {
             'dias_para_vencimento' => $diasParaVencimento,
             'status_reciclagem' => $status,
             'status_label' => $statusLabel,
-            'acionar_alerta' => $status === 'alerta',
+            'alerta_reciclagem_nivel' => $alertLevel,
+            'acionar_alerta' => in_array($status, ['alerta', 'vencida'], true),
         ];
     }
 
