@@ -326,6 +326,7 @@ class RhController {
             'situacao_reciclagem' => 'Valida',
             'outros_cursos' => [],
             'fator_rh' => '+',
+            'validade_reciclagem' => '',
             'banco_nome' => '',
             'agencia_bancaria' => '',
             'conta_bancaria' => '',
@@ -397,6 +398,7 @@ class RhController {
             'validade_cnv' => (string) ($collaborator['validade_cnv'] ?? ''),
             'curso_formacao' => !empty($collaborator['curso_formacao_concluido']) ? 'Sim' : 'Nao',
             'data_ultima_reciclagem' => (string) ($collaborator['data_ultima_reciclagem'] ?? ''),
+            'validade_reciclagem' => (string) ($collaborator['validade_reciclagem'] ?? ''),
             'situacao_reciclagem' => (string) ($collaborator['situacao_reciclagem'] ?? 'Valida'),
             'outros_cursos' => array_values(array_filter([
                 !empty($collaborator['curso_escolta_armada']) ? 'escolta_armada' : null,

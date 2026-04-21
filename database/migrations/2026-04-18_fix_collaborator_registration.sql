@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS colaborador_detalhes (
 ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS numero_cnv VARCHAR(30);
 ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS validade_cnv DATE;
 ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS curso_formacao_concluido BOOLEAN DEFAULT false;
+ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS validade_reciclagem DATE;
 ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS data_ultima_reciclagem DATE;
 ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS situacao_reciclagem VARCHAR(30);
 ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS curso_escolta_armada BOOLEAN DEFAULT false;

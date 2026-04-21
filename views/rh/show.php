@@ -229,8 +229,12 @@
                     <p class="mt-1 font-medium text-gray-800"><?= !empty($viewCollaborator['curso_formacao_concluido']) ? 'Sim' : 'Não' ?></p>
                 </div>
                 <div>
-                    <p class="text-xs uppercase tracking-wide text-gray-400">Última reciclagem</p>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Data da reciclagem</p>
                     <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['data_ultima_reciclagem'] ?? null) ?></p>
+                </div>
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-gray-400">Vencimento da reciclagem</p>
+                    <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['validade_reciclagem'] ?? null) ?></p>
                 </div>
                 <div class="sm:col-span-2 xl:col-span-4">
                     <p class="text-xs uppercase tracking-wide text-gray-400">Situação da reciclagem</p>

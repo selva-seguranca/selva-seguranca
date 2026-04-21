@@ -400,8 +400,13 @@
                 </label>
 
                 <label class="space-y-2">
-                    <span class="text-sm font-semibold text-gray-700">Data da última reciclagem</span>
+                    <span class="text-sm font-semibold text-gray-700">Data da reciclagem</span>
                     <input type="date" name="data_ultima_reciclagem" value="<?= $oldValue('data_ultima_reciclagem') ?>" data-required-for="vigilante" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
+                </label>
+
+                <label class="space-y-2">
+                    <span class="text-sm font-semibold text-gray-700">Data do vencimento da reciclagem</span>
+                    <input type="date" name="validade_reciclagem" value="<?= $oldValue('validade_reciclagem') ?>" data-required-for="vigilante" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
                 </label>
 
                 <label class="space-y-2 md:col-span-2">

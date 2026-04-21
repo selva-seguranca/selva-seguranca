@@ -150,6 +150,7 @@ class PortalRepository {
                     v.numero_cnv,
                     v.validade_cnv,
                     v.curso_formacao_concluido,
+                    v.validade_reciclagem,
                     v.data_ultima_reciclagem,
                     v.situacao_reciclagem,
                     v.curso_escolta_armada,
@@ -290,7 +291,8 @@ class PortalRepository {
                 'numero_cnv' => 'Informe o número da CNV.',
                 'validade_cnv' => 'Informe a validade da CNV.',
                 'curso_formacao' => 'Informe se o colaborador possui curso de formação.',
-                'data_ultima_reciclagem' => 'Informe a data da última reciclagem.',
+                'data_ultima_reciclagem' => 'Informe a data da reciclagem.',
+                'validade_reciclagem' => 'Informe a data do vencimento da reciclagem.',
                 'situacao_reciclagem' => 'Informe a situação da reciclagem.',
             ] as $field => $message) {
                 if ($this->nullIfBlank($payload[$field] ?? null) === null) {
@@ -502,7 +504,7 @@ class PortalRepository {
                         ':cnh' => null,
                         ':validade_cnh' => null,
                         ':formacao' => $cursoFormacao ? 'Curso de formação concluído' : null,
-                        ':validade_reciclagem' => null,
+                        ':validade_reciclagem' => $this->nullIfBlank($payload['validade_reciclagem'] ?? null),
                         ':numero_cnv' => $this->nullIfBlank($payload['numero_cnv'] ?? null),
                         ':validade_cnv' => $this->nullIfBlank($payload['validade_cnv'] ?? null),
                         ':curso_formacao_concluido' => $cursoFormacao,
@@ -625,7 +627,8 @@ class PortalRepository {
                 'numero_cnv' => 'Informe o número da CNV.',
                 'validade_cnv' => 'Informe a validade da CNV.',
                 'curso_formacao' => 'Informe se o colaborador possui curso de formação.',
-                'data_ultima_reciclagem' => 'Informe a data da última reciclagem.',
+                'data_ultima_reciclagem' => 'Informe a data da reciclagem.',
+                'validade_reciclagem' => 'Informe a data do vencimento da reciclagem.',
                 'situacao_reciclagem' => 'Informe a situação da reciclagem.',
             ] as $field => $message) {
                 if ($this->nullIfBlank($payload[$field] ?? null) === null) {
@@ -856,7 +859,7 @@ class PortalRepository {
                     ':cnh' => null,
                     ':validade_cnh' => null,
                     ':formacao' => $cursoFormacao ? 'Curso de formação concluído' : null,
-                    ':validade_reciclagem' => null,
+                    ':validade_reciclagem' => $this->nullIfBlank($payload['validade_reciclagem'] ?? null),
                     ':numero_cnv' => $this->nullIfBlank($payload['numero_cnv'] ?? null),
                     ':validade_cnv' => $this->nullIfBlank($payload['validade_cnv'] ?? null),
                     ':curso_formacao_concluido' => $cursoFormacao,
@@ -1400,6 +1403,7 @@ class PortalRepository {
         $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS numero_cnv VARCHAR(30)");
         $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS validade_cnv DATE");
         $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS curso_formacao_concluido BOOLEAN DEFAULT false");
+        $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS validade_reciclagem DATE");
         $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS data_ultima_reciclagem DATE");
         $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS situacao_reciclagem VARCHAR(30)");
         $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS curso_escolta_armada BOOLEAN DEFAULT false");
