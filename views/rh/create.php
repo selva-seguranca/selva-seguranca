@@ -8,6 +8,9 @@
     $selectedBloodType = $old['tipo_sanguineo'] ?? '';
     $selectedRhFactor = $old['fator_rh'] ?? '+';
     $selectedAccountType = $old['tipo_conta'] ?? '';
+    $selectedRhModule = ($old['modulo_rh'] ?? 'seguranca_privada') === 'servicos_terceirizacoes'
+        ? 'servicos_terceirizacoes'
+        : 'seguranca_privada';
     $editCollaboratorId = trim((string) ($editCollaboratorId ?? ($old['colaborador_id'] ?? '')));
     $existingPhotoUrl = trim((string) ($existingPhotoUrl ?? ($old['foto_url_atual'] ?? '')));
     $formAction = $isEditMode ? '/rh/colaboradores/atualizar' : '/rh/colaboradores';
@@ -137,6 +140,41 @@
                         </div>
                         <span class="inline-flex h-10 w-10 items-center justify-center rounded-full <?= $selectedType === 'financeiro_administrativo' ? 'bg-brand-red text-white' : 'bg-gray-100 text-gray-500' ?>">
                             <i class="ph ph-briefcase text-xl"></i>
+                        </span>
+                    </div>
+                </label>
+            </div>
+        </section>
+
+        <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-100 px-6 py-5">
+                <h3 class="text-lg font-bold text-gray-900">Módulo RH</h3>
+                <p class="mt-1 text-sm text-gray-500">Escolha em qual área do RH este colaborador será exibido após salvar.</p>
+            </div>
+
+            <div class="grid gap-4 px-6 py-6 md:grid-cols-2">
+                <label data-module-card="seguranca_privada" class="group cursor-pointer rounded-2xl border p-5 transition-colors <?= $selectedRhModule === 'seguranca_privada' ? 'border-brand-red bg-red-50' : 'border-gray-200 hover:border-red-200' ?>">
+                    <input type="radio" name="modulo_rh" value="seguranca_privada" class="sr-only js-rh-module" <?= $selectedRhModule === 'seguranca_privada' ? 'checked' : '' ?>>
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">SELVA SEGURANÇA PRIVADA</p>
+                            <p class="mt-2 text-sm text-gray-500">Envia o cadastro para o módulo principal da operação.</p>
+                        </div>
+                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-full <?= $selectedRhModule === 'seguranca_privada' ? 'bg-brand-red text-white' : 'bg-gray-100 text-gray-500' ?>">
+                            <i class="ph ph-shield-star text-xl"></i>
+                        </span>
+                    </div>
+                </label>
+
+                <label data-module-card="servicos_terceirizacoes" class="group cursor-pointer rounded-2xl border p-5 transition-colors <?= $selectedRhModule === 'servicos_terceirizacoes' ? 'border-brand-red bg-red-50' : 'border-gray-200 hover:border-red-200' ?>">
+                    <input type="radio" name="modulo_rh" value="servicos_terceirizacoes" class="sr-only js-rh-module" <?= $selectedRhModule === 'servicos_terceirizacoes' ? 'checked' : '' ?>>
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">SELVA SERVIÇOS E TERCEIRIZAÇÕES</p>
+                            <p class="mt-2 text-sm text-gray-500">Envia o cadastro para o módulo de serviços terceirizados.</p>
+                        </div>
+                        <span class="inline-flex h-10 w-10 items-center justify-center rounded-full <?= $selectedRhModule === 'servicos_terceirizacoes' ? 'bg-brand-red text-white' : 'bg-gray-100 text-gray-500' ?>">
+                            <i class="ph ph-buildings text-xl"></i>
                         </span>
                     </div>
                 </label>
@@ -524,6 +562,8 @@
         const photoStatus = document.getElementById('photo-status');
         const registrationTypeInputs = document.querySelectorAll('.js-registration-type');
         const registrationTypeCards = document.querySelectorAll('[data-type-card]');
+        const rhModuleInputs = document.querySelectorAll('.js-rh-module');
+        const rhModuleCards = document.querySelectorAll('[data-module-card]');
         const vigilanteBlocks = document.querySelectorAll('.js-vigilante-only');
         const adminBlocks = document.querySelectorAll('.js-admin-only');
         const vigilanteRequiredFields = document.querySelectorAll('[data-required-for="vigilante"]');
@@ -583,6 +623,31 @@
 
             vigilanteRequiredFields.forEach((field) => {
                 field.required = isVigilante;
+            });
+        }
+
+        function getSelectedRhModule() {
+            const checkedInput = Array.from(rhModuleInputs).find((input) => input.checked);
+            return checkedInput ? checkedInput.value : 'seguranca_privada';
+        }
+
+        function syncRhModuleUI() {
+            const currentModule = getSelectedRhModule();
+
+            rhModuleCards.forEach((card) => {
+                const isActive = card.dataset.moduleCard === currentModule;
+                const iconBadge = card.querySelector('span');
+                card.classList.toggle('border-brand-red', isActive);
+                card.classList.toggle('bg-red-50', isActive);
+                card.classList.toggle('border-gray-200', !isActive);
+                card.classList.toggle('hover:border-red-200', !isActive);
+
+                if (iconBadge) {
+                    iconBadge.classList.toggle('bg-brand-red', isActive);
+                    iconBadge.classList.toggle('text-white', isActive);
+                    iconBadge.classList.toggle('bg-gray-100', !isActive);
+                    iconBadge.classList.toggle('text-gray-500', !isActive);
+                }
             });
         }
 
@@ -866,6 +931,10 @@
             input.addEventListener('change', syncRegistrationTypeUI);
         });
 
+        rhModuleInputs.forEach((input) => {
+            input.addEventListener('change', syncRhModuleUI);
+        });
+
         async function lookupCep() {
             const cep = (cepInput.value || '').replace(/\D+/g, '');
             if (cep.length !== 8) {
@@ -928,5 +997,6 @@
         }
 
         syncRegistrationTypeUI();
+        syncRhModuleUI();
     })();
 </script>

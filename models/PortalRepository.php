@@ -122,11 +122,14 @@ class PortalRepository {
     }
 
     public function getCollaborators() {
+        $this->ensureCollaboratorRegistrationSchema();
+
         return $this->fetchAll(
             "SELECT c.id AS collaborator_id,
                     u.id AS user_id,
                     u.nome,
                     cd.foto_url,
+                    cd.modulo_rh,
                     COALESCE(c.cargo, CASE WHEN p.nome = 'Vigilante' THEN 'Vigilante' ELSE p.nome END) AS cargo,
                     COALESCE(c.departamento, CASE WHEN p.nome = 'Vigilante' THEN 'Operacional' ELSE 'Administrativo' END) AS departamento,
                     COALESCE(cd.situacao, CASE WHEN u.ativo THEN 'Ativo' ELSE 'Inativo' END) AS status
@@ -152,6 +155,7 @@ class PortalRepository {
                     c.departamento,
                     c.data_admissao,
                     cd.tipo_cadastro,
+                    cd.modulo_rh,
                     cd.foto_url,
                     cd.cpf,
                     cd.rg,
@@ -357,6 +361,7 @@ class PortalRepository {
         }
 
         $situacao = $this->normalizeEmploymentStatus($payload['situacao'] ?? 'Ativo');
+        $moduloRh = $this->normalizeRhModuleKey($payload['modulo_rh'] ?? 'seguranca_privada');
         $cargo = $this->resolveCollaboratorRole($tipoCadastro, $payload['funcao_administrativa'] ?? null);
         $departamento = $tipoCadastro === 'vigilante'
             ? 'Operacional'
@@ -409,6 +414,7 @@ class PortalRepository {
                 "INSERT INTO colaborador_detalhes (
                     colaborador_id,
                     tipo_cadastro,
+                    modulo_rh,
                     foto_url,
                     cpf,
                     rg,
@@ -438,6 +444,7 @@ class PortalRepository {
                  ) VALUES (
                     :colaborador_id,
                     :tipo_cadastro,
+                    :modulo_rh,
                     :foto_url,
                     :cpf,
                     :rg,
@@ -468,6 +475,7 @@ class PortalRepository {
                 [
                     ':colaborador_id' => $colaborador['id'],
                     ':tipo_cadastro' => $tipoCadastro,
+                    ':modulo_rh' => $moduloRh,
                     ':foto_url' => $fotoUrl,
                     ':cpf' => $cpf,
                     ':rg' => $this->nullIfBlank($payload['rg'] ?? null),
@@ -581,6 +589,7 @@ class PortalRepository {
             "SELECT c.id AS collaborator_id,
                     c.usuario_id,
                     cd.tipo_cadastro,
+                    cd.modulo_rh,
                     cd.foto_url,
                     u.email,
                     EXISTS(
@@ -690,6 +699,7 @@ class PortalRepository {
         }
 
         $situacao = $this->normalizeEmploymentStatus($payload['situacao'] ?? 'Ativo');
+        $moduloRh = $this->normalizeRhModuleKey($payload['modulo_rh'] ?? ($target['modulo_rh'] ?? 'seguranca_privada'));
         $cargo = $this->resolveCollaboratorRole($tipoCadastro, $payload['funcao_administrativa'] ?? null);
         $departamento = $tipoCadastro === 'vigilante'
             ? 'Operacional'
@@ -765,6 +775,7 @@ class PortalRepository {
                 "INSERT INTO colaborador_detalhes (
                     colaborador_id,
                     tipo_cadastro,
+                    modulo_rh,
                     foto_url,
                     cpf,
                     rg,
@@ -794,6 +805,7 @@ class PortalRepository {
                  ) VALUES (
                     :colaborador_id,
                     :tipo_cadastro,
+                    :modulo_rh,
                     :foto_url,
                     :cpf,
                     :rg,
@@ -823,6 +835,7 @@ class PortalRepository {
                  )
                  ON CONFLICT (colaborador_id) DO UPDATE SET
                     tipo_cadastro = EXCLUDED.tipo_cadastro,
+                    modulo_rh = EXCLUDED.modulo_rh,
                     foto_url = EXCLUDED.foto_url,
                     cpf = EXCLUDED.cpf,
                     rg = EXCLUDED.rg,
@@ -853,6 +866,7 @@ class PortalRepository {
                 [
                     ':colaborador_id' => $collaboratorId,
                     ':tipo_cadastro' => $tipoCadastro,
+                    ':modulo_rh' => $moduloRh,
                     ':foto_url' => $fotoUrl,
                     ':cpf' => $cpf,
                     ':rg' => $this->nullIfBlank($payload['rg'] ?? null),
@@ -1400,6 +1414,7 @@ class PortalRepository {
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 colaborador_id UUID NOT NULL UNIQUE REFERENCES colaboradores(id) ON DELETE CASCADE,
                 tipo_cadastro VARCHAR(50) NOT NULL DEFAULT 'financeiro_administrativo',
+                modulo_rh VARCHAR(50) NOT NULL DEFAULT 'seguranca_privada',
                 foto_url VARCHAR(255),
                 cpf VARCHAR(14) NOT NULL UNIQUE,
                 rg VARCHAR(30),
@@ -1440,6 +1455,7 @@ class PortalRepository {
         $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS curso_escolta_armada BOOLEAN DEFAULT false");
         $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS curso_seguranca_eventos BOOLEAN DEFAULT false");
         $this->db->exec("ALTER TABLE vigilantes ADD COLUMN IF NOT EXISTS curso_seguranca_vip BOOLEAN DEFAULT false");
+        $this->db->exec("ALTER TABLE colaborador_detalhes ADD COLUMN IF NOT EXISTS modulo_rh VARCHAR(50) NOT NULL DEFAULT 'seguranca_privada'");
         $this->db->exec("ALTER TABLE colaborador_detalhes ADD COLUMN IF NOT EXISTS banco_nome VARCHAR(100)");
         $this->db->exec("ALTER TABLE colaborador_detalhes ADD COLUMN IF NOT EXISTS agencia_bancaria VARCHAR(20)");
         $this->db->exec("ALTER TABLE colaborador_detalhes ADD COLUMN IF NOT EXISTS conta_bancaria VARCHAR(30)");
@@ -1503,6 +1519,14 @@ class PortalRepository {
         $type = strtolower(trim((string) $type));
 
         return $type === 'vigilante' ? 'vigilante' : 'financeiro_administrativo';
+    }
+
+    private function normalizeRhModuleKey($moduleKey) {
+        $moduleKey = strtolower(trim((string) $moduleKey));
+
+        return $moduleKey === 'servicos_terceirizacoes'
+            ? 'servicos_terceirizacoes'
+            : 'seguranca_privada';
     }
 
     private function normalizeEmploymentStatus($status) {

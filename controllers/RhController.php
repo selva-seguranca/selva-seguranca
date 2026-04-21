@@ -319,6 +319,7 @@ class RhController {
         return [
             'colaborador_id' => '',
             'tipo_cadastro' => 'vigilante',
+            'modulo_rh' => 'seguranca_privada',
             'funcao_administrativa' => 'Administrativo',
             'tipo_vinculo' => 'CLT',
             'situacao' => 'Ativo',
@@ -366,6 +367,7 @@ class RhController {
         return array_merge($this->defaultFormData(), [
             'colaborador_id' => (string) ($collaborator['collaborator_id'] ?? ''),
             'tipo_cadastro' => $registrationType,
+            'modulo_rh' => (string) ($collaborator['modulo_rh'] ?? 'seguranca_privada'),
             'funcao_administrativa' => (($collaborator['cargo'] ?? '') === 'Financeiro') ? 'Financeiro' : 'Administrativo',
             'email_acesso' => (string) ($collaborator['email'] ?? ''),
             'nome_completo' => (string) ($collaborator['nome'] ?? ''),
@@ -512,6 +514,11 @@ class RhController {
     }
 
     private function resolveRhModuleKey(array $colaborador) {
+        $storedModule = $this->normalizeRhModuleKey($colaborador['modulo_rh'] ?? '');
+        if ($storedModule !== '') {
+            return $storedModule;
+        }
+
         $haystack = $this->normalizeRhText(
             ($colaborador['cargo'] ?? '') . ' ' . ($colaborador['departamento'] ?? '')
         );
@@ -532,6 +539,16 @@ class RhController {
         }
 
         return 'seguranca_privada';
+    }
+
+    private function normalizeRhModuleKey($moduleKey) {
+        $moduleKey = strtolower(trim((string) $moduleKey));
+
+        if (in_array($moduleKey, ['seguranca_privada', 'servicos_terceirizacoes'], true)) {
+            return $moduleKey;
+        }
+
+        return '';
     }
 
     private function resolveRhArea(array $colaborador) {

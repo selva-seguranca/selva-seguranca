@@ -152,6 +152,7 @@ CREATE TABLE IF NOT EXISTS colaborador_detalhes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     colaborador_id UUID NOT NULL UNIQUE REFERENCES colaboradores(id) ON DELETE CASCADE,
     tipo_cadastro VARCHAR(50) NOT NULL DEFAULT 'financeiro_administrativo',
+    modulo_rh VARCHAR(50) NOT NULL DEFAULT 'seguranca_privada',
     foto_url VARCHAR(255),
     cpf VARCHAR(14) NOT NULL UNIQUE,
     rg VARCHAR(30),
