@@ -250,7 +250,7 @@
                     </table>
                 </div>
 
-                <div class="max-h-[760px] space-y-4 overflow-y-auto p-4 2xl:hidden">
+                <div class="max-h-[610px] space-y-4 overflow-y-auto p-4 2xl:hidden">
                     <?php foreach ($modulo['colaboradores'] as $c): ?>
                         <?php $photoUrl = trim((string) ($c['foto_url'] ?? '')); ?>
                         <article class="rounded-2xl border border-gray-200 p-4 shadow-sm" data-rh-area-row="<?= htmlspecialchars((string) ($c['rh_area'] ?? 'Administrativo'), ENT_QUOTES, 'UTF-8') ?>">
