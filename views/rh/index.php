@@ -116,12 +116,28 @@
     </div>
 <?php endif; ?>
 
-<div class="flex justify-between items-center mb-6">
-    <h3 class="text-xl font-semibold text-gray-800">Módulos de Colaboradores</h3>
+<div class="mb-6 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+    <div class="min-w-0">
+        <h3 class="text-xl font-semibold text-gray-800">Módulos de Colaboradores</h3>
+        <div class="mt-4 max-w-2xl">
+            <label for="rh-collaborator-search" class="mb-2 block text-sm font-semibold text-gray-700">Pesquisar colaborador</label>
+            <div class="relative">
+                <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-lg text-gray-400"></i>
+                <input
+                    type="search"
+                    id="rh-collaborator-search"
+                    class="w-full rounded-2xl border border-gray-200 bg-white py-3 pl-12 pr-4 text-sm text-gray-800 shadow-sm outline-none transition-colors placeholder:text-gray-400 focus:border-brand-red focus:ring-2 focus:ring-red-100"
+                    placeholder="Digite nome ou CPF"
+                    autocomplete="off"
+                >
+            </div>
+            <p class="mt-2 text-xs text-gray-500">A busca filtra por nome em tempo real e também localiza pelo CPF digitado.</p>
+        </div>
+    </div>
     <a
         href="/rh?modal=novo-colaborador"
         data-open-collaborator-modal
-        class="bg-brand-red hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium shadow transition-colors flex items-center"
+        class="inline-flex items-center justify-center rounded-lg bg-brand-red px-4 py-2 font-medium text-white shadow transition-colors hover:bg-red-700"
     >
         <i class="ph ph-plus-circle text-lg mr-2"></i>
         Novo Colaborador
@@ -183,7 +199,14 @@
                         <tbody class="divide-y divide-gray-100 text-sm">
                             <?php foreach ($modulo['colaboradores'] as $c): ?>
                             <?php $photoUrl = trim((string) ($c['foto_url'] ?? '')); ?>
-                            <tr class="hover:bg-gray-50 transition-colors" data-rh-area-row="<?= htmlspecialchars((string) ($c['rh_area'] ?? 'Administrativo'), ENT_QUOTES, 'UTF-8') ?>">
+                            <?php $searchCpf = preg_replace('/\D+/', '', (string) ($c['cpf'] ?? '')); ?>
+                            <tr
+                                class="hover:bg-gray-50 transition-colors"
+                                data-rh-area-row="<?= htmlspecialchars((string) ($c['rh_area'] ?? 'Administrativo'), ENT_QUOTES, 'UTF-8') ?>"
+                                data-rh-search-row
+                                data-rh-search-name="<?= htmlspecialchars((string) ($c['nome'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                                data-rh-search-cpf="<?= htmlspecialchars($searchCpf, ENT_QUOTES, 'UTF-8') ?>"
+                            >
                                 <td class="px-6 py-4 align-top font-medium text-gray-800">
                                     <div class="flex min-w-0 items-start gap-3">
                                         <div class="flex h-11 w-11 min-h-11 min-w-11 shrink-0 aspect-square items-center justify-center overflow-hidden rounded-full border border-white/80 text-xs font-bold shadow-sm <?= $photoUrl !== '' ? 'bg-white' : $tone['avatar'] ?>">
@@ -253,7 +276,14 @@
                 <div class="max-h-[610px] space-y-4 overflow-y-auto p-4 2xl:hidden">
                     <?php foreach ($modulo['colaboradores'] as $c): ?>
                         <?php $photoUrl = trim((string) ($c['foto_url'] ?? '')); ?>
-                        <article class="rounded-2xl border border-gray-200 p-4 shadow-sm" data-rh-area-row="<?= htmlspecialchars((string) ($c['rh_area'] ?? 'Administrativo'), ENT_QUOTES, 'UTF-8') ?>">
+                        <?php $searchCpf = preg_replace('/\D+/', '', (string) ($c['cpf'] ?? '')); ?>
+                        <article
+                            class="rounded-2xl border border-gray-200 p-4 shadow-sm"
+                            data-rh-area-row="<?= htmlspecialchars((string) ($c['rh_area'] ?? 'Administrativo'), ENT_QUOTES, 'UTF-8') ?>"
+                            data-rh-search-row
+                            data-rh-search-name="<?= htmlspecialchars((string) ($c['nome'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+                            data-rh-search-cpf="<?= htmlspecialchars($searchCpf, ENT_QUOTES, 'UTF-8') ?>"
+                        >
                             <div class="flex items-start justify-between gap-4">
                                 <div class="min-w-0">
                                     <div class="flex items-start">
@@ -320,7 +350,7 @@
                     <?php endforeach; ?>
                 </div>
                 <div data-rh-area-empty class="hidden p-6 text-sm text-gray-500">
-                    Nenhum colaborador encontrado nesta área.
+                    Nenhum colaborador encontrado com os filtros atuais.
                 </div>
             <?php endif; ?>
         </section>
@@ -453,6 +483,7 @@
         const collaboratorDeleteForms = document.querySelectorAll('[data-delete-collaborator-form]');
         const collaboratorDeleteConfirmButton = document.getElementById('collaborator-delete-confirm-button');
         const areaFilterButtons = document.querySelectorAll('[data-rh-area-filter]');
+        const collaboratorSearchInput = document.getElementById('rh-collaborator-search');
         const cropModal = document.getElementById('crop-modal');
         const successToast = document.getElementById('rh-action-success-toast');
         let pendingDeleteForm = null;
@@ -610,13 +641,57 @@
             });
         }
 
+        function normalizeSearchText(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+        }
+
+        function normalizeSearchDigits(value) {
+            return String(value || '').replace(/\D/g, '');
+        }
+
+        function getSearchState() {
+            const rawSearch = collaboratorSearchInput ? collaboratorSearchInput.value : '';
+            const text = normalizeSearchText(rawSearch);
+            const digits = normalizeSearchDigits(rawSearch);
+
+            return {
+                text,
+                digits,
+                hasLetters: /[a-z]/.test(text),
+                isActive: text !== '' || digits !== '',
+            };
+        }
+
+        function rowMatchesSearch(row, searchState) {
+            if (!searchState.isActive) {
+                return true;
+            }
+
+            const rowName = normalizeSearchText(row.dataset.rhSearchName || '');
+            const rowCpf = normalizeSearchDigits(row.dataset.rhSearchCpf || '');
+            const matchesName = searchState.text !== '' && rowName.includes(searchState.text);
+            const matchesCpf = searchState.digits !== '' && rowCpf.includes(searchState.digits);
+
+            if (searchState.digits !== '' && !searchState.hasLetters) {
+                return matchesCpf;
+            }
+
+            return matchesName || matchesCpf;
+        }
+
         function syncAreaFilter(moduleElement, activeArea) {
             const rows = moduleElement.querySelectorAll('[data-rh-area-row]');
             const emptyState = moduleElement.querySelector('[data-rh-area-empty]');
+            const searchState = getSearchState();
             let hasVisibleRows = false;
 
             rows.forEach((row) => {
-                const isVisible = activeArea === '' || row.dataset.rhAreaRow === activeArea;
+                const matchesArea = activeArea === '' || row.dataset.rhAreaRow === activeArea;
+                const isVisible = matchesArea && rowMatchesSearch(row, searchState);
                 row.classList.toggle('hidden', !isVisible);
 
                 if (isVisible) {
@@ -637,6 +712,12 @@
             }
         }
 
+        function syncAllRhFilters() {
+            document.querySelectorAll('[data-rh-module]').forEach((moduleElement) => {
+                syncAreaFilter(moduleElement, moduleElement.dataset.rhActiveArea || '');
+            });
+        }
+
         areaFilterButtons.forEach((button) => {
             button.addEventListener('click', () => {
                 const moduleElement = button.closest('[data-rh-module]');
@@ -653,6 +734,10 @@
                 syncAreaFilter(moduleElement, nextArea);
             });
         });
+
+        if (collaboratorSearchInput) {
+            collaboratorSearchInput.addEventListener('input', syncAllRhFilters);
+        }
 
         document.addEventListener('keydown', (event) => {
             if (event.key !== 'Escape') {

@@ -129,6 +129,7 @@ class PortalRepository {
                     u.id AS user_id,
                     u.nome,
                     cd.foto_url,
+                    cd.cpf,
                     cd.modulo_rh,
                     COALESCE(c.cargo, CASE WHEN p.nome = 'Vigilante' THEN 'Vigilante' ELSE p.nome END) AS cargo,
                     COALESCE(c.departamento, CASE WHEN p.nome = 'Vigilante' THEN 'Operacional' ELSE 'Administrativo' END) AS departamento,
