@@ -132,7 +132,7 @@
                     <input type="radio" name="<?= $isEditMode ? 'tipo_cadastro_visual' : 'tipo_cadastro' ?>" value="financeiro_administrativo" class="sr-only js-registration-type" <?= $selectedType === 'financeiro_administrativo' ? 'checked' : '' ?> <?= $isEditMode ? 'disabled' : '' ?>>
                     <div class="flex items-start justify-between gap-4">
                         <div>
-                            <p class="text-sm font-semibold text-gray-900">Financeiro / Administrativo</p>
+                            <p class="text-sm font-semibold text-gray-900">ADMINISTRATIVO</p>
                             <p class="mt-2 text-sm text-gray-500">Mantém somente dados pessoais e profissionais básicos.</p>
                         </div>
                         <span class="inline-flex h-10 w-10 items-center justify-center rounded-full <?= $selectedType === 'financeiro_administrativo' ? 'bg-brand-red text-white' : 'bg-gray-100 text-gray-500' ?>">
