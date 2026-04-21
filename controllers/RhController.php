@@ -476,7 +476,7 @@ class RhController {
         $modulos = [
             'seguranca_privada' => [
                 'slug' => 'seguranca_privada',
-                'title' => 'COLABORADORES SELVA SEGURANÇA PRIVADA',
+                'title' => 'SELVA SEGURANÇA PRIVADA',
                 'subtitle' => 'Base administrativa, operacional e técnica da operação principal.',
                 'roles' => ['Administrativo', 'Vigilante', 'Técnico'],
                 'colaboradores' => [],
