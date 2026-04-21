@@ -119,7 +119,7 @@
                     <input type="radio" name="<?= $isEditMode ? 'tipo_cadastro_visual' : 'tipo_cadastro' ?>" value="vigilante" class="sr-only js-registration-type" <?= $selectedType === 'vigilante' ? 'checked' : '' ?> <?= $isEditMode ? 'disabled' : '' ?>>
                     <div class="flex items-start justify-between gap-4">
                         <div>
-                            <p class="text-sm font-semibold text-gray-900">Colaborador Vigilante</p>
+                            <p class="text-sm font-semibold text-gray-900">OPERACIONAL</p>
                             <p class="mt-2 text-sm text-gray-500">Abre CNV, reciclagem e cursos extras.</p>
                         </div>
                         <span class="inline-flex h-10 w-10 items-center justify-center rounded-full <?= $selectedType === 'vigilante' ? 'bg-brand-red text-white' : 'bg-gray-100 text-gray-500' ?>">
