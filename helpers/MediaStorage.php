@@ -557,7 +557,7 @@ class MediaStorage {
     }
 
     private static function getMaxFileSizeBytes() {
-        $defaultMb = Env::isTruthy('VERCEL') ? 4 : 20;
+        $defaultMb = Env::isTruthy('VERCEL') ? 10 : 20;
         $mb = (float) Env::get('MEDIA_MAX_FILE_SIZE_MB', (string)$defaultMb);
         return (int) round($mb * 1024 * 1024);
     }

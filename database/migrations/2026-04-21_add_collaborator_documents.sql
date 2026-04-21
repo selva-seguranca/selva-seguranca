@@ -13,3 +13,13 @@ CREATE TABLE IF NOT EXISTS colaborador_documentos (
 
 CREATE INDEX IF NOT EXISTS idx_colaborador_documentos_colaborador_id
     ON colaborador_documentos (colaborador_id);
+
+DO $$
+BEGIN
+    IF to_regclass('storage.buckets') IS NOT NULL THEN
+        UPDATE storage.buckets
+        SET file_size_limit = 10485760
+        WHERE id = 'colaboradores'
+          AND (file_size_limit IS NULL OR file_size_limit < 10485760);
+    END IF;
+END $$;
