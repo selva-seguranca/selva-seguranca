@@ -488,7 +488,7 @@ class RhController {
             ],
             'servicos_terceirizacoes' => [
                 'slug' => 'servicos_terceirizacoes',
-                'title' => 'COLABORADORES SELVA SERVIÇOS E TERCEIRIZAÇÕES',
+                'title' => 'SELVA SERVIÇOS E TERCEIRIZAÇÕES',
                 'subtitle' => 'Equipe dedicada a postos de apoio, portaria e serviços terceirizados.',
                 'roles' => ['Porteiro', 'Vigitante'],
                 'colaboradores' => [],
