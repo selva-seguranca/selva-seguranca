@@ -20,6 +20,7 @@
         ? 'Colaborador Vigilante'
         : 'Financeiro / Administrativo';
     $courses = is_array($viewCollaborator['outros_cursos'] ?? null) ? $viewCollaborator['outros_cursos'] : [];
+    $documents = is_array($viewCollaborator['documentos'] ?? null) ? $viewCollaborator['documentos'] : [];
     $photoUrl = trim((string) ($viewCollaborator['foto_url'] ?? ''));
     $statusLabel = trim((string) ($viewCollaborator['situacao'] ?? ($viewCollaborator['ativo'] ? 'Ativo' : 'Inativo')));
 ?>
@@ -210,6 +211,37 @@
                 <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['titular_conta'] ?? null) ?></p>
             </div>
         </div>
+    </section>
+
+    <section class="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h4 class="text-lg font-bold text-gray-900">Documentos em PDF</h4>
+        <?php if (empty($documents)): ?>
+            <p class="mt-4 text-sm text-gray-500">Nenhum documento PDF anexado.</p>
+        <?php else: ?>
+            <div class="mt-5 grid gap-3 md:grid-cols-2">
+                <?php foreach ($documents as $document): ?>
+                    <?php $documentUrl = trim((string) ($document['arquivo_url'] ?? '')); ?>
+                    <?php if ($documentUrl === '') { continue; } ?>
+                    <a
+                        href="<?= htmlspecialchars($documentUrl, ENT_QUOTES, 'UTF-8') ?>"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 transition-colors hover:border-brand-red hover:text-brand-red"
+                    >
+                        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-brand-red">
+                            <i class="ph ph-file-pdf text-xl"></i>
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block truncate font-semibold"><?= htmlspecialchars((string) ($document['nome_original'] ?? 'documento.pdf'), ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php if (!empty($document['criado_em'])): ?>
+                                <span class="mt-0.5 block text-xs text-gray-400">Anexado em <?= htmlspecialchars((string) $document['criado_em'], ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php endif; ?>
+                        </span>
+                        <i class="ph ph-arrow-square-out text-lg"></i>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </section>
 
     <?php if (($viewCollaborator['tipo_cadastro'] ?? '') === 'vigilante'): ?>

@@ -62,6 +62,10 @@ class RhController {
                             if (($createModalState['old']['foto_url_atual'] ?? '') === '') {
                                 $createModalState['old']['foto_url_atual'] = $editCollaborator['foto_url'] ?? '';
                             }
+
+                            if (!isset($createModalState['old']['documentos'])) {
+                                $createModalState['old']['documentos'] = $editCollaborator['documentos'] ?? [];
+                            }
                         } else {
                             $createModalState['old'] = $this->mapCollaboratorToFormData($editCollaborator);
                         }
@@ -125,10 +129,11 @@ class RhController {
         $storedFiles = [];
 
         try {
+            $collaboratorBucket = $this->getCollaboratorBucket();
             $photo = $this->storeOptionalFile(
                 $_FILES['foto_colaborador'] ?? null,
                 'colaboradores/fotos',
-                trim((string) Env::get('SUPABASE_COLLABORATORS_BUCKET', Env::get('SUPABASE_COLABORADORES_BUCKET', 'colaboradores')))
+                $collaboratorBucket
             );
             if ($photo === null) {
                 throw new \RuntimeException('Selecione a foto do colaborador e aplique o crop antes de salvar.');
@@ -138,9 +143,19 @@ class RhController {
                 $storedFiles[] = $photo;
             }
 
+            $documents = $this->storeOptionalPdfFiles(
+                $_FILES['documentos_pdf'] ?? null,
+                'colaboradores/documentos',
+                $collaboratorBucket
+            );
+            foreach ($documents as $document) {
+                $storedFiles[] = $document;
+            }
+
             $repository = new PortalRepository();
             $result = $repository->createCollaboratorRegistration($_POST, [
                 'foto' => $photo,
+                'documentos' => $documents,
             ]);
 
             unset($_SESSION['rh_form_mode'], $_SESSION['rh_form_edit_id'], $_SESSION['rh_form_existing_photo_url'], $_SESSION['rh_form_old']);
@@ -184,6 +199,7 @@ class RhController {
 
         try {
             $repository = new PortalRepository();
+            $collaboratorBucket = $this->getCollaboratorBucket();
 
             if ($repository->getCollaboratorDetails($collaboratorId) === null) {
                 throw new \RuntimeException('Cadastro do colaborador não encontrado.');
@@ -192,15 +208,25 @@ class RhController {
             $photo = $this->storeOptionalFile(
                 $_FILES['foto_colaborador'] ?? null,
                 'colaboradores/fotos',
-                trim((string) Env::get('SUPABASE_COLLABORATORS_BUCKET', Env::get('SUPABASE_COLABORADORES_BUCKET', 'colaboradores')))
+                $collaboratorBucket
             );
 
             if ($photo !== null) {
                 $storedFiles[] = $photo;
             }
 
+            $documents = $this->storeOptionalPdfFiles(
+                $_FILES['documentos_pdf'] ?? null,
+                'colaboradores/documentos',
+                $collaboratorBucket
+            );
+            foreach ($documents as $document) {
+                $storedFiles[] = $document;
+            }
+
             $result = $repository->updateCollaboratorRegistration($collaboratorId, $_POST, [
                 'foto' => $photo,
+                'documentos' => $documents,
             ]);
 
             unset($_SESSION['rh_form_mode'], $_SESSION['rh_form_edit_id'], $_SESSION['rh_form_existing_photo_url'], $_SESSION['rh_form_old']);
@@ -256,6 +282,9 @@ class RhController {
 
             $result = $repository->deleteCollaboratorRegistration($collaboratorId);
             $this->deleteCollaboratorPhoto($result['photo_url'] ?? null);
+            foreach ($result['documents'] ?? [] as $document) {
+                $this->deleteCollaboratorPhoto($document['arquivo_url'] ?? null, $document['bucket'] ?? null);
+            }
 
             $_SESSION['rh_action_success'] = 'Colaborador excluído com sucesso.';
         } catch (Throwable $e) {
@@ -335,6 +364,7 @@ class RhController {
             'chave_pix' => '',
             'titular_conta' => '',
             'foto_url_atual' => '',
+            'documentos' => [],
         ];
     }
 
@@ -408,6 +438,7 @@ class RhController {
                 !empty($collaborator['curso_seguranca_vip']) ? 'seguranca_vip' : null,
             ])),
             'foto_url_atual' => (string) ($collaborator['foto_url'] ?? ''),
+            'documentos' => is_array($collaborator['documentos'] ?? null) ? $collaborator['documentos'] : [],
         ]);
     }
 
@@ -419,16 +450,107 @@ class RhController {
         return MediaStorage::store($file, $folder, $bucket);
     }
 
-    private function deleteCollaboratorPhoto($photoUrl) {
+    private function storeOptionalPdfFiles($files, $folder, $bucket = null) {
+        $normalizedFiles = array_values(array_filter(
+            $this->normalizeUploadedFiles($files),
+            static function ($file) {
+                return (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE);
+            }
+        ));
+
+        if (count($normalizedFiles) > 4) {
+            throw new \RuntimeException("Envie no m\u{00E1}ximo 4 documentos em PDF por vez.");
+        }
+
+        $storedDocuments = [];
+
+        try {
+            foreach ($normalizedFiles as $file) {
+                $this->validatePdfUpload($file);
+                $storedFile = MediaStorage::store($file, $folder, $bucket);
+
+                if ($storedFile === null) {
+                    continue;
+                }
+
+                $originalName = trim(str_replace(["\0", '/', '\\'], '', (string) ($file['name'] ?? '')));
+                $storedFile['nome_original'] = $originalName !== '' ? $originalName : 'documento.pdf';
+                $storedFile['tamanho_bytes'] = (int) ($file['size'] ?? 0);
+                $storedDocuments[] = $storedFile;
+            }
+        } catch (Throwable $e) {
+            foreach (array_reverse($storedDocuments) as $storedDocument) {
+                MediaStorage::delete($storedDocument);
+            }
+
+            throw $e;
+        }
+
+        return $storedDocuments;
+    }
+
+    private function normalizeUploadedFiles($files) {
+        if (!is_array($files) || !isset($files['name'])) {
+            return [];
+        }
+
+        if (!is_array($files['name'])) {
+            return [$files];
+        }
+
+        $normalized = [];
+        foreach ($files['name'] as $index => $name) {
+            $normalized[] = [
+                'name' => $name,
+                'type' => $files['type'][$index] ?? '',
+                'tmp_name' => $files['tmp_name'][$index] ?? '',
+                'error' => $files['error'][$index] ?? UPLOAD_ERR_NO_FILE,
+                'size' => $files['size'][$index] ?? 0,
+            ];
+        }
+
+        return $normalized;
+    }
+
+    private function validatePdfUpload(array $file) {
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            return;
+        }
+
+        $extension = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+        $mime = '';
+
+        if (class_exists('finfo') && is_string($file['tmp_name'] ?? '') && is_file($file['tmp_name'])) {
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $mime = strtolower((string) (@$finfo->file($file['tmp_name']) ?: ''));
+        }
+
+        if ($mime === '') {
+            $mime = strtolower((string) ($file['type'] ?? ''));
+        }
+
+        if ($extension !== 'pdf' && $mime !== 'application/pdf') {
+            throw new \RuntimeException('Anexe somente documentos em PDF.');
+        }
+    }
+
+    private function getCollaboratorBucket() {
+        return trim((string) Env::get(
+            'SUPABASE_COLLABORATORS_BUCKET',
+            Env::get('SUPABASE_COLABORADORES_BUCKET', 'colaboradores')
+        ));
+    }
+
+    private function deleteCollaboratorPhoto($photoUrl, $bucketOverride = null) {
         $photoUrl = trim((string) $photoUrl);
         if ($photoUrl === '') {
             return;
         }
 
-        $bucket = trim((string) Env::get(
-            'SUPABASE_COLLABORATORS_BUCKET',
-            Env::get('SUPABASE_COLABORADORES_BUCKET', 'colaboradores')
-        ));
+        $bucket = trim((string) $bucketOverride);
+        if ($bucket === '') {
+            $bucket = $this->getCollaboratorBucket();
+        }
 
         if (strpos($photoUrl, '/uploads/') === 0) {
             MediaStorage::delete([

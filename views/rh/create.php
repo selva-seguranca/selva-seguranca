@@ -5,6 +5,7 @@
     $selectedType = ($old['tipo_cadastro'] ?? 'vigilante') === 'vigilante' ? 'vigilante' : 'financeiro_administrativo';
     $selectedAdminRole = $old['funcao_administrativa'] ?? 'Administrativo';
     $selectedCourses = is_array($old['outros_cursos'] ?? null) ? $old['outros_cursos'] : [];
+    $existingDocuments = is_array($old['documentos'] ?? null) ? $old['documentos'] : [];
     $selectedBloodType = $old['tipo_sanguineo'] ?? '';
     $selectedRhFactor = $old['fator_rh'] ?? '+';
     $selectedAccountType = $old['tipo_conta'] ?? '';
@@ -365,6 +366,51 @@
 
         <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
             <div class="border-b border-gray-100 px-6 py-5">
+                <h3 class="text-lg font-bold text-gray-900">Documentos em PDF</h3>
+                <p class="mt-1 text-sm text-gray-500">Anexe documentos do colaborador, como contrato, certificados ou comprovantes. Use somente arquivos PDF.</p>
+            </div>
+
+            <div class="space-y-5 px-6 py-6">
+                <?php if (!empty($existingDocuments)): ?>
+                    <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                        <p class="text-sm font-semibold text-gray-700">Documentos j&aacute; anexados</p>
+                        <div class="mt-3 grid gap-3 md:grid-cols-2">
+                            <?php foreach ($existingDocuments as $document): ?>
+                                <?php $documentUrl = trim((string) ($document['arquivo_url'] ?? '')); ?>
+                                <?php if ($documentUrl === '') { continue; } ?>
+                                <a
+                                    href="<?= htmlspecialchars($documentUrl, ENT_QUOTES, 'UTF-8') ?>"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 transition-colors hover:border-brand-red hover:text-brand-red"
+                                >
+                                    <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-50 text-brand-red">
+                                        <i class="ph ph-file-pdf text-lg"></i>
+                                    </span>
+                                    <span class="min-w-0 flex-1 truncate"><?= htmlspecialchars((string) ($document['nome_original'] ?? 'documento.pdf'), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <i class="ph ph-arrow-square-out text-base"></i>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <label class="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-gray-300 bg-gray-50 px-6 py-8 text-center transition-colors hover:border-brand-red hover:bg-red-50/40">
+                    <input id="document-upload-input" type="file" name="documentos_pdf[]" accept="application/pdf,.pdf" multiple class="hidden">
+                    <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white text-brand-red shadow-sm">
+                        <i class="ph ph-file-pdf text-2xl"></i>
+                    </span>
+                    <span class="mt-4 text-sm font-semibold text-gray-900">Selecionar documentos em PDF</span>
+                    <span class="mt-1 text-xs text-gray-500">Envie at&eacute; 4 arquivos PDF por vez, respeitando o limite de <?= \Helpers\MediaStorage::getMaxAllowedFileSizeLabel() ?> por arquivo.</span>
+                </label>
+
+                <div id="document-selected-list" class="hidden rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-700"></div>
+                <p id="document-status" class="sr-only" aria-live="polite"></p>
+            </div>
+        </section>
+
+        <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
+            <div class="border-b border-gray-100 px-6 py-5">
                 <h3 class="text-lg font-bold text-gray-900">Dados profissionais</h3>
                 <p class="mt-1 text-sm text-gray-500">Dados de vínculo, admissão e situação atual do colaborador.</p>
             </div>
@@ -560,6 +606,9 @@
         const photoPreview = document.getElementById('photo-preview');
         const photoPlaceholder = document.getElementById('photo-placeholder');
         const photoStatus = document.getElementById('photo-status');
+        const documentUploadInput = document.getElementById('document-upload-input');
+        const documentSelectedList = document.getElementById('document-selected-list');
+        const documentStatus = document.getElementById('document-status');
         const registrationTypeInputs = document.querySelectorAll('.js-registration-type');
         const registrationTypeCards = document.querySelectorAll('[data-type-card]');
         const rhModuleInputs = document.querySelectorAll('.js-rh-module');
@@ -575,6 +624,7 @@
 
         let cropper = null;
         let sourceImageUrl = null;
+        const maxDocumentUploadCount = 4;
 
         function setPhotoError(message) {
             if (!photoStatus) {
@@ -688,6 +738,86 @@
                 event.target.value = applyMask(event.target.value, event.target.dataset.mask);
             });
         });
+
+        function setDocumentError(message) {
+            if (!documentStatus) {
+                window.alert(message);
+                return;
+            }
+
+            documentStatus.textContent = message;
+            documentStatus.classList.remove('sr-only', 'text-gray-500');
+            documentStatus.classList.add('text-sm', 'font-semibold', 'text-brand-red');
+        }
+
+        function clearDocumentStatus() {
+            if (!documentStatus) {
+                return;
+            }
+
+            documentStatus.textContent = '';
+            documentStatus.classList.add('sr-only');
+            documentStatus.classList.remove('text-sm', 'font-semibold', 'text-brand-red', 'text-gray-500');
+        }
+
+        function renderSelectedDocuments() {
+            if (!documentUploadInput || !documentSelectedList) {
+                return;
+            }
+
+            clearDocumentStatus();
+            const files = Array.from(documentUploadInput.files || []);
+
+            if (files.length === 0) {
+                documentSelectedList.classList.add('hidden');
+                documentSelectedList.innerHTML = '';
+                return;
+            }
+
+            if (files.length > maxDocumentUploadCount) {
+                documentUploadInput.value = '';
+                documentSelectedList.classList.add('hidden');
+                documentSelectedList.innerHTML = '';
+                setDocumentError('Selecione no m\u00e1ximo ' + maxDocumentUploadCount + ' documentos PDF por vez.');
+                return;
+            }
+
+            const invalidFile = files.find((file) => {
+                const isPdfByType = file.type === 'application/pdf';
+                const isPdfByName = file.name.toLowerCase().endsWith('.pdf');
+                return !isPdfByType && !isPdfByName;
+            });
+
+            if (invalidFile) {
+                documentUploadInput.value = '';
+                documentSelectedList.classList.add('hidden');
+                documentSelectedList.innerHTML = '';
+                setDocumentError('Anexe somente documentos em PDF.');
+                return;
+            }
+
+            const oversizedFile = files.find((file) => file.size > maxPhotoUploadBytes);
+            if (oversizedFile) {
+                documentUploadInput.value = '';
+                documentSelectedList.classList.add('hidden');
+                documentSelectedList.innerHTML = '';
+                setDocumentError('Cada PDF deve ter at\u00e9 ' + maxPhotoUploadLabel + '.');
+                return;
+            }
+
+            documentSelectedList.classList.remove('hidden');
+            documentSelectedList.innerHTML = [
+                '<p class="mb-3 text-sm font-semibold text-gray-700">Documentos selecionados</p>',
+                ...files.map((file) => {
+                    const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+                    return '<div class="flex items-center gap-3 rounded-xl border border-gray-100 px-3 py-2">' +
+                        '<span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-50 text-brand-red"><i class="ph ph-file-pdf text-base"></i></span>' +
+                        '<span class="min-w-0 flex-1 truncate">' + file.name.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char])) + '</span>' +
+                        '<span class="text-xs text-gray-400">' + sizeMb + ' MB</span>' +
+                    '</div>';
+                })
+            ].join('');
+        }
 
         function updatePhotoPreview(file) {
             if (photoStatus) {
@@ -817,6 +947,10 @@
 
             openCropModalFromFile(file);
         });
+
+        if (documentUploadInput) {
+            documentUploadInput.addEventListener('change', renderSelectedDocuments);
+        }
 
         if (photoEditButton) {
             photoEditButton.addEventListener('click', () => {

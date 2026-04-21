@@ -216,11 +216,15 @@ class PortalRepository {
             $row['curso_seguranca_eventos'] ? 'Segurança de Eventos' : null,
             $row['curso_seguranca_vip'] ? 'Segurança VIP' : null,
         ]));
+        $row['documentos'] = $this->getCollaboratorDocuments($collaboratorId);
 
         return $row;
     }
 
     public function deleteCollaboratorRegistration($collaboratorId) {
+        $this->ensureCollaboratorRegistrationSchema();
+        $documents = $this->getCollaboratorDocuments($collaboratorId);
+
         $target = $this->fetchOne(
             "SELECT c.id AS collaborator_id,
                     c.usuario_id,
@@ -264,6 +268,7 @@ class PortalRepository {
 
             return [
                 'photo_url' => $target['foto_url'] ?? null,
+                'documents' => $documents,
             ];
         } catch (Throwable $e) {
             if ($this->db->inTransaction()) {
@@ -562,6 +567,8 @@ class PortalRepository {
                     ]
                 );
             }
+
+            $this->insertCollaboratorDocuments($colaborador['id'], $media['documentos'] ?? []);
 
             $this->db->commit();
 
@@ -977,6 +984,8 @@ class PortalRepository {
                     );
                 }
             }
+
+            $this->insertCollaboratorDocuments($collaboratorId, $media['documentos'] ?? []);
 
             $this->db->commit();
 
@@ -1463,6 +1472,87 @@ class PortalRepository {
         $this->db->exec("ALTER TABLE colaborador_detalhes ADD COLUMN IF NOT EXISTS tipo_conta VARCHAR(30)");
         $this->db->exec("ALTER TABLE colaborador_detalhes ADD COLUMN IF NOT EXISTS chave_pix VARCHAR(150)");
         $this->db->exec("ALTER TABLE colaborador_detalhes ADD COLUMN IF NOT EXISTS titular_conta VARCHAR(150)");
+        $this->db->exec(
+            "CREATE TABLE IF NOT EXISTS colaborador_documentos (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                colaborador_id UUID NOT NULL REFERENCES colaboradores(id) ON DELETE CASCADE,
+                nome_original VARCHAR(255) NOT NULL,
+                arquivo_url TEXT NOT NULL,
+                arquivo_path TEXT,
+                storage_driver VARCHAR(30),
+                bucket VARCHAR(100),
+                mime_type VARCHAR(100) DEFAULT 'application/pdf',
+                tamanho_bytes INTEGER,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )"
+        );
+        $this->db->exec(
+            "CREATE INDEX IF NOT EXISTS idx_colaborador_documentos_colaborador_id
+             ON colaborador_documentos (colaborador_id)"
+        );
+    }
+
+    private function getCollaboratorDocuments($collaboratorId) {
+        return $this->fetchAll(
+            "SELECT id,
+                    colaborador_id,
+                    nome_original,
+                    arquivo_url,
+                    arquivo_path,
+                    storage_driver,
+                    bucket,
+                    mime_type,
+                    tamanho_bytes,
+                    criado_em
+             FROM colaborador_documentos
+             WHERE colaborador_id = :collaborator_id
+             ORDER BY criado_em DESC, nome_original ASC",
+            [':collaborator_id' => $collaboratorId]
+        );
+    }
+
+    private function insertCollaboratorDocuments($collaboratorId, array $documents) {
+        foreach ($documents as $document) {
+            $arquivoUrl = trim((string) ($document['url'] ?? ''));
+            if ($arquivoUrl === '') {
+                continue;
+            }
+
+            $this->run(
+                "INSERT INTO colaborador_documentos (
+                    colaborador_id,
+                    nome_original,
+                    arquivo_url,
+                    arquivo_path,
+                    storage_driver,
+                    bucket,
+                    mime_type,
+                    tamanho_bytes
+                 ) VALUES (
+                    :colaborador_id,
+                    :nome_original,
+                    :arquivo_url,
+                    :arquivo_path,
+                    :storage_driver,
+                    :bucket,
+                    :mime_type,
+                    :tamanho_bytes
+                 )",
+                [
+                    ':colaborador_id' => $collaboratorId,
+                    ':nome_original' => $this->limitText((string) ($document['nome_original'] ?? 'documento.pdf'), 255),
+                    ':arquivo_url' => $arquivoUrl,
+                    ':arquivo_path' => $this->nullIfBlank($document['object_path'] ?? ($document['path'] ?? null)),
+                    ':storage_driver' => $this->nullIfBlank($document['driver'] ?? null),
+                    ':bucket' => $this->nullIfBlank($document['bucket'] ?? null),
+                    ':mime_type' => $this->nullIfBlank($document['mime'] ?? 'application/pdf'),
+                    ':tamanho_bytes' => isset($document['tamanho_bytes']) ? (int) $document['tamanho_bytes'] : null,
+                ],
+                [
+                    ':tamanho_bytes' => PDO::PARAM_INT,
+                ]
+            );
+        }
     }
 
     private function findProfileIdByName($profileName) {
@@ -1581,6 +1671,19 @@ class PortalRepository {
     private function nullIfBlank($value) {
         $value = trim((string) $value);
         return $value === '' ? null : $value;
+    }
+
+    private function limitText($value, $maxLength) {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
+
+        if (function_exists('mb_substr')) {
+            return mb_substr($value, 0, $maxLength);
+        }
+
+        return substr($value, 0, $maxLength);
     }
 
     private function generateTemporaryPassword() {
