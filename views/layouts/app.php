@@ -33,7 +33,7 @@
         $currentPath = substr($currentPath, strlen('/public')) ?: '/';
     }
 
-    $linkBaseClasses = 'flex items-center space-x-3 rounded-lg px-4 py-3 transition-colors';
+    $linkBaseClasses = 'flex items-center gap-3 rounded-lg px-3 py-3 transition-colors';
     $linkActiveClasses = 'bg-brand-red text-white shadow-lg shadow-red-500/20';
     $linkInactiveClasses = 'text-gray-300 hover:text-white hover:bg-gray-800';
 
@@ -66,7 +66,7 @@
     <!-- Sidebar -->
     <aside
         id="app-sidebar"
-        class="fixed inset-y-0 left-0 z-30 flex w-64 -translate-x-full flex-col bg-brand-dark text-gray-300 shadow-xl transition-transform duration-200 md:static md:z-20 md:translate-x-0 md:shrink-0"
+        class="fixed inset-y-0 left-0 z-30 flex w-72 -translate-x-full flex-col bg-brand-dark text-gray-300 shadow-xl transition-transform duration-200 md:static md:z-20 md:translate-x-0 md:shrink-0"
     >
         <button
             id="sidebar-close"
@@ -87,8 +87,8 @@
                 class="<?= $linkBaseClasses . ' ' . ($isDashboardActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
                 <?= $isDashboardActive ? 'aria-current="page"' : '' ?>
             >
-                <i class="ph ph-squares-four text-xl"></i>
-                <span class="font-medium">Dashboard</span>
+                <i class="ph ph-squares-four shrink-0 text-xl"></i>
+                <span class="whitespace-nowrap font-medium">Dashboard</span>
             </a>
             
             <?php if ($_SESSION['user_perfil'] === 'Coordenador Geral' || $_SESSION['user_perfil'] === 'Administrador'): ?>
@@ -97,8 +97,8 @@
                 class="<?= $linkBaseClasses . ' ' . ($isRhActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
                 <?= $isRhActive ? 'aria-current="page"' : '' ?>
             >
-                <i class="ph ph-users text-xl"></i>
-                <span class="font-medium">RH</span>
+                <i class="ph ph-users shrink-0 text-xl"></i>
+                <span class="whitespace-nowrap font-medium">RH</span>
             </a>
 
             <a
@@ -106,8 +106,8 @@
                 class="<?= $linkBaseClasses . ' ' . ($isAdvertenciasActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
                 <?= $isAdvertenciasActive ? 'aria-current="page"' : '' ?>
             >
-                <i class="ph ph-warning-octagon text-xl"></i>
-                <span class="font-medium">Controle de Advertências</span>
+                <i class="ph ph-warning-octagon shrink-0 text-xl"></i>
+                <span class="whitespace-nowrap font-medium">Controle de Advertências</span>
             </a>
 
             <a
@@ -115,8 +115,8 @@
                 class="<?= $linkBaseClasses . ' ' . ($isReciclagemActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
                 <?= $isReciclagemActive ? 'aria-current="page"' : '' ?>
             >
-                <i class="ph ph-recycle text-xl"></i>
-                <span class="font-medium">Reciclagem</span>
+                <i class="ph ph-recycle shrink-0 text-xl"></i>
+                <span class="whitespace-nowrap font-medium">Reciclagem</span>
             </a>
 
             <a
@@ -124,8 +124,8 @@
                 class="<?= $linkBaseClasses . ' ' . ($isEscalasActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
                 <?= $isEscalasActive ? 'aria-current="page"' : '' ?>
             >
-                <i class="ph ph-calendar text-xl"></i>
-                <span class="font-medium">Escalas</span>
+                <i class="ph ph-calendar shrink-0 text-xl"></i>
+                <span class="whitespace-nowrap font-medium">Escalas</span>
             </a>
 
             <a
@@ -133,8 +133,8 @@
                 class="<?= $linkBaseClasses . ' ' . ($isFrotaActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
                 <?= $isFrotaActive ? 'aria-current="page"' : '' ?>
             >
-                <i class="ph ph-car text-xl"></i>
-                <span class="font-medium">Frota</span>
+                <i class="ph ph-car shrink-0 text-xl"></i>
+                <span class="whitespace-nowrap font-medium">Frota</span>
             </a>
 
             <a
@@ -142,8 +142,8 @@
                 class="<?= $linkBaseClasses . ' ' . ($isContratosActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
                 <?= $isContratosActive ? 'aria-current="page"' : '' ?>
             >
-                <i class="ph ph-handshake text-xl"></i>
-                <span class="font-medium">Contratos</span>
+                <i class="ph ph-handshake shrink-0 text-xl"></i>
+                <span class="whitespace-nowrap font-medium">Contratos</span>
             </a>
             <?php endif; ?>
 
@@ -153,8 +153,8 @@
                 class="<?= $linkBaseClasses . ' ' . ($isFinanceiroActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
                 <?= $isFinanceiroActive ? 'aria-current="page"' : '' ?>
             >
-                <i class="ph ph-coins text-xl"></i>
-                <span class="font-medium">Financeiro</span>
+                <i class="ph ph-coins shrink-0 text-xl"></i>
+                <span class="whitespace-nowrap font-medium">Financeiro</span>
             </a>
             <?php endif; ?>
             
@@ -163,15 +163,15 @@
                 class="<?= $linkBaseClasses . ' md:hidden ' . ($isVigilanteActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
                 <?= $isVigilanteActive ? 'aria-current="page"' : '' ?>
             >
-                <i class="ph ph-shield-check text-xl <?= $isVigilanteActive ? 'text-white' : 'text-brand-red' ?>"></i>
-                <span class="font-medium">M&oacute;dulo Vigilante</span>
+                <i class="ph ph-shield-check shrink-0 text-xl <?= $isVigilanteActive ? 'text-white' : 'text-brand-red' ?>"></i>
+                <span class="whitespace-nowrap font-medium">M&oacute;dulo Vigilante</span>
             </a>
         </nav>
 
         <div class="p-4 border-t border-gray-800">
             <a href="/logout" class="flex items-center space-x-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg px-4 py-3 transition-colors">
-                <i class="ph ph-sign-out text-xl text-brand-red"></i>
-                <span class="font-medium">Sair</span>
+                <i class="ph ph-sign-out shrink-0 text-xl text-brand-red"></i>
+                <span class="whitespace-nowrap font-medium">Sair</span>
             </a>
         </div>
     </aside>
