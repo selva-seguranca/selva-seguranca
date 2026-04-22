@@ -208,6 +208,7 @@
     </div>
 <?php endif; ?>
 
+<?php ob_start(); ?>
 <section id="controle-advertencias" class="mb-8 rounded-3xl border border-red-100 bg-white shadow-sm">
     <div class="border-b border-gray-100 px-6 py-5">
         <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -443,6 +444,7 @@
         </div>
     </div>
 </section>
+<?php $advertenciasSectionHtml = ob_get_clean(); ?>
 
 <div class="mb-6 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
     <div class="min-w-0">
@@ -684,6 +686,8 @@
         </section>
     <?php endforeach; ?>
 </div>
+
+<?= $advertenciasSectionHtml ?? '' ?>
 
 <div
     id="collaborator-view-modal"
