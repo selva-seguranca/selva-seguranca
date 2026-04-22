@@ -138,7 +138,7 @@
     </div>
 
     <div class="grid gap-6 p-6 2xl:grid-cols-[minmax(0,1fr)_520px]">
-        <form action="/advertencias" method="POST" class="rounded-3xl border border-gray-200 bg-gray-50 p-5">
+        <form id="advertencia-form" action="/advertencias" method="POST" class="rounded-3xl border border-gray-200 bg-gray-50 p-5">
             <div class="flex items-start gap-3">
                 <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-red text-white">
                     <i class="ph ph-warning-octagon text-2xl"></i>
@@ -152,21 +152,26 @@
             <div class="mt-5 grid gap-4 lg:grid-cols-2">
                 <div class="lg:col-span-2">
                     <label for="advertencia-colaborador" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">Colaborador vigilante</label>
-                    <select id="advertencia-colaborador" name="colaborador_id" required class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red">
-                        <option value="">Selecione o vigilante</option>
+                    <input
+                        id="advertencia-colaborador"
+                        type="text"
+                        list="advertencia-vigilantes-list"
+                        required
+                        autocomplete="off"
+                        class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red"
+                        placeholder="Digite o nome do vigilante"
+                    >
+                    <datalist id="advertencia-vigilantes-list">
                         <?php foreach ($advertenciaVigilantes as $vigilante): ?>
-                            <option
-                                value="<?= htmlspecialchars((string) ($vigilante['collaborator_id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                data-vigilante-id="<?= htmlspecialchars((string) ($vigilante['vigilante_id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                data-cpf="<?= htmlspecialchars((string) ($vigilante['cpf'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                            >
-                                <?= htmlspecialchars((string) ($vigilante['nome'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-                            </option>
+                            <option value="<?= htmlspecialchars((string) ($vigilante['nome'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" label="CPF <?= htmlspecialchars((string) ($vigilante['cpf'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></option>
                         <?php endforeach; ?>
-                    </select>
+                    </datalist>
+                    <input type="hidden" id="advertencia-colaborador-id" name="colaborador_id" value="">
                     <input type="hidden" id="advertencia-vigilante-id" name="vigilante_id" value="">
                     <?php if (empty($advertenciaVigilantes)): ?>
                         <p class="mt-2 text-xs text-red-600">Nenhum vigilante disponível para advertência.</p>
+                    <?php else: ?>
+                        <p class="mt-2 text-xs text-gray-500">Digite o nome e selecione o vigilante sugerido para carregar CPF e ocorrências.</p>
                     <?php endif; ?>
                 </div>
 
@@ -343,29 +348,77 @@
 
 <script>
     (() => {
-        const collaboratorSelect = document.getElementById('advertencia-colaborador');
+        const warningForm = document.getElementById('advertencia-form');
+        const collaboratorInput = document.getElementById('advertencia-colaborador');
+        const collaboratorIdInput = document.getElementById('advertencia-colaborador-id');
         const vigilanteInput = document.getElementById('advertencia-vigilante-id');
         const cpfInput = document.getElementById('advertencia-cpf');
         const occurrenceSelect = document.getElementById('advertencia-ocorrencia');
         const occurrenceDateInput = document.getElementById('advertencia-data-ocorrencia');
         const occurrenceEmpty = document.getElementById('advertencia-ocorrencia-empty');
+        const collaborators = <?= json_encode(array_map(static function ($vigilante) {
+            return [
+                'name' => (string) ($vigilante['nome'] ?? ''),
+                'collaboratorId' => (string) ($vigilante['collaborator_id'] ?? ''),
+                'vigilanteId' => (string) ($vigilante['vigilante_id'] ?? ''),
+                'cpf' => (string) ($vigilante['cpf'] ?? ''),
+            ];
+        }, $advertenciaVigilantes), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?: '[]' ?>;
+
+        function normalizeText(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+        }
+
+        function findTypedCollaborator() {
+            const typedName = normalizeText(collaboratorInput ? collaboratorInput.value : '');
+
+            if (typedName === '') {
+                return null;
+            }
+
+            const exactMatch = collaborators.find((collaborator) => normalizeText(collaborator.name) === typedName);
+
+            if (exactMatch) {
+                return exactMatch;
+            }
+
+            const prefixMatches = collaborators.filter((collaborator) => normalizeText(collaborator.name).startsWith(typedName));
+
+            if (prefixMatches.length === 1) {
+                return prefixMatches[0];
+            }
+
+            const partialMatches = collaborators.filter((collaborator) => normalizeText(collaborator.name).includes(typedName));
+
+            return partialMatches.length === 1 ? partialMatches[0] : null;
+        }
 
         function syncOccurrenceOptions() {
-            if (!collaboratorSelect || !occurrenceSelect) {
+            if (!collaboratorInput || !occurrenceSelect) {
                 return;
             }
 
-            const selectedOption = collaboratorSelect.options[collaboratorSelect.selectedIndex];
-            const selectedVigilanteId = selectedOption ? (selectedOption.dataset.vigilanteId || '') : '';
+            const selectedCollaborator = findTypedCollaborator();
+            const selectedVigilanteId = selectedCollaborator ? selectedCollaborator.vigilanteId : '';
             let visibleOccurrences = 0;
+
+            if (collaboratorIdInput) {
+                collaboratorIdInput.value = selectedCollaborator ? selectedCollaborator.collaboratorId : '';
+            }
 
             if (vigilanteInput) {
                 vigilanteInput.value = selectedVigilanteId;
             }
 
             if (cpfInput) {
-                cpfInput.value = selectedOption && selectedOption.value ? (selectedOption.dataset.cpf || '') : '';
+                cpfInput.value = selectedCollaborator ? selectedCollaborator.cpf : '';
             }
+
+            collaboratorInput.setCustomValidity('');
 
             Array.from(occurrenceSelect.options).forEach((option) => {
                 if (option.value === '') {
@@ -411,8 +464,13 @@
             occurrenceDateInput.value = selectedOption && selectedOption.value ? (selectedOption.dataset.date || '') : '';
         }
 
-        if (collaboratorSelect) {
-            collaboratorSelect.addEventListener('change', () => {
+        if (collaboratorInput) {
+            collaboratorInput.addEventListener('input', () => {
+                syncOccurrenceOptions();
+                syncOccurrenceDate();
+            });
+
+            collaboratorInput.addEventListener('change', () => {
                 syncOccurrenceOptions();
                 syncOccurrenceDate();
             });
@@ -420,6 +478,18 @@
 
         if (occurrenceSelect) {
             occurrenceSelect.addEventListener('change', syncOccurrenceDate);
+        }
+
+        if (warningForm) {
+            warningForm.addEventListener('submit', (event) => {
+                if (!collaboratorIdInput || collaboratorIdInput.value !== '') {
+                    return;
+                }
+
+                event.preventDefault();
+                collaboratorInput.setCustomValidity('Digite ou selecione um vigilante válido da lista.');
+                collaboratorInput.reportValidity();
+            });
         }
 
         syncOccurrenceOptions();
