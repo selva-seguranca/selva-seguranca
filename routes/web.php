@@ -19,7 +19,10 @@ $router->get('/rh/colaboradores/novo', 'RhController@create');
 $router->post('/rh/colaboradores', 'RhController@store');
 $router->post('/rh/colaboradores/atualizar', 'RhController@update');
 $router->post('/rh/colaboradores/excluir', 'RhController@destroy');
-$router->post('/rh/advertencias', 'RhController@storeWarning');
+
+// Controle de Advertências Routes
+$router->get('/advertencias', 'AdvertenciaController@index');
+$router->post('/advertencias', 'AdvertenciaController@store');
 
 // Reciclagem Routes
 $router->get('/reciclagem', 'ReciclagemController@index');

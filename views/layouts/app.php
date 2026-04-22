@@ -39,6 +39,7 @@
 
     $isDashboardActive = $currentPath === '/';
     $isRhActive = strpos($currentPath, '/rh') === 0;
+    $isAdvertenciasActive = strpos($currentPath, '/advertencias') === 0;
     $isReciclagemActive = strpos($currentPath, '/reciclagem') === 0;
     $isEscalasActive = strpos($currentPath, '/escalas') === 0;
     $isFrotaActive = strpos($currentPath, '/frota') === 0;
@@ -98,6 +99,15 @@
             >
                 <i class="ph ph-users text-xl"></i>
                 <span class="font-medium">RH</span>
+            </a>
+
+            <a
+                href="/advertencias"
+                class="<?= $linkBaseClasses . ' ' . ($isAdvertenciasActive ? $linkActiveClasses : $linkInactiveClasses) ?>"
+                <?= $isAdvertenciasActive ? 'aria-current="page"' : '' ?>
+            >
+                <i class="ph ph-warning-octagon text-xl"></i>
+                <span class="font-medium">Controle de Advertências</span>
             </a>
 
             <a
