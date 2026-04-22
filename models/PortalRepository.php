@@ -83,11 +83,161 @@ class PortalRepository {
     }
 
     public function getRhKpis() {
+        $this->ensureCollaboratorRegistrationSchema();
+
         return [
             'total_ativos' => (int) $this->fetchValue("SELECT COUNT(*) FROM usuarios WHERE ativo = true"),
             'em_ferias' => 0,
-            'advertencias_recentes' => 0,
+            'advertencias_recentes' => (int) $this->fetchValue(
+                "SELECT COUNT(*)
+                 FROM advertencias_colaboradores
+                 WHERE data_advertencia >= date_trunc('month', CURRENT_DATE)::date"
+            ),
         ];
+    }
+
+    public function getRhWarningControlData($historyLimit = 50) {
+        $this->ensureCollaboratorRegistrationSchema();
+
+        return [
+            'vigilantes' => $this->getWarningEligibleVigilantes(),
+            'ocorrencias' => $this->getWarningOccurrenceOptions(),
+            'advertencias' => $this->getCollaboratorWarnings($historyLimit),
+            'resumo' => $this->getCollaboratorWarningSummary(),
+        ];
+    }
+
+    public function createCollaboratorWarning(array $payload, $responsibleUserId, $responsibleName) {
+        $this->ensureCollaboratorRegistrationSchema();
+
+        $collaboratorId = trim((string) ($payload['colaborador_id'] ?? ''));
+        $vigilanteId = trim((string) ($payload['vigilante_id'] ?? ''));
+        $occurrenceId = trim((string) ($payload['ocorrencia_id'] ?? ''));
+        $postoServico = $this->limitText((string) ($payload['posto_servico'] ?? ''), 150);
+        $dataAdvertencia = $this->normalizeRequiredDate($payload['data_advertencia'] ?? null, 'Informe a data da advertência.');
+        $tipoAdvertencia = $this->normalizeRequiredChoice($payload['tipo_advertencia'] ?? '', ['Verbal', 'Escrita'], 'tipo de advertência');
+        $motivo = $this->limitText((string) ($payload['motivo'] ?? ''), 120);
+        $descricao = trim((string) ($payload['descricao'] ?? ''));
+        $classificacao = $this->normalizeRequiredChoice($payload['classificacao_falta'] ?? '', ['Leve', 'Média', 'Grave'], 'classificação da falta');
+        $medidaDisciplinar = $this->normalizeRequiredChoice($payload['medida_disciplinar'] ?? 'Advertência', ['Advertência', 'Suspensão', 'Desligamento'], 'evolução disciplinar');
+        $responsibleName = $this->limitText((string) $responsibleName, 150);
+        $responsibleUserId = trim((string) $responsibleUserId);
+
+        if ($collaboratorId === '' || $vigilanteId === '') {
+            throw new RuntimeException('Selecione o colaborador vigilante da advertência.');
+        }
+
+        if ($occurrenceId === '') {
+            throw new RuntimeException('Selecione a ocorrência do sistema vinculada à advertência.');
+        }
+
+        if ($postoServico === '') {
+            throw new RuntimeException('Informe o posto de serviço.');
+        }
+
+        if ($motivo === '') {
+            throw new RuntimeException('Informe o motivo padronizado da advertência.');
+        }
+
+        if ($descricao === '') {
+            throw new RuntimeException('Informe a descrição detalhada da advertência.');
+        }
+
+        if ($responsibleName === '') {
+            throw new RuntimeException('Responsável pela aplicação não identificado.');
+        }
+
+        $target = $this->fetchOne(
+            "SELECT c.id AS colaborador_id,
+                    v.id AS vigilante_id,
+                    cd.cpf,
+                    u.nome
+             FROM colaboradores c
+             JOIN usuarios u ON u.id = c.usuario_id
+             JOIN vigilantes v ON v.usuario_id = u.id
+             JOIN colaborador_detalhes cd ON cd.colaborador_id = c.id
+             WHERE c.id = :colaborador_id
+               AND v.id = :vigilante_id
+             LIMIT 1",
+            [
+                ':colaborador_id' => $collaboratorId,
+                ':vigilante_id' => $vigilanteId,
+            ]
+        );
+
+        if ($target === null) {
+            throw new RuntimeException('Colaborador vigilante não encontrado para advertência.');
+        }
+
+        $occurrence = $this->fetchOne(
+            "SELECT o.id,
+                    o.data_hora,
+                    r.vigilante_id
+             FROM ocorrencias o
+             JOIN rondas r ON r.id = o.ronda_id
+             WHERE o.id = :ocorrencia_id
+               AND r.vigilante_id = :vigilante_id
+             LIMIT 1",
+            [
+                ':ocorrencia_id' => $occurrenceId,
+                ':vigilante_id' => $vigilanteId,
+            ]
+        );
+
+        if ($occurrence === null) {
+            throw new RuntimeException('A ocorrência selecionada não pertence ao vigilante informado.');
+        }
+
+        $dataOcorrencia = substr((string) ($occurrence['data_hora'] ?? ''), 0, 10);
+        $dataOcorrencia = $this->normalizeRequiredDate($dataOcorrencia, 'Ocorrência sem data válida no sistema.');
+
+        return $this->run(
+            "INSERT INTO advertencias_colaboradores (
+                colaborador_id,
+                vigilante_id,
+                ocorrencia_id,
+                posto_servico,
+                data_ocorrencia,
+                data_advertencia,
+                tipo_advertencia,
+                motivo,
+                descricao,
+                classificacao_falta,
+                medida_disciplinar,
+                responsavel_usuario_id,
+                responsavel_nome
+             ) VALUES (
+                :colaborador_id,
+                :vigilante_id,
+                :ocorrencia_id,
+                :posto_servico,
+                :data_ocorrencia,
+                :data_advertencia,
+                :tipo_advertencia,
+                :motivo,
+                :descricao,
+                :classificacao_falta,
+                :medida_disciplinar,
+                :responsavel_usuario_id,
+                :responsavel_nome
+             )
+             RETURNING id",
+            [
+                ':colaborador_id' => $collaboratorId,
+                ':vigilante_id' => $vigilanteId,
+                ':ocorrencia_id' => $occurrenceId,
+                ':posto_servico' => $postoServico,
+                ':data_ocorrencia' => $dataOcorrencia,
+                ':data_advertencia' => $dataAdvertencia,
+                ':tipo_advertencia' => $tipoAdvertencia,
+                ':motivo' => $motivo,
+                ':descricao' => $descricao,
+                ':classificacao_falta' => $classificacao,
+                ':medida_disciplinar' => $medidaDisciplinar,
+                ':responsavel_usuario_id' => $responsibleUserId !== '' ? $responsibleUserId : null,
+                ':responsavel_nome' => $responsibleName,
+            ]
+        )->fetch();
     }
 
     public function getVigilanteRecyclingCards($userId = null) {
@@ -1517,6 +1667,153 @@ class PortalRepository {
             "CREATE INDEX IF NOT EXISTS idx_colaborador_documentos_colaborador_id
              ON colaborador_documentos (colaborador_id)"
         );
+        $this->db->exec(
+            "CREATE TABLE IF NOT EXISTS advertencias_colaboradores (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                colaborador_id UUID NOT NULL REFERENCES colaboradores(id) ON DELETE CASCADE,
+                vigilante_id UUID NOT NULL REFERENCES vigilantes(id) ON DELETE RESTRICT,
+                ocorrencia_id UUID NOT NULL REFERENCES ocorrencias(id) ON DELETE RESTRICT,
+                posto_servico VARCHAR(150) NOT NULL,
+                data_ocorrencia DATE NOT NULL,
+                data_advertencia DATE NOT NULL,
+                tipo_advertencia VARCHAR(20) NOT NULL,
+                motivo VARCHAR(120) NOT NULL,
+                descricao TEXT NOT NULL,
+                classificacao_falta VARCHAR(20) NOT NULL,
+                medida_disciplinar VARCHAR(30) NOT NULL DEFAULT 'Advertência',
+                responsavel_usuario_id UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+                responsavel_nome VARCHAR(150) NOT NULL,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )"
+        );
+        $this->db->exec(
+            "CREATE INDEX IF NOT EXISTS idx_advertencias_colaborador_id
+             ON advertencias_colaboradores (colaborador_id)"
+        );
+        $this->db->exec(
+            "CREATE INDEX IF NOT EXISTS idx_advertencias_vigilante_id
+             ON advertencias_colaboradores (vigilante_id)"
+        );
+        $this->db->exec(
+            "CREATE INDEX IF NOT EXISTS idx_advertencias_ocorrencia_id
+             ON advertencias_colaboradores (ocorrencia_id)"
+        );
+        $this->db->exec(
+            "CREATE INDEX IF NOT EXISTS idx_advertencias_data_advertencia
+             ON advertencias_colaboradores (data_advertencia)"
+        );
+    }
+
+    private function getWarningEligibleVigilantes() {
+        return $this->fetchAll(
+            "SELECT c.id AS collaborator_id,
+                    v.id AS vigilante_id,
+                    u.nome,
+                    cd.cpf,
+                    cd.foto_url,
+                    COALESCE(cd.situacao, CASE WHEN u.ativo THEN 'Ativo' ELSE 'Inativo' END) AS status
+             FROM colaboradores c
+             JOIN usuarios u ON u.id = c.usuario_id
+             JOIN vigilantes v ON v.usuario_id = u.id
+             JOIN colaborador_detalhes cd ON cd.colaborador_id = c.id
+             ORDER BY u.nome ASC"
+        );
+    }
+
+    private function getWarningOccurrenceOptions($limit = 200) {
+        $rows = $this->fetchAll(
+            "SELECT o.id,
+                    o.tipo,
+                    o.descricao,
+                    o.data_hora,
+                    r.id AS ronda_id,
+                    r.vigilante_id,
+                    c.id AS collaborator_id,
+                    u.nome AS vigilante_nome,
+                    ve.modelo,
+                    ve.placa
+             FROM ocorrencias o
+             JOIN rondas r ON r.id = o.ronda_id
+             JOIN vigilantes v ON v.id = r.vigilante_id
+             JOIN usuarios u ON u.id = v.usuario_id
+             JOIN colaboradores c ON c.usuario_id = u.id
+             LEFT JOIN veiculos ve ON ve.id = r.veiculo_id
+             ORDER BY o.data_hora DESC
+             LIMIT :limit",
+            [':limit' => (int) $limit],
+            [':limit' => PDO::PARAM_INT]
+        );
+
+        return array_map(function ($row) {
+            $row['tipo_label'] = $this->formatOccurrenceType($row['tipo'] ?? '');
+            $row['veiculo'] = trim((string) ($row['modelo'] ?? '')) !== '' || trim((string) ($row['placa'] ?? '')) !== ''
+                ? trim((string) ($row['modelo'] ?? '') . ' - ' . (string) ($row['placa'] ?? ''), ' -')
+                : 'Sem viatura';
+
+            return $row;
+        }, $rows);
+    }
+
+    private function getCollaboratorWarnings($limit = 50) {
+        $rows = $this->fetchAll(
+            "SELECT a.id,
+                    a.colaborador_id,
+                    a.vigilante_id,
+                    a.ocorrencia_id,
+                    a.posto_servico,
+                    a.data_ocorrencia,
+                    a.data_advertencia,
+                    a.tipo_advertencia,
+                    a.motivo,
+                    a.descricao,
+                    a.classificacao_falta,
+                    a.medida_disciplinar,
+                    a.responsavel_nome,
+                    a.criado_em,
+                    u.nome AS colaborador_nome,
+                    cd.cpf,
+                    cd.foto_url,
+                    o.tipo AS ocorrencia_tipo,
+                    o.descricao AS ocorrencia_descricao,
+                    o.data_hora AS ocorrencia_data_hora
+             FROM advertencias_colaboradores a
+             JOIN colaboradores c ON c.id = a.colaborador_id
+             JOIN usuarios u ON u.id = c.usuario_id
+             LEFT JOIN colaborador_detalhes cd ON cd.colaborador_id = c.id
+             LEFT JOIN ocorrencias o ON o.id = a.ocorrencia_id
+             ORDER BY a.data_advertencia DESC, a.criado_em DESC
+             LIMIT :limit",
+            [':limit' => (int) $limit],
+            [':limit' => PDO::PARAM_INT]
+        );
+
+        return array_map(function ($row) {
+            $row['ocorrencia_tipo_label'] = $this->formatOccurrenceType($row['ocorrencia_tipo'] ?? '');
+
+            return $row;
+        }, $rows);
+    }
+
+    private function getCollaboratorWarningSummary() {
+        return [
+            'total' => (int) $this->fetchValue("SELECT COUNT(*) FROM advertencias_colaboradores"),
+            'mes_atual' => (int) $this->fetchValue(
+                "SELECT COUNT(*)
+                 FROM advertencias_colaboradores
+                 WHERE data_advertencia >= date_trunc('month', CURRENT_DATE)::date"
+            ),
+            'graves' => (int) $this->fetchValue(
+                "SELECT COUNT(*)
+                 FROM advertencias_colaboradores
+                 WHERE classificacao_falta = 'Grave'"
+            ),
+            'evolucao' => (int) $this->fetchValue(
+                "SELECT COUNT(*)
+                 FROM advertencias_colaboradores
+                 WHERE medida_disciplinar IN ('Suspensão', 'Desligamento')"
+            ),
+        ];
     }
 
     private function getCollaboratorDocuments($collaboratorId) {
@@ -1698,6 +1995,33 @@ class PortalRepository {
     private function nullIfBlank($value) {
         $value = trim((string) $value);
         return $value === '' ? null : $value;
+    }
+
+    private function normalizeRequiredDate($value, $message) {
+        $value = $this->nullIfBlank($value);
+
+        if ($value === null) {
+            throw new RuntimeException($message);
+        }
+
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        if ($date === false || $date->format('Y-m-d') !== $value) {
+            throw new RuntimeException($message);
+        }
+
+        return $value;
+    }
+
+    private function normalizeRequiredChoice($value, array $allowed, $label) {
+        $value = trim((string) $value);
+
+        foreach ($allowed as $option) {
+            if (strcasecmp($value, $option) === 0) {
+                return $option;
+            }
+        }
+
+        throw new RuntimeException('Selecione um valor válido para ' . $label . '.');
     }
 
     private function limitText($value, $maxLength) {

@@ -15,8 +15,20 @@ class RhController {
 
         $colaboradores = [];
         $modulosRh = $this->buildRhModules([]);
+        $advertenciasControl = [
+            'vigilantes' => [],
+            'ocorrencias' => [],
+            'advertencias' => [],
+            'resumo' => [
+                'total' => 0,
+                'mes_atual' => 0,
+                'graves' => 0,
+                'evolucao' => 0,
+            ],
+        ];
         $createModalState = $this->consumeCreateModalState();
         $actionFlash = $this->consumeActionFlash();
+        $advertenciaFlash = $this->consumeAdvertenciaFlash();
         $kpis = [
             'total_ativos' => 0,
             'em_ferias' => 0,
@@ -32,6 +44,7 @@ class RhController {
             $colaboradores = $repository->getCollaborators();
             $modulosRh = $this->buildRhModules($colaboradores);
             $kpis = $repository->getRhKpis();
+            $advertenciasControl = $repository->getRhWarningControlData();
 
             if ($createModalState['formMode'] === 'edit') {
                 if ($editCollaboratorId === '') {
@@ -101,11 +114,39 @@ class RhController {
             'existingPhotoUrl' => $createModalState['existingPhotoUrl'],
             'actionSuccess' => $actionFlash['success'],
             'actionError' => $actionFlash['error'],
+            'advertenciaSuccess' => $advertenciaFlash['success'],
+            'advertenciaError' => $advertenciaFlash['error'],
+            'advertenciasControl' => $advertenciasControl,
             'viewCollaborator' => $viewCollaborator,
             'isViewModalOpen' => $viewCollaborator !== null,
             'kpis' => $kpis,
             'dbWarning' => $dbWarning,
         ]);
+    }
+
+    public function storeWarning() {
+        Auth::requireAnyProfile(['Coordenador Geral', 'Administrador']);
+
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            header('Location: /rh#controle-advertencias');
+            exit;
+        }
+
+        try {
+            $repository = new PortalRepository();
+            $repository->createCollaboratorWarning(
+                $_POST,
+                $_SESSION['user_id'] ?? null,
+                $_SESSION['user_nome'] ?? ''
+            );
+
+            $_SESSION['rh_advertencia_success'] = 'ADVERTÊNCIA REGISTRADA COM SUCESSO!';
+        } catch (Throwable $e) {
+            $_SESSION['rh_advertencia_error'] = $e->getMessage();
+        }
+
+        header('Location: /rh#controle-advertencias');
+        exit;
     }
 
     public function create() {
@@ -337,6 +378,18 @@ class RhController {
         $error = $_SESSION['rh_action_error'] ?? null;
 
         unset($_SESSION['rh_action_success'], $_SESSION['rh_action_error']);
+
+        return [
+            'success' => $success,
+            'error' => $error,
+        ];
+    }
+
+    private function consumeAdvertenciaFlash() {
+        $success = $_SESSION['rh_advertencia_success'] ?? null;
+        $error = $_SESSION['rh_advertencia_error'] ?? null;
+
+        unset($_SESSION['rh_advertencia_success'], $_SESSION['rh_advertencia_error']);
 
         return [
             'success' => $success,
