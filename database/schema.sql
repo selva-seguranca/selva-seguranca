@@ -214,6 +214,12 @@ CREATE TABLE IF NOT EXISTS advertencias_colaboradores (
     medida_disciplinar VARCHAR(30) NOT NULL DEFAULT 'Advertência',
     responsavel_usuario_id UUID REFERENCES usuarios(id) ON DELETE SET NULL,
     responsavel_nome VARCHAR(150) NOT NULL,
+    arquivo_pdf_nome VARCHAR(255),
+    arquivo_pdf_url TEXT,
+    arquivo_pdf_path TEXT,
+    arquivo_pdf_storage_driver VARCHAR(30),
+    arquivo_pdf_bucket VARCHAR(100),
+    arquivo_pdf_tamanho_bytes INTEGER,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

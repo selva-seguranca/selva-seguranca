@@ -73,6 +73,36 @@ class MediaStorage {
         throw new RuntimeException('Driver de armazenamento de media invalido.');
     }
 
+    public static function storeContent(string $contents, string $filename, string $folder = 'uploads', ?string $bucketOverride = null, string $mime = 'application/pdf') {
+        if ($contents === '') {
+            throw new RuntimeException('Conteudo do arquivo nao gerado.');
+        }
+
+        if (strlen($contents) > self::getMaxFileSizeBytes()) {
+            throw new RuntimeException('O arquivo deve ter ate ' . self::getMaxFileSizeLabel() . '.');
+        }
+
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        if ($extension === '') {
+            $extension = self::MIME_TO_EXTENSION[$mime] ?? 'bin';
+        }
+
+        $driver = strtolower((string) Env::get(
+            'MEDIA_STORAGE_DRIVER',
+            Env::get('CHECKLIST_STORAGE_DRIVER', Env::isTruthy('VERCEL') ? 'supabase' : 'local')
+        ));
+
+        if ($driver === 'local') {
+            return self::storeContentLocally($contents, $extension, $folder, $mime, $filename);
+        }
+
+        if ($driver === 'supabase') {
+            return self::storeContentInSupabase($contents, $extension, $folder, $bucketOverride, $mime, $filename);
+        }
+
+        throw new RuntimeException('Driver de armazenamento de media invalido.');
+    }
+
     public static function delete($storedFile) {
         if (is_array($storedFile)) {
             $driver = strtolower((string) ($storedFile['driver'] ?? 'local'));
@@ -162,6 +192,33 @@ class MediaStorage {
         ];
     }
 
+    private static function storeContentLocally(string $contents, string $extension, string $folder, string $mime, string $filename) {
+        if (Env::isTruthy('VERCEL')) {
+            throw new RuntimeException('Na Vercel, use driver supabase.');
+        }
+
+        $relativeDirectory = '/uploads/' . trim($folder, '/') . '/' . date('Y/m');
+        $absoluteDirectory = dirname(__DIR__) . '/public' . str_replace('/', DIRECTORY_SEPARATOR, $relativeDirectory);
+
+        if (!is_dir($absoluteDirectory) && !mkdir($absoluteDirectory, 0775, true) && !is_dir($absoluteDirectory)) {
+            throw new RuntimeException('Nao foi possivel preparar o diretorio de armazenamento.');
+        }
+
+        $safeFilename = self::buildStoredFilename($filename, $extension);
+        $absolutePath = $absoluteDirectory . DIRECTORY_SEPARATOR . $safeFilename;
+
+        if (file_put_contents($absolutePath, $contents) === false) {
+            throw new RuntimeException('Nao foi possivel salvar o arquivo localmente.');
+        }
+
+        return [
+            'driver' => 'local',
+            'url' => $relativeDirectory . '/' . $safeFilename,
+            'path' => $absolutePath,
+            'mime' => $mime,
+        ];
+    }
+
     private static function storeInSupabase($file, $extension, $folder, $bucketOverride = null) {
         $supabaseUrl = self::resolveSupabaseUrl();
         $bucket = self::resolveSupabaseBucket($bucketOverride, $folder);
@@ -213,6 +270,53 @@ class MediaStorage {
                 $uploadUrl,
                 $storageKey,
                 $fileContents,
+                $mime
+            );
+        }
+
+        return [
+            'driver' => 'supabase',
+            'url' => self::buildSupabasePublicUrl($supabaseUrl, $bucket, $objectPath),
+            'path' => $objectPath,
+            'object_path' => $objectPath,
+            'bucket' => $bucket,
+            'mime' => $mime,
+        ];
+    }
+
+    private static function storeContentInSupabase(string $contents, string $extension, string $folder, ?string $bucketOverride, string $mime, string $filename) {
+        $supabaseUrl = self::resolveSupabaseUrl();
+        $bucket = self::resolveSupabaseBucket($bucketOverride, $folder);
+        $storageKey = self::resolveSupabaseStorageKey();
+
+        if ($supabaseUrl === '' || $storageKey === '') {
+            throw new RuntimeException('Configuracao do Supabase ausente.');
+        }
+
+        $objectPath = trim($folder, '/') . '/' . date('Y/m') . '/' . self::buildStoredFilename($filename, $extension);
+        $uploadUrl = $supabaseUrl . '/storage/v1/object/' . rawurlencode($bucket) . '/' . self::encodePath($objectPath);
+
+        try {
+            self::sendSupabaseRequest(
+                'POST',
+                $uploadUrl,
+                $storageKey,
+                $contents,
+                $mime
+            );
+        } catch (RuntimeException $e) {
+            if (!self::isMissingBucketError($e)) {
+                throw $e;
+            }
+
+            self::ensureSupabaseBucketExists($supabaseUrl, $bucket, $storageKey);
+            usleep(150000);
+
+            self::sendSupabaseRequest(
+                'POST',
+                $uploadUrl,
+                $storageKey,
+                $contents,
                 $mime
             );
         }
@@ -554,6 +658,29 @@ class MediaStorage {
     private static function encodePath($path) {
         $segments = array_map('rawurlencode', explode('/', trim((string) $path, '/')));
         return implode('/', $segments);
+    }
+
+    private static function buildStoredFilename(string $filename, string $extension): string {
+        $base = pathinfo($filename, PATHINFO_FILENAME);
+        $base = strtolower(trim((string) $base));
+
+        if (function_exists('iconv')) {
+            $converted = @iconv('UTF-8', 'ASCII//TRANSLIT', $base);
+            if ($converted !== false) {
+                $base = $converted;
+            }
+        }
+
+        $base = preg_replace('/[^a-z0-9]+/i', '-', $base) ?: 'arquivo';
+        $base = trim($base, '-');
+
+        if ($base === '') {
+            $base = 'arquivo';
+        }
+
+        $extension = preg_replace('/[^a-z0-9]+/i', '', strtolower($extension)) ?: 'bin';
+
+        return substr($base, 0, 80) . '-' . bin2hex(random_bytes(6)) . '.' . $extension;
     }
 
     private static function getMaxFileSizeBytes() {

@@ -240,6 +240,124 @@ class PortalRepository {
         )->fetch();
     }
 
+    public function getCollaboratorWarningById($warningId) {
+        $this->ensureCollaboratorRegistrationSchema();
+        $warningId = trim((string) $warningId);
+
+        if ($warningId === '') {
+            return null;
+        }
+
+        $row = $this->fetchOne(
+            "SELECT a.id,
+                    a.colaborador_id,
+                    a.vigilante_id,
+                    a.ocorrencia_id,
+                    a.posto_servico,
+                    a.data_ocorrencia,
+                    a.data_advertencia,
+                    a.tipo_advertencia,
+                    a.motivo,
+                    a.descricao,
+                    a.classificacao_falta,
+                    a.medida_disciplinar,
+                    a.responsavel_nome,
+                    a.arquivo_pdf_nome,
+                    a.arquivo_pdf_url,
+                    a.arquivo_pdf_path,
+                    a.arquivo_pdf_storage_driver,
+                    a.arquivo_pdf_bucket,
+                    a.arquivo_pdf_tamanho_bytes,
+                    a.criado_em,
+                    u.nome AS colaborador_nome,
+                    cd.cpf,
+                    o.tipo AS ocorrencia_tipo,
+                    o.descricao AS ocorrencia_descricao,
+                    o.data_hora AS ocorrencia_data_hora
+             FROM advertencias_colaboradores a
+             JOIN colaboradores c ON c.id = a.colaborador_id
+             JOIN usuarios u ON u.id = c.usuario_id
+             LEFT JOIN colaborador_detalhes cd ON cd.colaborador_id = c.id
+             LEFT JOIN ocorrencias o ON o.id = a.ocorrencia_id
+             WHERE a.id = :id
+             LIMIT 1",
+            [':id' => $warningId]
+        );
+
+        if ($row === null) {
+            return null;
+        }
+
+        $row['ocorrencia_tipo_label'] = $this->formatOccurrenceType($row['ocorrencia_tipo'] ?? '');
+
+        return $row;
+    }
+
+    public function attachCollaboratorWarningPdf($warningId, array $storedFile, string $fileName, int $sizeBytes) {
+        $this->ensureCollaboratorRegistrationSchema();
+
+        $this->run(
+            "UPDATE advertencias_colaboradores
+             SET arquivo_pdf_nome = :arquivo_pdf_nome,
+                 arquivo_pdf_url = :arquivo_pdf_url,
+                 arquivo_pdf_path = :arquivo_pdf_path,
+                 arquivo_pdf_storage_driver = :arquivo_pdf_storage_driver,
+                 arquivo_pdf_bucket = :arquivo_pdf_bucket,
+                 arquivo_pdf_tamanho_bytes = :arquivo_pdf_tamanho_bytes,
+                 atualizado_em = CURRENT_TIMESTAMP
+             WHERE id = :id",
+            [
+                ':id' => trim((string) $warningId),
+                ':arquivo_pdf_nome' => $this->limitText($fileName, 255),
+                ':arquivo_pdf_url' => $this->nullIfBlank($storedFile['url'] ?? null),
+                ':arquivo_pdf_path' => $this->nullIfBlank($storedFile['object_path'] ?? ($storedFile['path'] ?? null)),
+                ':arquivo_pdf_storage_driver' => $this->nullIfBlank($storedFile['driver'] ?? null),
+                ':arquivo_pdf_bucket' => $this->nullIfBlank($storedFile['bucket'] ?? null),
+                ':arquivo_pdf_tamanho_bytes' => $sizeBytes,
+            ],
+            [
+                ':arquivo_pdf_tamanho_bytes' => PDO::PARAM_INT,
+            ]
+        );
+    }
+
+    public function getCollaboratorWarningPdf($warningId) {
+        $this->ensureCollaboratorRegistrationSchema();
+        $warningId = trim((string) $warningId);
+
+        if ($warningId === '') {
+            return null;
+        }
+
+        return $this->fetchOne(
+            "SELECT id,
+                    arquivo_pdf_nome,
+                    arquivo_pdf_url,
+                    arquivo_pdf_path,
+                    arquivo_pdf_storage_driver,
+                    arquivo_pdf_bucket
+             FROM advertencias_colaboradores
+             WHERE id = :id
+               AND arquivo_pdf_url IS NOT NULL
+             LIMIT 1",
+            [':id' => $warningId]
+        );
+    }
+
+    public function deleteCollaboratorWarning($warningId): void {
+        $this->ensureCollaboratorRegistrationSchema();
+        $warningId = trim((string) $warningId);
+
+        if ($warningId === '') {
+            return;
+        }
+
+        $this->run(
+            "DELETE FROM advertencias_colaboradores WHERE id = :id",
+            [':id' => $warningId]
+        );
+    }
+
     public function getVigilanteRecyclingCards($userId = null) {
         $this->ensureCollaboratorRegistrationSchema();
 
@@ -1683,10 +1801,22 @@ class PortalRepository {
                 medida_disciplinar VARCHAR(30) NOT NULL DEFAULT 'Advertência',
                 responsavel_usuario_id UUID REFERENCES usuarios(id) ON DELETE SET NULL,
                 responsavel_nome VARCHAR(150) NOT NULL,
+                arquivo_pdf_nome VARCHAR(255),
+                arquivo_pdf_url TEXT,
+                arquivo_pdf_path TEXT,
+                arquivo_pdf_storage_driver VARCHAR(30),
+                arquivo_pdf_bucket VARCHAR(100),
+                arquivo_pdf_tamanho_bytes INTEGER,
                 criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )"
         );
+        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_nome VARCHAR(255)");
+        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_url TEXT");
+        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_path TEXT");
+        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_storage_driver VARCHAR(30)");
+        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_bucket VARCHAR(100)");
+        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_tamanho_bytes INTEGER");
         $this->db->exec(
             "CREATE INDEX IF NOT EXISTS idx_advertencias_colaborador_id
              ON advertencias_colaboradores (colaborador_id)"
@@ -1770,6 +1900,12 @@ class PortalRepository {
                     a.classificacao_falta,
                     a.medida_disciplinar,
                     a.responsavel_nome,
+                    a.arquivo_pdf_nome,
+                    a.arquivo_pdf_url,
+                    a.arquivo_pdf_path,
+                    a.arquivo_pdf_storage_driver,
+                    a.arquivo_pdf_bucket,
+                    a.arquivo_pdf_tamanho_bytes,
                     a.criado_em,
                     u.nome AS colaborador_nome,
                     cd.cpf,

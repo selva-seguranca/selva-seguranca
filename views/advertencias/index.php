@@ -94,12 +94,19 @@
 <?php endif; ?>
 
 <?php if ($advertenciaSuccessMessage !== ''): ?>
-    <div class="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-800">
+    <div
+        id="advertencia-success-toast"
+        class="fixed left-1/2 top-1/2 z-[90] w-[calc(100%-1.5rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm text-green-800 shadow-2xl transition-all duration-300"
+        role="alert"
+        aria-live="polite"
+    >
         <div class="flex items-start gap-3">
-            <i class="ph ph-check-circle mt-0.5 text-lg"></i>
-            <div>
-                <p class="font-semibold"><?= htmlspecialchars($advertenciaSuccessMessage, ENT_QUOTES, 'UTF-8') ?></p>
-                <p class="mt-1 text-xs text-green-700">O registro foi vinculado à ocorrência selecionada e gravado no histórico do colaborador.</p>
+            <span class="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-green-100 text-green-700">
+                <i class="ph ph-check-circle text-xl"></i>
+            </span>
+            <div class="min-w-0">
+                <p class="font-semibold tracking-[0.04em]"><?= htmlspecialchars($advertenciaSuccessMessage, ENT_QUOTES, 'UTF-8') ?></p>
+                <p class="mt-1 text-xs text-green-700">O registro foi salvo no banco, o formulário foi resetado e o PDF ficou disponível no histórico.</p>
             </div>
         </div>
     </div>
@@ -336,6 +343,32 @@
                                 </p>
                                 <p class="mt-1">Responsável: <?= htmlspecialchars((string) ($advertencia['responsavel_nome'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
                             </div>
+
+                            <?php if (!empty($advertencia['arquivo_pdf_url'])): ?>
+                                <?php $pdfQuery = '/advertencias/pdf?id=' . rawurlencode((string) ($advertencia['id'] ?? '')); ?>
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    <a
+                                        href="<?= htmlspecialchars($pdfQuery, ENT_QUOTES, 'UTF-8') ?>"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition-colors hover:border-brand-red hover:text-brand-red"
+                                    >
+                                        <i class="ph ph-printer text-base"></i>
+                                        Visualizar / imprimir PDF
+                                    </a>
+                                    <a
+                                        href="<?= htmlspecialchars($pdfQuery . '&download=1', ENT_QUOTES, 'UTF-8') ?>"
+                                        class="inline-flex items-center gap-1.5 rounded-xl bg-brand-red px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700"
+                                    >
+                                        <i class="ph ph-download-simple text-base"></i>
+                                        Baixar PDF
+                                    </a>
+                                </div>
+                            <?php else: ?>
+                                <p class="mt-3 rounded-xl border border-dashed border-gray-200 bg-white px-3 py-2 text-xs text-gray-400">
+                                    PDF ainda não disponível para este registro.
+                                </p>
+                            <?php endif; ?>
                         </article>
                     <?php endforeach; ?>
                 </div>
@@ -346,6 +379,7 @@
 
 <script>
     (() => {
+        const successToast = document.getElementById('advertencia-success-toast');
         const warningForm = document.getElementById('advertencia-form');
         const collaboratorInput = document.getElementById('advertencia-colaborador');
         const collaboratorIdInput = document.getElementById('advertencia-colaborador-id');
@@ -625,6 +659,16 @@
                 hideCollaboratorSuggestions();
             }
         });
+
+        if (successToast) {
+            window.setTimeout(() => {
+                successToast.classList.add('pointer-events-none', 'scale-95', 'opacity-0');
+
+                window.setTimeout(() => {
+                    successToast.remove();
+                }, 320);
+            }, 4200);
+        }
 
         syncOccurrenceOptions();
         syncOccurrenceDate();

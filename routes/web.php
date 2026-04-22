@@ -22,6 +22,7 @@ $router->post('/rh/colaboradores/excluir', 'RhController@destroy');
 
 // Controle de Advertências Routes
 $router->get('/advertencias', 'AdvertenciaController@index');
+$router->get('/advertencias/pdf', 'AdvertenciaController@pdf');
 $router->post('/advertencias', 'AdvertenciaController@store');
 
 // Reciclagem Routes
