@@ -10,6 +10,24 @@
         return $value !== '' ? htmlspecialchars($value, ENT_QUOTES, 'UTF-8') : $fallback;
     };
 
+    $dateValue = function ($value, $fallback = 'NÃ£o informado') use ($detailValue) {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return $fallback;
+        }
+
+        $datePart = substr($value, 0, 10);
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $datePart) === 1) {
+            try {
+                return htmlspecialchars((new \DateTimeImmutable($datePart))->format('d/m/Y'), ENT_QUOTES, 'UTF-8');
+            } catch (\Throwable $e) {
+            }
+        }
+
+        return $detailValue($value, $fallback);
+    };
+
     $statusClassMap = [
         'Ativo' => 'bg-green-100 text-green-800',
         'Inativo' => 'bg-gray-200 text-gray-800',
@@ -76,7 +94,7 @@
                     </div>
                     <div class="rounded-2xl bg-gray-50 px-4 py-3">
                         <p class="text-[11px] uppercase tracking-wide text-gray-400">Admissão</p>
-                        <p class="mt-1 font-semibold text-gray-800"><?= $detailValue($viewCollaborator['data_admissao'] ?? null) ?></p>
+                        <p class="mt-1 font-semibold text-gray-800"><?= $dateValue($viewCollaborator['data_admissao'] ?? null) ?></p>
                     </div>
                 </div>
             </div>
@@ -97,7 +115,7 @@
                 </div>
                 <div>
                     <p class="text-xs uppercase tracking-wide text-gray-400">Data de nascimento</p>
-                    <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['data_nascimento'] ?? null) ?></p>
+                    <p class="mt-1 font-medium text-gray-800"><?= $dateValue($viewCollaborator['data_nascimento'] ?? null) ?></p>
                 </div>
                 <div>
                     <p class="text-xs uppercase tracking-wide text-gray-400">Nome da mãe</p>
@@ -234,7 +252,7 @@
                         <span class="min-w-0 flex-1">
                             <span class="block truncate font-semibold"><?= htmlspecialchars((string) ($document['nome_original'] ?? 'documento.pdf'), ENT_QUOTES, 'UTF-8') ?></span>
                             <?php if (!empty($document['criado_em'])): ?>
-                                <span class="mt-0.5 block text-xs text-gray-400">Anexado em <?= htmlspecialchars((string) $document['criado_em'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="mt-0.5 block text-xs text-gray-400">Anexado em <?= $dateValue($document['criado_em'] ?? null) ?></span>
                             <?php endif; ?>
                         </span>
                         <i class="ph ph-arrow-square-out text-lg"></i>
@@ -254,7 +272,7 @@
                 </div>
                 <div>
                     <p class="text-xs uppercase tracking-wide text-gray-400">Validade da CNV</p>
-                    <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['validade_cnv'] ?? null) ?></p>
+                    <p class="mt-1 font-medium text-gray-800"><?= $dateValue($viewCollaborator['validade_cnv'] ?? null) ?></p>
                 </div>
                 <div>
                     <p class="text-xs uppercase tracking-wide text-gray-400">Curso de formação</p>
@@ -262,11 +280,11 @@
                 </div>
                 <div>
                     <p class="text-xs uppercase tracking-wide text-gray-400">Data da reciclagem</p>
-                    <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['data_ultima_reciclagem'] ?? null) ?></p>
+                    <p class="mt-1 font-medium text-gray-800"><?= $dateValue($viewCollaborator['data_ultima_reciclagem'] ?? null) ?></p>
                 </div>
                 <div>
                     <p class="text-xs uppercase tracking-wide text-gray-400">Vencimento da reciclagem</p>
-                    <p class="mt-1 font-medium text-gray-800"><?= $detailValue($viewCollaborator['validade_reciclagem'] ?? null) ?></p>
+                    <p class="mt-1 font-medium text-gray-800"><?= $dateValue($viewCollaborator['validade_reciclagem'] ?? null) ?></p>
                 </div>
                 <div class="sm:col-span-2 xl:col-span-4">
                     <p class="text-xs uppercase tracking-wide text-gray-400">Situação da reciclagem</p>
