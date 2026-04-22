@@ -155,23 +155,21 @@
                     <input
                         id="advertencia-colaborador"
                         type="text"
-                        list="advertencia-vigilantes-list"
                         required
                         autocomplete="off"
+                        aria-autocomplete="list"
+                        aria-controls="advertencia-vigilantes-suggestions"
+                        aria-expanded="false"
                         class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-brand-red"
                         placeholder="Digite o nome do vigilante"
                     >
-                    <datalist id="advertencia-vigilantes-list">
-                        <?php foreach ($advertenciaVigilantes as $vigilante): ?>
-                            <option value="<?= htmlspecialchars((string) ($vigilante['nome'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" label="CPF <?= htmlspecialchars((string) ($vigilante['cpf'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></option>
-                        <?php endforeach; ?>
-                    </datalist>
+                    <div id="advertencia-vigilantes-suggestions" class="mt-1 hidden overflow-hidden rounded-xl border border-gray-200 bg-white text-sm"></div>
                     <input type="hidden" id="advertencia-colaborador-id" name="colaborador_id" value="">
                     <input type="hidden" id="advertencia-vigilante-id" name="vigilante_id" value="">
                     <?php if (empty($advertenciaVigilantes)): ?>
                         <p class="mt-2 text-xs text-red-600">Nenhum vigilante disponível para advertência.</p>
                     <?php else: ?>
-                        <p class="mt-2 text-xs text-gray-500">Digite o nome e selecione o vigilante sugerido para carregar CPF e ocorrências.</p>
+                        <p class="mt-2 text-xs text-gray-500">Digite o nome do vigilante para filtrar a lista e carregar CPF e ocorrências.</p>
                     <?php endif; ?>
                 </div>
 
@@ -351,11 +349,14 @@
         const warningForm = document.getElementById('advertencia-form');
         const collaboratorInput = document.getElementById('advertencia-colaborador');
         const collaboratorIdInput = document.getElementById('advertencia-colaborador-id');
+        const collaboratorSuggestions = document.getElementById('advertencia-vigilantes-suggestions');
         const vigilanteInput = document.getElementById('advertencia-vigilante-id');
         const cpfInput = document.getElementById('advertencia-cpf');
         const occurrenceSelect = document.getElementById('advertencia-ocorrencia');
         const occurrenceDateInput = document.getElementById('advertencia-data-ocorrencia');
         const occurrenceEmpty = document.getElementById('advertencia-ocorrencia-empty');
+        let currentSuggestions = [];
+        let activeSuggestionIndex = -1;
         const collaborators = <?= json_encode(array_map(static function ($vigilante) {
             return [
                 'name' => (string) ($vigilante['nome'] ?? ''),
@@ -395,6 +396,89 @@
             const partialMatches = collaborators.filter((collaborator) => normalizeText(collaborator.name).includes(typedName));
 
             return partialMatches.length === 1 ? partialMatches[0] : null;
+        }
+
+        function getMatchingCollaborators() {
+            const typedName = normalizeText(collaboratorInput ? collaboratorInput.value : '');
+
+            if (typedName === '') {
+                return [];
+            }
+
+            const startsWithMatches = collaborators.filter((collaborator) => normalizeText(collaborator.name).startsWith(typedName));
+            const containsMatches = collaborators.filter((collaborator) => {
+                const normalizedName = normalizeText(collaborator.name);
+                return normalizedName.includes(typedName) && !normalizedName.startsWith(typedName);
+            });
+
+            return [...startsWithMatches, ...containsMatches].slice(0, 8);
+        }
+
+        function hideCollaboratorSuggestions() {
+            currentSuggestions = [];
+            activeSuggestionIndex = -1;
+
+            if (!collaboratorSuggestions) {
+                return;
+            }
+
+            collaboratorSuggestions.classList.add('hidden');
+            collaboratorSuggestions.innerHTML = '';
+
+            if (collaboratorInput) {
+                collaboratorInput.setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        function updateActiveSuggestion() {
+            if (!collaboratorSuggestions) {
+                return;
+            }
+
+            Array.from(collaboratorSuggestions.querySelectorAll('button')).forEach((button, index) => {
+                const isActive = index === activeSuggestionIndex;
+                button.classList.toggle('bg-red-50', isActive);
+                button.classList.toggle('text-brand-red', isActive);
+            });
+        }
+
+        function selectCollaborator(collaborator) {
+            if (!collaboratorInput || !collaborator) {
+                return;
+            }
+
+            collaboratorInput.value = collaborator.name;
+            hideCollaboratorSuggestions();
+            syncOccurrenceOptions();
+            syncOccurrenceDate();
+        }
+
+        function renderCollaboratorSuggestions() {
+            if (!collaboratorInput || !collaboratorSuggestions) {
+                return;
+            }
+
+            currentSuggestions = getMatchingCollaborators();
+            activeSuggestionIndex = -1;
+            collaboratorSuggestions.innerHTML = '';
+
+            if (currentSuggestions.length === 0) {
+                hideCollaboratorSuggestions();
+                return;
+            }
+
+            currentSuggestions.forEach((collaborator, index) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'block w-full px-4 py-2.5 text-left font-semibold text-gray-800 transition-colors hover:bg-red-50 focus:bg-red-50 focus:outline-none';
+                button.textContent = collaborator.name;
+                button.addEventListener('mousedown', (event) => event.preventDefault());
+                button.addEventListener('click', () => selectCollaborator(collaborator));
+                collaboratorSuggestions.appendChild(button);
+            });
+
+            collaboratorSuggestions.classList.remove('hidden');
+            collaboratorInput.setAttribute('aria-expanded', 'true');
         }
 
         function syncOccurrenceOptions() {
@@ -466,6 +550,7 @@
 
         if (collaboratorInput) {
             collaboratorInput.addEventListener('input', () => {
+                renderCollaboratorSuggestions();
                 syncOccurrenceOptions();
                 syncOccurrenceDate();
             });
@@ -473,6 +558,42 @@
             collaboratorInput.addEventListener('change', () => {
                 syncOccurrenceOptions();
                 syncOccurrenceDate();
+            });
+
+            collaboratorInput.addEventListener('focus', renderCollaboratorSuggestions);
+
+            collaboratorInput.addEventListener('blur', () => {
+                window.setTimeout(hideCollaboratorSuggestions, 120);
+            });
+
+            collaboratorInput.addEventListener('keydown', (event) => {
+                if (!collaboratorSuggestions || collaboratorSuggestions.classList.contains('hidden')) {
+                    return;
+                }
+
+                if (event.key === 'Escape') {
+                    hideCollaboratorSuggestions();
+                    return;
+                }
+
+                if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    activeSuggestionIndex = (activeSuggestionIndex + 1) % currentSuggestions.length;
+                    updateActiveSuggestion();
+                    return;
+                }
+
+                if (event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    activeSuggestionIndex = activeSuggestionIndex <= 0 ? currentSuggestions.length - 1 : activeSuggestionIndex - 1;
+                    updateActiveSuggestion();
+                    return;
+                }
+
+                if (event.key === 'Enter' && activeSuggestionIndex >= 0) {
+                    event.preventDefault();
+                    selectCollaborator(currentSuggestions[activeSuggestionIndex]);
+                }
             });
         }
 
@@ -482,6 +603,8 @@
 
         if (warningForm) {
             warningForm.addEventListener('submit', (event) => {
+                syncOccurrenceOptions();
+
                 if (!collaboratorIdInput || collaboratorIdInput.value !== '') {
                     return;
                 }
@@ -491,6 +614,17 @@
                 collaboratorInput.reportValidity();
             });
         }
+
+        document.addEventListener('mousedown', (event) => {
+            if (
+                collaboratorInput
+                && collaboratorSuggestions
+                && !collaboratorInput.contains(event.target)
+                && !collaboratorSuggestions.contains(event.target)
+            ) {
+                hideCollaboratorSuggestions();
+            }
+        });
 
         syncOccurrenceOptions();
         syncOccurrenceDate();
