@@ -199,11 +199,38 @@ CREATE TABLE IF NOT EXISTS colaborador_documentos (
 CREATE INDEX IF NOT EXISTS idx_colaborador_documentos_colaborador_id
     ON colaborador_documentos (colaborador_id);
 
+CREATE TABLE IF NOT EXISTS ocorrencias_colaboradores (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    colaborador_id UUID NOT NULL REFERENCES colaboradores(id) ON DELETE CASCADE,
+    vigilante_id UUID NOT NULL REFERENCES vigilantes(id) ON DELETE RESTRICT,
+    posto_servico VARCHAR(150) NOT NULL,
+    data_ocorrencia DATE NOT NULL,
+    tipo_ocorrencia VARCHAR(80) NOT NULL,
+    descricao TEXT NOT NULL,
+    classificacao VARCHAR(20) NOT NULL DEFAULT 'MÃ©dia',
+    responsavel_usuario_id UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+    responsavel_nome VARCHAR(150) NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_ocorrencias_colaboradores_colaborador_id
+    ON ocorrencias_colaboradores (colaborador_id);
+
+CREATE INDEX IF NOT EXISTS idx_ocorrencias_colaboradores_vigilante_id
+    ON ocorrencias_colaboradores (vigilante_id);
+
+CREATE INDEX IF NOT EXISTS idx_ocorrencias_colaboradores_data_ocorrencia
+    ON ocorrencias_colaboradores (data_ocorrencia);
+
+CREATE INDEX IF NOT EXISTS idx_ocorrencias_colaboradores_classificacao
+    ON ocorrencias_colaboradores (classificacao);
+
 CREATE TABLE IF NOT EXISTS advertencias_colaboradores (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     colaborador_id UUID NOT NULL REFERENCES colaboradores(id) ON DELETE CASCADE,
     vigilante_id UUID NOT NULL REFERENCES vigilantes(id) ON DELETE RESTRICT,
-    ocorrencia_id UUID NOT NULL REFERENCES ocorrencias(id) ON DELETE RESTRICT,
+    ocorrencia_id UUID NOT NULL REFERENCES ocorrencias_colaboradores(id) ON DELETE RESTRICT,
     posto_servico VARCHAR(150) NOT NULL,
     data_ocorrencia DATE NOT NULL,
     data_advertencia DATE NOT NULL,

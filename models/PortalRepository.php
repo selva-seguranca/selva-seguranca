@@ -172,12 +172,11 @@ class PortalRepository {
 
         $occurrence = $this->fetchOne(
             "SELECT o.id,
-                    o.data_hora,
-                    r.vigilante_id
-             FROM ocorrencias o
-             JOIN rondas r ON r.id = o.ronda_id
+                    o.data_ocorrencia,
+                    o.vigilante_id
+             FROM ocorrencias_colaboradores o
              WHERE o.id = :ocorrencia_id
-               AND r.vigilante_id = :vigilante_id
+               AND o.vigilante_id = :vigilante_id
              LIMIT 1",
             [
                 ':ocorrencia_id' => $occurrenceId,
@@ -189,8 +188,7 @@ class PortalRepository {
             throw new RuntimeException('A ocorrência selecionada não pertence ao vigilante informado.');
         }
 
-        $dataOcorrencia = substr((string) ($occurrence['data_hora'] ?? ''), 0, 10);
-        $dataOcorrencia = $this->normalizeRequiredDate($dataOcorrencia, 'Ocorrência sem data válida no sistema.');
+        $dataOcorrencia = $this->normalizeRequiredDate($occurrence['data_ocorrencia'] ?? null, 'Ocorrência sem data válida no sistema.');
 
         return $this->run(
             "INSERT INTO advertencias_colaboradores (
@@ -361,14 +359,15 @@ class PortalRepository {
                     a.criado_em,
                     u.nome AS colaborador_nome,
                     cd.cpf,
-                    o.tipo AS ocorrencia_tipo,
+                    o.tipo_ocorrencia AS ocorrencia_tipo,
                     o.descricao AS ocorrencia_descricao,
-                    o.data_hora AS ocorrencia_data_hora
+                    o.data_ocorrencia AS ocorrencia_data,
+                    o.posto_servico AS ocorrencia_posto_servico
              FROM advertencias_colaboradores a
              JOIN colaboradores c ON c.id = a.colaborador_id
              JOIN usuarios u ON u.id = c.usuario_id
              LEFT JOIN colaborador_detalhes cd ON cd.colaborador_id = c.id
-             LEFT JOIN ocorrencias o ON o.id = a.ocorrencia_id
+             LEFT JOIN ocorrencias_colaboradores o ON o.id = a.ocorrencia_id
              WHERE a.id = :id
              LIMIT 1",
             [':id' => $warningId]
@@ -378,7 +377,9 @@ class PortalRepository {
             return null;
         }
 
-        $row['ocorrencia_tipo_label'] = $this->formatOccurrenceType($row['ocorrencia_tipo'] ?? '');
+        $row['ocorrencia_tipo_label'] = trim((string) ($row['ocorrencia_tipo'] ?? '')) !== ''
+            ? trim((string) $row['ocorrencia_tipo'])
+            : 'Ocorrência registrada';
 
         return $row;
     }
@@ -1876,54 +1877,6 @@ class PortalRepository {
              ON colaborador_documentos (colaborador_id)"
         );
         $this->db->exec(
-            "CREATE TABLE IF NOT EXISTS advertencias_colaboradores (
-                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                colaborador_id UUID NOT NULL REFERENCES colaboradores(id) ON DELETE CASCADE,
-                vigilante_id UUID NOT NULL REFERENCES vigilantes(id) ON DELETE RESTRICT,
-                ocorrencia_id UUID NOT NULL REFERENCES ocorrencias(id) ON DELETE RESTRICT,
-                posto_servico VARCHAR(150) NOT NULL,
-                data_ocorrencia DATE NOT NULL,
-                data_advertencia DATE NOT NULL,
-                tipo_advertencia VARCHAR(20) NOT NULL,
-                motivo VARCHAR(120) NOT NULL,
-                descricao TEXT NOT NULL,
-                classificacao_falta VARCHAR(20) NOT NULL,
-                medida_disciplinar VARCHAR(30) NOT NULL DEFAULT 'Advertência',
-                responsavel_usuario_id UUID REFERENCES usuarios(id) ON DELETE SET NULL,
-                responsavel_nome VARCHAR(150) NOT NULL,
-                arquivo_pdf_nome VARCHAR(255),
-                arquivo_pdf_url TEXT,
-                arquivo_pdf_path TEXT,
-                arquivo_pdf_storage_driver VARCHAR(30),
-                arquivo_pdf_bucket VARCHAR(100),
-                arquivo_pdf_tamanho_bytes INTEGER,
-                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )"
-        );
-        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_nome VARCHAR(255)");
-        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_url TEXT");
-        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_path TEXT");
-        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_storage_driver VARCHAR(30)");
-        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_bucket VARCHAR(100)");
-        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_tamanho_bytes INTEGER");
-        $this->db->exec(
-            "CREATE INDEX IF NOT EXISTS idx_advertencias_colaborador_id
-             ON advertencias_colaboradores (colaborador_id)"
-        );
-        $this->db->exec(
-            "CREATE INDEX IF NOT EXISTS idx_advertencias_vigilante_id
-             ON advertencias_colaboradores (vigilante_id)"
-        );
-        $this->db->exec(
-            "CREATE INDEX IF NOT EXISTS idx_advertencias_ocorrencia_id
-             ON advertencias_colaboradores (ocorrencia_id)"
-        );
-        $this->db->exec(
-            "CREATE INDEX IF NOT EXISTS idx_advertencias_data_advertencia
-             ON advertencias_colaboradores (data_advertencia)"
-        );
-        $this->db->exec(
             "CREATE TABLE IF NOT EXISTS ocorrencias_colaboradores (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 colaborador_id UUID NOT NULL REFERENCES colaboradores(id) ON DELETE CASCADE,
@@ -1955,6 +1908,101 @@ class PortalRepository {
             "CREATE INDEX IF NOT EXISTS idx_ocorrencias_colaboradores_classificacao
              ON ocorrencias_colaboradores (classificacao)"
         );
+        $this->db->exec(
+            "CREATE TABLE IF NOT EXISTS advertencias_colaboradores (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                colaborador_id UUID NOT NULL REFERENCES colaboradores(id) ON DELETE CASCADE,
+                vigilante_id UUID NOT NULL REFERENCES vigilantes(id) ON DELETE RESTRICT,
+                ocorrencia_id UUID NOT NULL REFERENCES ocorrencias_colaboradores(id) ON DELETE RESTRICT,
+                posto_servico VARCHAR(150) NOT NULL,
+                data_ocorrencia DATE NOT NULL,
+                data_advertencia DATE NOT NULL,
+                tipo_advertencia VARCHAR(20) NOT NULL,
+                motivo VARCHAR(120) NOT NULL,
+                descricao TEXT NOT NULL,
+                classificacao_falta VARCHAR(20) NOT NULL,
+                medida_disciplinar VARCHAR(30) NOT NULL DEFAULT 'Advertência',
+                responsavel_usuario_id UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+                responsavel_nome VARCHAR(150) NOT NULL,
+                arquivo_pdf_nome VARCHAR(255),
+                arquivo_pdf_url TEXT,
+                arquivo_pdf_path TEXT,
+                arquivo_pdf_storage_driver VARCHAR(30),
+                arquivo_pdf_bucket VARCHAR(100),
+                arquivo_pdf_tamanho_bytes INTEGER,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )"
+        );
+        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_nome VARCHAR(255)");
+        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_url TEXT");
+        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_path TEXT");
+        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_storage_driver VARCHAR(30)");
+        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_bucket VARCHAR(100)");
+        $this->db->exec("ALTER TABLE advertencias_colaboradores ADD COLUMN IF NOT EXISTS arquivo_pdf_tamanho_bytes INTEGER");
+        $this->db->exec(
+            "DO $$
+            DECLARE
+                fk_record RECORD;
+            BEGIN
+                FOR fk_record IN
+                    SELECT tc.constraint_name
+                    FROM information_schema.table_constraints tc
+                    JOIN information_schema.key_column_usage kcu
+                      ON tc.constraint_name = kcu.constraint_name
+                     AND tc.table_schema = kcu.table_schema
+                    JOIN information_schema.constraint_column_usage ccu
+                      ON tc.constraint_name = ccu.constraint_name
+                     AND tc.table_schema = ccu.table_schema
+                    WHERE tc.table_schema = 'public'
+                      AND tc.table_name = 'advertencias_colaboradores'
+                      AND tc.constraint_type = 'FOREIGN KEY'
+                      AND kcu.column_name = 'ocorrencia_id'
+                      AND ccu.table_name <> 'ocorrencias_colaboradores'
+                LOOP
+                    EXECUTE format(
+                        'ALTER TABLE advertencias_colaboradores DROP CONSTRAINT IF EXISTS %I',
+                        fk_record.constraint_name
+                    );
+                END LOOP;
+
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM information_schema.table_constraints tc
+                    JOIN information_schema.key_column_usage kcu
+                      ON tc.constraint_name = kcu.constraint_name
+                     AND tc.table_schema = kcu.table_schema
+                    JOIN information_schema.constraint_column_usage ccu
+                      ON tc.constraint_name = ccu.constraint_name
+                     AND tc.table_schema = ccu.table_schema
+                    WHERE tc.table_schema = 'public'
+                      AND tc.table_name = 'advertencias_colaboradores'
+                      AND tc.constraint_type = 'FOREIGN KEY'
+                      AND kcu.column_name = 'ocorrencia_id'
+                      AND ccu.table_name = 'ocorrencias_colaboradores'
+                ) THEN
+                    ALTER TABLE advertencias_colaboradores
+                    ADD CONSTRAINT advertencias_colaboradores_ocorrencia_id_fkey
+                    FOREIGN KEY (ocorrencia_id) REFERENCES ocorrencias_colaboradores(id) ON DELETE RESTRICT NOT VALID;
+                END IF;
+            END $$"
+        );
+        $this->db->exec(
+            "CREATE INDEX IF NOT EXISTS idx_advertencias_colaborador_id
+             ON advertencias_colaboradores (colaborador_id)"
+        );
+        $this->db->exec(
+            "CREATE INDEX IF NOT EXISTS idx_advertencias_vigilante_id
+             ON advertencias_colaboradores (vigilante_id)"
+        );
+        $this->db->exec(
+            "CREATE INDEX IF NOT EXISTS idx_advertencias_ocorrencia_id
+             ON advertencias_colaboradores (ocorrencia_id)"
+        );
+        $this->db->exec(
+            "CREATE INDEX IF NOT EXISTS idx_advertencias_data_advertencia
+             ON advertencias_colaboradores (data_advertencia)"
+        );
     }
 
     private function getWarningEligibleVigilantes() {
@@ -1976,32 +2024,27 @@ class PortalRepository {
     private function getWarningOccurrenceOptions($limit = 200) {
         $rows = $this->fetchAll(
             "SELECT o.id,
-                    o.tipo,
+                    o.tipo_ocorrencia,
                     o.descricao,
-                    o.data_hora,
-                    r.id AS ronda_id,
-                    r.vigilante_id,
+                    o.data_ocorrencia,
+                    o.posto_servico,
+                    o.vigilante_id,
                     c.id AS collaborator_id,
-                    u.nome AS vigilante_nome,
-                    ve.modelo,
-                    ve.placa
-             FROM ocorrencias o
-             JOIN rondas r ON r.id = o.ronda_id
-             JOIN vigilantes v ON v.id = r.vigilante_id
+                    u.nome AS vigilante_nome
+             FROM ocorrencias_colaboradores o
+             JOIN vigilantes v ON v.id = o.vigilante_id
              JOIN usuarios u ON u.id = v.usuario_id
              JOIN colaboradores c ON c.usuario_id = u.id
-             LEFT JOIN veiculos ve ON ve.id = r.veiculo_id
-             ORDER BY o.data_hora DESC
+             ORDER BY o.data_ocorrencia DESC, o.criado_em DESC
              LIMIT :limit",
             [':limit' => (int) $limit],
             [':limit' => PDO::PARAM_INT]
         );
 
         return array_map(function ($row) {
-            $row['tipo_label'] = $this->formatOccurrenceType($row['tipo'] ?? '');
-            $row['veiculo'] = trim((string) ($row['modelo'] ?? '')) !== '' || trim((string) ($row['placa'] ?? '')) !== ''
-                ? trim((string) ($row['modelo'] ?? '') . ' - ' . (string) ($row['placa'] ?? ''), ' -')
-                : 'Sem viatura';
+            $row['tipo_label'] = trim((string) ($row['tipo_ocorrencia'] ?? '')) !== ''
+                ? trim((string) $row['tipo_ocorrencia'])
+                : 'Ocorrência registrada';
 
             return $row;
         }, $rows);
@@ -2032,14 +2075,15 @@ class PortalRepository {
                     u.nome AS colaborador_nome,
                     cd.cpf,
                     cd.foto_url,
-                    o.tipo AS ocorrencia_tipo,
+                    o.tipo_ocorrencia AS ocorrencia_tipo,
                     o.descricao AS ocorrencia_descricao,
-                    o.data_hora AS ocorrencia_data_hora
+                    o.data_ocorrencia AS ocorrencia_data,
+                    o.posto_servico AS ocorrencia_posto_servico
              FROM advertencias_colaboradores a
              JOIN colaboradores c ON c.id = a.colaborador_id
              JOIN usuarios u ON u.id = c.usuario_id
              LEFT JOIN colaborador_detalhes cd ON cd.colaborador_id = c.id
-             LEFT JOIN ocorrencias o ON o.id = a.ocorrencia_id
+             LEFT JOIN ocorrencias_colaboradores o ON o.id = a.ocorrencia_id
              ORDER BY a.data_advertencia DESC, a.criado_em DESC
              LIMIT :limit",
             [':limit' => (int) $limit],
@@ -2047,7 +2091,9 @@ class PortalRepository {
         );
 
         return array_map(function ($row) {
-            $row['ocorrencia_tipo_label'] = $this->formatOccurrenceType($row['ocorrencia_tipo'] ?? '');
+            $row['ocorrencia_tipo_label'] = trim((string) ($row['ocorrencia_tipo'] ?? '')) !== ''
+                ? trim((string) $row['ocorrencia_tipo'])
+                : 'Ocorrência registrada';
 
             return $row;
         }, $rows);

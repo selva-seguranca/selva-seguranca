@@ -264,10 +264,10 @@
                             <option value="">Selecione primeiro o vigilante</option>
                             <?php foreach ($advertenciaOcorrencias as $ocorrencia): ?>
                                 <?php
-                                    $occurrenceDate = substr((string) ($ocorrencia['data_hora'] ?? ''), 0, 10);
-                                    $occurrenceLabel = $formatDateTime($ocorrencia['data_hora'] ?? null)
-                                        . ' - ' . (string) ($ocorrencia['tipo_label'] ?? 'Ocorrência')
-                                        . ' - ' . $shortText($ocorrencia['descricao'] ?? '', 70);
+                                    $occurrenceDate = (string) ($ocorrencia['data_ocorrencia'] ?? '');
+                                    $occurrenceLabel = $formatDate($ocorrencia['data_ocorrencia'] ?? null)
+                                        . ' - ' . (string) ($ocorrencia['tipo_label'] ?? 'Ocorrência registrada')
+                                        . ' - ' . (string) ($ocorrencia['posto_servico'] ?? 'Posto não informado');
                                 ?>
                                 <option
                                     value="<?= htmlspecialchars((string) ($ocorrencia['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
@@ -407,8 +407,11 @@
                                     <p>
                                         Ocorrência vinculada:
                                         <span class="font-semibold text-gray-700"><?= htmlspecialchars((string) ($advertencia['ocorrencia_tipo_label'] ?? 'Ocorrência'), ENT_QUOTES, 'UTF-8') ?></span>
-                                        em <?= htmlspecialchars($formatDateTime($advertencia['ocorrencia_data_hora'] ?? null), ENT_QUOTES, 'UTF-8') ?>.
+                                        em <?= htmlspecialchars($formatDate($advertencia['ocorrencia_data'] ?? null), ENT_QUOTES, 'UTF-8') ?>.
                                     </p>
+                                    <?php if (trim((string) ($advertencia['ocorrencia_posto_servico'] ?? '')) !== ''): ?>
+                                        <p class="mt-1">Posto da ocorrência: <?= htmlspecialchars((string) ($advertencia['ocorrencia_posto_servico'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+                                    <?php endif; ?>
                                     <p class="mt-1">Responsável: <?= htmlspecialchars((string) ($advertencia['responsavel_nome'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
                                 </div>
 
@@ -851,12 +854,13 @@
 
             const selectedVigilanteId = selectedCollaborator ? selectedCollaborator.vigilanteId : '';
             let visibleOccurrences = 0;
+            let firstVisibleOccurrenceValue = '';
 
             Array.from(warningOccurrenceSelect.options).forEach((option) => {
                 if (option.value === '') {
                     option.hidden = false;
                     option.disabled = false;
-                    option.textContent = selectedVigilanteId ? 'Selecione a ocorrência' : 'Selecione primeiro o vigilante';
+                    option.textContent = selectedVigilanteId ? 'Selecione a ocorrência registrada' : 'Selecione primeiro o vigilante';
                     return;
                 }
 
@@ -866,6 +870,10 @@
 
                 if (isVisible) {
                     visibleOccurrences++;
+
+                    if (firstVisibleOccurrenceValue === '') {
+                        firstVisibleOccurrenceValue = option.value;
+                    }
                 }
             });
 
@@ -876,6 +884,8 @@
 
             if (!selectedVigilanteId || visibleOccurrences === 0) {
                 warningOccurrenceSelect.value = '';
+            } else if (warningOccurrenceSelect.value === '' && firstVisibleOccurrenceValue !== '') {
+                warningOccurrenceSelect.value = firstVisibleOccurrenceValue;
             }
 
             if (warningOccurrenceDateInput && warningOccurrenceSelect.value === '') {

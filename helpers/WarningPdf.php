@@ -60,7 +60,8 @@ class WarningPdf {
         $addSpace(6);
         $addLine('OCORRENCIA VINCULADA', 12, 18);
         $addLine('Tipo da ocorrencia: ' . $this->value($warning['ocorrencia_tipo_label'] ?? $warning['ocorrencia_tipo'] ?? null));
-        $addLine('Data e hora da ocorrencia: ' . $this->formatDateTime($warning['ocorrencia_data_hora'] ?? null));
+        $addLine('Data da ocorrencia vinculada: ' . $this->formatDate($warning['ocorrencia_data'] ?? null));
+        $addLine('Posto da ocorrencia: ' . $this->value($warning['ocorrencia_posto_servico'] ?? null));
         $addLine('Descricao da ocorrencia: ' . $this->value($warning['ocorrencia_descricao'] ?? null), 10, 14);
         $addSpace(6);
         $addLine('RESPONSAVEL PELA APLICACAO', 12, 18);
