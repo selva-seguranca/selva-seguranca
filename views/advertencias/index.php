@@ -365,11 +365,22 @@
                             <?php
                                 $classificacao = (string) ($advertencia['classificacao_falta'] ?? '');
                                 $medida = (string) ($advertencia['medida_disciplinar'] ?? '');
+                                $fotoUrl = trim((string) ($advertencia['foto_url'] ?? ''));
+                                $nomeColaborador = (string) ($advertencia['colaborador_nome'] ?? 'Vigilante');
                             ?>
                             <article class="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                                <div class="flex gap-4">
+                                    <?php if ($fotoUrl !== ''): ?>
+                                        <img src="<?= htmlspecialchars($fotoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($nomeColaborador, ENT_QUOTES, 'UTF-8') ?>" class="h-16 w-16 rounded-2xl object-cover">
+                                    <?php else: ?>
+                                        <div class="inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-lg font-black text-brand-red">
+                                            <?= htmlspecialchars($buildInitials($nomeColaborador), ENT_QUOTES, 'UTF-8') ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div class="min-w-0 flex-1">
                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                     <div class="min-w-0">
-                                        <h4 class="font-bold text-gray-950"><?= htmlspecialchars((string) ($advertencia['colaborador_nome'] ?? 'Vigilante'), ENT_QUOTES, 'UTF-8') ?></h4>
+                                        <h4 class="font-bold text-gray-950"><?= htmlspecialchars($nomeColaborador, ENT_QUOTES, 'UTF-8') ?></h4>
                                         <p class="mt-1 text-xs text-gray-500">
                                             CPF <?= htmlspecialchars((string) ($advertencia['cpf'] ?? 'Não informado'), ENT_QUOTES, 'UTF-8') ?>
                                             <span class="mx-1 text-gray-300">|</span>
@@ -440,6 +451,8 @@
                                         PDF ainda não disponível para este registro.
                                     </p>
                                 <?php endif; ?>
+                                    </div>
+                                </div>
                             </article>
                         <?php endforeach; ?>
                     </div>
