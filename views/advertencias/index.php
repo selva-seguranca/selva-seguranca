@@ -211,8 +211,8 @@
         </div>
     </div>
 
-    <div class="space-y-6 p-6">
-        <div class="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_520px]">
+    <div class="flex flex-col gap-6 p-6">
+        <div class="order-2 grid gap-6 2xl:grid-cols-[minmax(0,1fr)_520px]">
             <form id="advertencia-form" action="/advertencias" method="POST" class="rounded-3xl border border-gray-200 bg-gray-50 p-5">
                 <div class="flex items-start gap-3">
                     <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-red text-white">
@@ -444,7 +444,7 @@
             </div>
         </div>
 
-        <div class="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_520px]">
+        <div class="order-1 grid gap-6 2xl:grid-cols-[minmax(0,1fr)_520px]">
             <form id="ocorrencia-form" action="/advertencias/ocorrencias" method="POST" class="rounded-3xl border border-gray-200 bg-gray-50 p-5">
                 <div class="flex items-start gap-3">
                     <span class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white">
