@@ -66,7 +66,7 @@
     <!-- Sidebar -->
     <aside
         id="app-sidebar"
-        class="fixed inset-y-0 left-0 z-30 flex w-72 -translate-x-full flex-col bg-brand-dark text-gray-300 shadow-xl transition-transform duration-200 md:static md:z-20 md:translate-x-0 md:shrink-0"
+        class="fixed inset-y-0 left-0 z-30 flex w-80 -translate-x-full flex-col bg-brand-dark text-gray-300 shadow-xl transition-transform duration-200 md:static md:z-20 md:translate-x-0 md:shrink-0"
     >
         <button
             id="sidebar-close"
@@ -107,7 +107,7 @@
                 <?= $isAdvertenciasActive ? 'aria-current="page"' : '' ?>
             >
                 <i class="ph ph-warning-octagon shrink-0 text-xl"></i>
-                <span class="whitespace-nowrap font-medium">Controle de Advertências</span>
+                <span class="whitespace-nowrap font-medium">Ocorrências e Advertências</span>
             </a>
 
             <a

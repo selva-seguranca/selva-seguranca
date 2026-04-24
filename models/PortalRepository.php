@@ -103,7 +103,8 @@ class PortalRepository {
             'vigilantes' => $this->getWarningEligibleVigilantes(),
             'ocorrencias' => $this->getWarningOccurrenceOptions(),
             'advertencias' => $this->getCollaboratorWarnings($historyLimit),
-            'resumo' => $this->getCollaboratorWarningSummary(),
+            'ocorrencias_registradas' => $this->getCollaboratorOccurrenceRecords($historyLimit),
+            'resumo' => $this->getOccurrenceAndWarningSummary(),
         ];
     }
 
@@ -234,6 +235,95 @@ class PortalRepository {
                 ':descricao' => $descricao,
                 ':classificacao_falta' => $classificacao,
                 ':medida_disciplinar' => $medidaDisciplinar,
+                ':responsavel_usuario_id' => $responsibleUserId !== '' ? $responsibleUserId : null,
+                ':responsavel_nome' => $responsibleName,
+            ]
+        )->fetch();
+    }
+
+    public function createCollaboratorOccurrenceRecord(array $payload, $responsibleUserId, $responsibleName) {
+        $this->ensureCollaboratorRegistrationSchema();
+
+        $collaboratorId = trim((string) ($payload['colaborador_id'] ?? ''));
+        $vigilanteId = trim((string) ($payload['vigilante_id'] ?? ''));
+        $postoServico = $this->limitText((string) ($payload['posto_servico'] ?? ''), 150);
+        $dataOcorrencia = $this->normalizeRequiredDate($payload['data_ocorrencia'] ?? null, 'Informe a data da ocorrência.');
+        $tipoOcorrencia = $this->limitText((string) ($payload['tipo_ocorrencia'] ?? ''), 80);
+        $descricao = trim((string) ($payload['descricao'] ?? ''));
+        $classificacao = $this->normalizeRequiredChoice($payload['classificacao'] ?? '', ['Leve', 'Média', 'Grave'], 'classificação da ocorrência');
+        $responsibleName = $this->limitText((string) $responsibleName, 150);
+        $responsibleUserId = trim((string) $responsibleUserId);
+
+        if ($collaboratorId === '' || $vigilanteId === '') {
+            throw new RuntimeException('Selecione o colaborador vigilante da ocorrência.');
+        }
+
+        if ($postoServico === '') {
+            throw new RuntimeException('Informe o posto de serviço.');
+        }
+
+        if ($tipoOcorrencia === '') {
+            throw new RuntimeException('Informe o tipo da ocorrência.');
+        }
+
+        if ($descricao === '') {
+            throw new RuntimeException('Informe a descrição detalhada da ocorrência.');
+        }
+
+        if ($responsibleName === '') {
+            throw new RuntimeException('Responsável pelo registro não identificado.');
+        }
+
+        $target = $this->fetchOne(
+            "SELECT c.id AS colaborador_id,
+                    v.id AS vigilante_id
+             FROM colaboradores c
+             JOIN usuarios u ON u.id = c.usuario_id
+             JOIN vigilantes v ON v.usuario_id = u.id
+             WHERE c.id = :colaborador_id
+               AND v.id = :vigilante_id
+             LIMIT 1",
+            [
+                ':colaborador_id' => $collaboratorId,
+                ':vigilante_id' => $vigilanteId,
+            ]
+        );
+
+        if ($target === null) {
+            throw new RuntimeException('Colaborador vigilante não encontrado para ocorrência.');
+        }
+
+        return $this->run(
+            "INSERT INTO ocorrencias_colaboradores (
+                colaborador_id,
+                vigilante_id,
+                posto_servico,
+                data_ocorrencia,
+                tipo_ocorrencia,
+                descricao,
+                classificacao,
+                responsavel_usuario_id,
+                responsavel_nome
+             ) VALUES (
+                :colaborador_id,
+                :vigilante_id,
+                :posto_servico,
+                :data_ocorrencia,
+                :tipo_ocorrencia,
+                :descricao,
+                :classificacao,
+                :responsavel_usuario_id,
+                :responsavel_nome
+             )
+             RETURNING id",
+            [
+                ':colaborador_id' => $collaboratorId,
+                ':vigilante_id' => $vigilanteId,
+                ':posto_servico' => $postoServico,
+                ':data_ocorrencia' => $dataOcorrencia,
+                ':tipo_ocorrencia' => $tipoOcorrencia,
+                ':descricao' => $descricao,
+                ':classificacao' => $classificacao,
                 ':responsavel_usuario_id' => $responsibleUserId !== '' ? $responsibleUserId : null,
                 ':responsavel_nome' => $responsibleName,
             ]
@@ -1833,6 +1923,38 @@ class PortalRepository {
             "CREATE INDEX IF NOT EXISTS idx_advertencias_data_advertencia
              ON advertencias_colaboradores (data_advertencia)"
         );
+        $this->db->exec(
+            "CREATE TABLE IF NOT EXISTS ocorrencias_colaboradores (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                colaborador_id UUID NOT NULL REFERENCES colaboradores(id) ON DELETE CASCADE,
+                vigilante_id UUID NOT NULL REFERENCES vigilantes(id) ON DELETE RESTRICT,
+                posto_servico VARCHAR(150) NOT NULL,
+                data_ocorrencia DATE NOT NULL,
+                tipo_ocorrencia VARCHAR(80) NOT NULL,
+                descricao TEXT NOT NULL,
+                classificacao VARCHAR(20) NOT NULL DEFAULT 'Média',
+                responsavel_usuario_id UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+                responsavel_nome VARCHAR(150) NOT NULL,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )"
+        );
+        $this->db->exec(
+            "CREATE INDEX IF NOT EXISTS idx_ocorrencias_colaboradores_colaborador_id
+             ON ocorrencias_colaboradores (colaborador_id)"
+        );
+        $this->db->exec(
+            "CREATE INDEX IF NOT EXISTS idx_ocorrencias_colaboradores_vigilante_id
+             ON ocorrencias_colaboradores (vigilante_id)"
+        );
+        $this->db->exec(
+            "CREATE INDEX IF NOT EXISTS idx_ocorrencias_colaboradores_data_ocorrencia
+             ON ocorrencias_colaboradores (data_ocorrencia)"
+        );
+        $this->db->exec(
+            "CREATE INDEX IF NOT EXISTS idx_ocorrencias_colaboradores_classificacao
+             ON ocorrencias_colaboradores (classificacao)"
+        );
     }
 
     private function getWarningEligibleVigilantes() {
@@ -1931,20 +2053,64 @@ class PortalRepository {
         }, $rows);
     }
 
-    private function getCollaboratorWarningSummary() {
+    private function getCollaboratorOccurrenceRecords($limit = 50) {
+        return $this->fetchAll(
+            "SELECT o.id,
+                    o.colaborador_id,
+                    o.vigilante_id,
+                    o.posto_servico,
+                    o.data_ocorrencia,
+                    o.tipo_ocorrencia,
+                    o.descricao,
+                    o.classificacao,
+                    o.responsavel_nome,
+                    o.criado_em,
+                    u.nome AS colaborador_nome,
+                    c.cargo,
+                    c.departamento,
+                    cd.cpf,
+                    cd.foto_url,
+                    cd.situacao
+             FROM ocorrencias_colaboradores o
+             JOIN colaboradores c ON c.id = o.colaborador_id
+             JOIN usuarios u ON u.id = c.usuario_id
+             LEFT JOIN colaborador_detalhes cd ON cd.colaborador_id = c.id
+             ORDER BY o.data_ocorrencia DESC, o.criado_em DESC
+             LIMIT :limit",
+            [':limit' => (int) $limit],
+            [':limit' => PDO::PARAM_INT]
+        );
+    }
+
+    private function getOccurrenceAndWarningSummary() {
         return [
-            'total' => (int) $this->fetchValue("SELECT COUNT(*) FROM advertencias_colaboradores"),
-            'mes_atual' => (int) $this->fetchValue(
-                "SELECT COUNT(*)
-                 FROM advertencias_colaboradores
-                 WHERE data_advertencia >= date_trunc('month', CURRENT_DATE)::date"
+            'advertencias_total' => (int) $this->fetchValue("SELECT COUNT(*) FROM advertencias_colaboradores"),
+            'ocorrencias_total' => (int) $this->fetchValue("SELECT COUNT(*) FROM ocorrencias_colaboradores"),
+            'mes_atual' => (int) (
+                (int) $this->fetchValue(
+                    "SELECT COUNT(*)
+                     FROM advertencias_colaboradores
+                     WHERE data_advertencia >= date_trunc('month', CURRENT_DATE)::date"
+                )
+                + (int) $this->fetchValue(
+                    "SELECT COUNT(*)
+                     FROM ocorrencias_colaboradores
+                     WHERE data_ocorrencia >= date_trunc('month', CURRENT_DATE)::date"
+                )
             ),
-            'graves' => (int) $this->fetchValue(
-                "SELECT COUNT(*)
-                 FROM advertencias_colaboradores
-                 WHERE classificacao_falta = 'Grave'"
+            'graves_total' => (int) (
+                (int) $this->fetchValue(
+                    "SELECT COUNT(*)
+                     FROM advertencias_colaboradores
+                     WHERE classificacao_falta = 'Grave'"
+                )
+                + (int) $this->fetchValue(
+                    "SELECT COUNT(*)
+                     FROM ocorrencias_colaboradores
+                     WHERE classificacao = 'Grave'"
+                )
             ),
-            'evolucao' => (int) $this->fetchValue(
+            'evolucao_total' => (int) $this->fetchValue(
                 "SELECT COUNT(*)
                  FROM advertencias_colaboradores
                  WHERE medida_disciplinar IN ('Suspensão', 'Desligamento')"

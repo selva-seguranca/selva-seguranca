@@ -20,9 +20,10 @@ $router->post('/rh/colaboradores', 'RhController@store');
 $router->post('/rh/colaboradores/atualizar', 'RhController@update');
 $router->post('/rh/colaboradores/excluir', 'RhController@destroy');
 
-// Controle de Advertências Routes
+// Ocorrências e Advertências Routes
 $router->get('/advertencias', 'AdvertenciaController@index');
 $router->get('/advertencias/pdf', 'AdvertenciaController@pdf');
+$router->post('/advertencias/ocorrencias', 'AdvertenciaController@storeOccurrence');
 $router->post('/advertencias', 'AdvertenciaController@store');
 
 // Reciclagem Routes

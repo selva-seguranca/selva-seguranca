@@ -17,11 +17,13 @@ class AdvertenciaController {
             'vigilantes' => [],
             'ocorrencias' => [],
             'advertencias' => [],
+            'ocorrencias_registradas' => [],
             'resumo' => [
-                'total' => 0,
+                'advertencias_total' => 0,
+                'ocorrencias_total' => 0,
                 'mes_atual' => 0,
-                'graves' => 0,
-                'evolucao' => 0,
+                'graves_total' => 0,
+                'evolucao_total' => 0,
             ],
         ];
         $flash = $this->consumeFlash();
@@ -31,14 +33,16 @@ class AdvertenciaController {
             $repository = new PortalRepository();
             $advertenciasControl = $repository->getRhWarningControlData();
         } catch (Throwable $e) {
-            $dbWarning = 'Não foi possível carregar o controle de advertências direto do banco.';
+            $dbWarning = 'Não foi possível carregar o módulo de ocorrências e advertências direto do banco.';
         }
 
         View::render('advertencias/index', [
-            'pageTitle' => 'Controle de Advertências',
+            'pageTitle' => 'Ocorrências e Advertências',
             'advertenciasControl' => $advertenciasControl,
             'advertenciaSuccess' => $flash['success'],
             'advertenciaError' => $flash['error'],
+            'ocorrenciaSuccess' => $flash['occurrence_success'],
+            'ocorrenciaError' => $flash['occurrence_error'],
             'dbWarning' => $dbWarning,
         ]);
     }
@@ -116,6 +120,31 @@ class AdvertenciaController {
         exit;
     }
 
+    public function storeOccurrence() {
+        Auth::requireAnyProfile(['Coordenador Geral', 'Administrador']);
+
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            header('Location: /advertencias');
+            exit;
+        }
+
+        try {
+            $repository = new PortalRepository();
+            $repository->createCollaboratorOccurrenceRecord(
+                $_POST,
+                $_SESSION['user_id'] ?? null,
+                $_SESSION['user_nome'] ?? ''
+            );
+
+            $_SESSION['occurrence_success'] = 'OCORRÊNCIA SALVA COM SUCESSO!';
+        } catch (Throwable $e) {
+            $_SESSION['occurrence_error'] = $e->getMessage();
+        }
+
+        header('Location: /advertencias');
+        exit;
+    }
+
     public function pdf() {
         Auth::requireAnyProfile(['Coordenador Geral', 'Administrador']);
 
@@ -183,12 +212,21 @@ class AdvertenciaController {
     private function consumeFlash() {
         $success = $_SESSION['advertencia_success'] ?? null;
         $error = $_SESSION['advertencia_error'] ?? null;
+        $occurrenceSuccess = $_SESSION['occurrence_success'] ?? null;
+        $occurrenceError = $_SESSION['occurrence_error'] ?? null;
 
-        unset($_SESSION['advertencia_success'], $_SESSION['advertencia_error']);
+        unset(
+            $_SESSION['advertencia_success'],
+            $_SESSION['advertencia_error'],
+            $_SESSION['occurrence_success'],
+            $_SESSION['occurrence_error']
+        );
 
         return [
             'success' => $success,
             'error' => $error,
+            'occurrence_success' => $occurrenceSuccess,
+            'occurrence_error' => $occurrenceError,
         ];
     }
 
